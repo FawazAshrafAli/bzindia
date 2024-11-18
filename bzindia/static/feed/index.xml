@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+
+<channel>
+	<title>Top Companies in India 2022</title>
+	<atom:link href="https://bzindia.in/feed/" rel="self" type="application/rss+xml" />
+	<link>https://bzindia.in/</link>
+	<description>Common Description</description>
+	<lastBuildDate>Wed, 27 Dec 2023 18:22:55 +0000</lastBuildDate>
+	<copyright>Copyright (c) 2024 BZindia.com, All rights reserved.</copyright>
+	<language>en-US</language>
+ 
+<image>
+	<url>https://bzindia.in/favicon.png</url>
+	<title>Top Companies in India 2022</title>
+	<link>https://bzindia.in/</link>
+	<width>32</width>
+	<height>32</height>
+</image> 
+
+
+<!-- item 01 Start -->
+
+<item>
+		<title>ISO Certification for Online Business and Sellers</title>
+		<link>https://bzindia.in/registration/iso-certification-for-online-business-and-sellers/</link>
+		<dc:creator><![CDATA[AUTHOR NAME]]></dc:creator>
+		<pubDate>Wed, 27 Dec 2023 18:22:55 +0000</pubDate>
+		<category><![CDATA[CATEGORY NAME]]></category>
+        <source>BZindia</source>
+        <guid isPermaLink="false">https://bzindia.in/2f9ff03330a1b4076b4a3f6ac0fba693</guid>
+		
+        <category><![CDATA[Keywords/Tags 01]]></category>
+        <category><![CDATA[Keywords/Tags 02]]></category>
+        <category><![CDATA[Keywords/Tags 03]]></category> 
+
+        <description><![CDATA[<p>First paragraph Short Description of page content <a href="#">Read More... </a></p>]]></description>
+
+        <content:encoded><![CDATA[<p>full description of page content with (p, img, h1, h3, h4, ul, li)</p>]]></content:encoded>
+       
+	    <enclosure url="https://example.com/image.jpg" type="image/jpeg" />
+
+</item>
+
+<!-- item 01 End -->
+
+	<!-- Additional 'item' elements with similar structure can be added here -->
+	
+</channel>
+</rss>
+
+
+
+

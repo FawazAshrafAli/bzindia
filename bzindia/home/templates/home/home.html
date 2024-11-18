@@ -1,0 +1,923 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}{% endblock title %}
+
+{% block content %}
+<!--banner-slider start -->
+<section class="bg-half" style="background-image: url(/static/images/city-4667143_1920.jpg);" data-aos="fade-in">
+
+  <!-- banner-serch-bar-section-start -->
+
+  <div class="banner-sech-bar">
+    <div class="banner-serch-bar-cntnt">
+      <h2>SEARCH YOUR NEEDS</h2>
+      <p>Find Best Companies for your Service or Products</p>
+      <form class="search_bx mt-5" role="search">
+        <input class="form-control " type="search" placeholder="Search " aria-label="Search">
+        <button class="srch-btn" type="submit"><i class="fas fa-search"></i></button>
+      </form>
+    </div>
+  </div>
+  <div class="bg-overlay"></div>
+  <!-- banner-serch-bar-section-end -->
+</section>
+ 
+  <!-- home -banner section-end -->
+
+  <!--join venture-slider-section start  -->
+
+  <section>
+    <div class="hm-pge-join-vntr-slider">
+      <div class="join-vntr-sldr-bx" data-aos="fade-down">
+        <h2>OUR JOIN VENTURES
+        </h2>
+
+        <!-- venture slider -->
+
+        <div class="teams_slide">
+          {% for company in companies %}
+          {% if company.logo %}
+          <div class="team_slider_padd">
+            <div>
+              <a href="#">
+                <img src="{{company.logo.url}}" alt="">
+              </a>
+            </div>
+          </div>          
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!--join venture-slider-section end  -->
+
+
+
+  
+  <section class="content_area001" style="padding: 0px 0px 40px 0px; margin-bottom: 40px; border-bottom: 1px solid #ddd;">
+    <div class="container">
+ 
+
+      <h3>BZindia Group of Joint Ventures</h3>
+        <span class="line"></span>
+
+      <div class="row">
+        
+        <div class="col-md-12 col-sm-12 col-xs-12">
+        <div id="verticalTab">
+          <ul class="resp-tabs-list">
+            {% for company in companies %}
+            <li>{{company.name}}</li>
+          {% endfor %}
+           </ul>
+          <div class="resp-tabs-container">
+            
+            {% for company in companies %}
+            <div>
+              <h4 style="padding-bottom: 10px;" id="company-heading">{{company.name}}</h4>
+              <p class="row">
+                <span class="col-md-2 home_company_list"><img style="width: 100%;" src="{% if company.logo.url %} {{company.logo.url}} {% endif %}"></span>    
+                <span class="col-md-10">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nibh urna, euismod ut ornare non, volutpat vel tortor. Integer laoreet placerat suscipit. Sed sodales scelerisque commodo. Nam porta cursus lectus. Proin nunc erat, gravida a facilisis quis, ornare id lectus. Proin consectetur nibh quis urna gravida mollis.
+                </span>   
+              </p>
+ 
+              <ul class="row list-default" style="padding:10px 0 20px 0;">
+                <li class="col col-md-6 col-12">passport all Directors</li>
+                <li class="col col-md-6 col-12">Cancelled Cheque of firm or passbook first page </li>
+                <li class="col col-md-6 col-12">Photo of all Directors.</li>
+                <li class="col col-md-6 col-12">Name of the business</li>
+                <li class="col col-md-6 col-12">Nature of business</li>
+                <li class="col col-md-6 col-12">Product deals with</li>
+                <li class="col col-md-6 col-12">Shop rent agreement</li>
+                <li class="col col-md-6 col-12">Building tax receipt</li>
+                <li class="col col-md-6 col-12">Electricity bill</li>
+                <li class="col col-md-6 col-12">DIN number of all Directors</li>
+                <li class="col col-md-6 col-12">Certificate of incorporation</li>
+                <li class="col col-md-6 col-12">Board Resolution</li>
+                <li class="col col-md-6 col-12">Mobile no and Email id office and all the directors</li>
+                <li class="col col-md-6 col-12">Digital Signature</li>
+              </ul>
+
+              <a href="{% url 'company:company_home' company.slug %}" class="primary_button">Read More</a>
+          </div>
+          {% endfor %}
+
+        {% comment %} <div>
+          <h4 style="padding-bottom: 10px;">IPCS - Automation Company in India</h4>
+          <p class="row">
+            <span class="col-md-2 home_company_list"><img style="width: 100%;" src="{% static 'images/brets-logo-english-course-training-institutes-india.webp' %}"></span>    
+            <span class="col-md-10">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nibh urna, euismod ut ornare non, volutpat vel tortor. Integer laoreet placerat suscipit. Sed sodales scelerisque commodo. Nam porta cursus lectus. Proin nunc erat, gravida a facilisis quis, ornare id lectus. Proin consectetur nibh quis urna gravida mollis.
+            </span>   
+          </p>
+ 
+        <ul class="row list-default" style="padding:10px 0 20px 0;">
+          <li class="col col-md-6 col-12">passport all Directors</li>
+          <li class="col col-md-6 col-12">Cancelled Cheque of firm or passbook first page </li>
+          <li class="col col-md-6 col-12">Photo of all Directors.</li>
+          <li class="col col-md-6 col-12">Name of the business</li>
+          <li class="col col-md-6 col-12">Nature of business</li>
+          <li class="col col-md-6 col-12">Product deals with</li>
+          <li class="col col-md-6 col-12">Shop rent agreement</li>
+          <li class="col col-md-6 col-12">Building tax receipt</li>
+          <li class="col col-md-6 col-12">Electricity bill</li>
+          <li class="col col-md-6 col-12">DIN number of all Directors</li>
+          <li class="col col-md-6 col-12">Certificate of incorporation</li>
+          <li class="col col-md-6 col-12">Board Resolution</li>
+          <li class="col col-md-6 col-12">Mobile no and Email id office and all the directors</li>
+          <li class="col col-md-6 col-12">Digital Signature</li>
+          </ul>
+
+            <a href="#" class="primary_button">Read More</a>
+          </div>
+
+          <div>
+            <h4 style="padding-bottom: 10px;">Leads - Construction Company in India</h4>
+          <p class="row">
+        <span class="col-md-2 home_company_list"><img style="width: 100%;" src="{% static 'images/brets-logo-english-course-training-institutes-india.webp' %}"></span>    
+         <span class="col-md-10">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nibh urna, euismod ut ornare non, volutpat vel tortor. Integer laoreet placerat suscipit. Sed sodales scelerisque commodo. Nam porta cursus lectus. Proin nunc erat, gravida a facilisis quis, ornare id lectus. Proin consectetur nibh quis urna gravida mollis.
+         </span>   
+        </p>
+ 
+        <ul class="row list-default" style="padding:10px 0 20px 0;">
+          <li class="col col-md-6 col-12">passport all Directors</li>
+          <li class="col col-md-6 col-12">Cancelled Cheque of firm or passbook first page </li>
+          <li class="col col-md-6 col-12">Photo of all Directors.</li>
+          <li class="col col-md-6 col-12">Name of the business</li>
+          <li class="col col-md-6 col-12">Nature of business</li>
+          <li class="col col-md-6 col-12">Product deals with</li>
+          <li class="col col-md-6 col-12">Shop rent agreement</li>
+          <li class="col col-md-6 col-12">Building tax receipt</li>
+          <li class="col col-md-6 col-12">Electricity bill</li>
+          <li class="col col-md-6 col-12">DIN number of all Directors</li>
+          <li class="col col-md-6 col-12">Certificate of incorporation</li>
+          <li class="col col-md-6 col-12">Board Resolution</li>
+          <li class="col col-md-6 col-12">Mobile no and Email id office and all the directors</li>
+          <li class="col col-md-6 col-12">Digital Signature</li>
+          </ul>
+
+            <a href="#" class="primary_button">Read More</a>
+          </div> {% endcomment %}
+
+        <div style="clear: both;"></div>
+     
+          </div>
+          </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+
+<section>
+  <div class="container">
+    <div class="offerd-service-section">
+      <h2>OFFERED SERVICES IN INDIA</h2>
+      <div class="offerd-service" style="padding-bottom: 30px;">
+      
+<div style="padding: 5px;">
+<div class="position_relative img-scale max_size">
+  <figure class="picher_doc">
+    <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+    <div class="opacity-medium bg-extra-black"></div>
+    <div class="date_top">
+      <span>Office Building</span>
+    </div>
+    <div class="inner_text">
+      <h3 class="show_tital">Big bugets for startup</h3>
+
+      <p class="display_block">
+        A Rich Heritage &amp; Brand History
+      </p>
+    
+      <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+    </div>
+  </figure>
+</div></div>
+
+<div style="padding: 5px;">
+<div class="position_relative img-scale max_size">
+  <figure class="picher_doc">
+    <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+    <div class="opacity-medium bg-extra-black"></div>
+    <div class="date_top">
+      <span>Office Building</span>
+    </div>
+    <div class="inner_text">
+      <h3 class="show_tital">Big bugets for startup</h3>
+
+      <p class="display_block">
+        A Rich Heritage &amp; Brand History
+      </p>
+    
+      <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+    </div>
+  </figure>
+</div></div>
+
+<div style="padding: 5px;">
+<div class="position_relative img-scale max_size">
+  <figure class="picher_doc">
+    <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+    <div class="opacity-medium bg-extra-black"></div>
+    <div class="date_top">
+      <span>Office Building</span>
+    </div>
+    <div class="inner_text">
+      <h3 class="show_tital">Big bugets for startup</h3>
+
+      <p class="display_block">
+        A Rich Heritage &amp; Brand History
+      </p>
+    
+      <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+    </div>
+  </figure>
+</div></div>
+
+<div style="padding: 5px;">
+<div class="position_relative img-scale max_size">
+  <figure class="picher_doc">
+    <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+    <div class="opacity-medium bg-extra-black"></div>
+    <div class="date_top">
+      <span>Office Building</span>
+    </div>
+    <div class="inner_text">
+      <h3 class="show_tital">Big bugets for startup</h3>
+
+      <p class="display_block">
+        A Rich Heritage &amp; Brand History
+      </p>
+    
+      <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+    </div>
+  </figure>
+</div></div>
+
+<div style="padding: 5px;">
+<div class="position_relative img-scale max_size">
+  <figure class="picher_doc">
+    <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+    <div class="opacity-medium bg-extra-black"></div>
+    <div class="date_top">
+      <span>Office Building</span>
+    </div>
+    <div class="inner_text">
+      <h3 class="show_tital">Big bugets for startup</h3>
+
+      <p class="display_block">
+        A Rich Heritage &amp; Brand History
+      </p>
+    
+      <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+    </div>
+  </figure>
+</div></div>
+
+<div style="padding: 5px;">
+<div class="position_relative img-scale max_size">
+  <figure class="picher_doc">
+    <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+    <div class="opacity-medium bg-extra-black"></div>
+    <div class="date_top">
+      <span>Office Building</span>
+    </div>
+    <div class="inner_text">
+      <h3 class="show_tital">Big bugets for startup</h3>
+
+      <p class="display_block">
+        A Rich Heritage &amp; Brand History
+      </p>
+    
+      <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+    </div>
+  </figure>
+</div></div>
+
+
+      </div>
+      <a href="#" class="primary_button" style="margin: 0 auto;">View More</a>
+    </div>
+  </div>
+</section>
+<!-- what-we-do section end -->
+
+
+<!-- offered-service section start -->
+
+
+<section style="background: #f1f1f1; margin-bottom: 20px; padding: 0px 0px 50px 0px;">
+  <div class="container">
+    <div class="row">
+      
+<div class="row" style="padding: 40px 0 0px 0;text-align: center;">
+<div class="offerd-service-section" style="margin: 0; ">
+    <h2>TOP PRODUCTS</h2>
+    <span class="line"></span>
+    <div class="offerd-service">
+    
+  {% for product in products %}
+  <div style="padding: 5px;">
+  <div class="product-grid">
+      <div class="product-image">
+          <a href="#" class="image">
+              <img class="pic-1" src="{% if product.image %}{{product.image.url}}{% else %}{% static 'images/img-3.jpg' %}{% endif %}">
+              <img class="pic-2" src="{% if product.image %}{{product.image.url}}{% else %}{% static 'images/img-4.jpg' %}{% endif %}">
+          </a>
+          <span class="product-sale-label">sale!</span>
+          <ul class="social">
+              <li><a href="#" data-tip="Quick View"><i class="fa fa-eye"></i></a></li>
+              <li><a href="#" data-tip="Add to wishlist"><i class="fa fa-heart"></i></a></li>
+          </ul>
+          <div class="product-rating">
+            <ul class="client_review">
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star" aria-hidden="true"></span>
+              <span class="fa fa-star" aria-hidden="true"></span>
+            
+        </ul>
+              <a class="add-to-cart" href="#"> ADD TO CART </a>
+          </div>
+      </div>
+      <div class="product-content">
+          <h3 class="title"><a href="#">{{product.name}}</a></h3>
+          <div class="price">&#8377;{{product.price}}</div>
+      </div>
+  </div>
+  </div>
+  {% endfor %}
+
+
+  {% comment %} <div style="padding: 5px;">
+  <div class="product-grid">
+      <div class="product-image">
+          <a href="#" class="image">
+            <img class="pic-1" src="{% static 'images/img-3.jpg' %}">
+            <img class="pic-2" src="{% static 'images/img-4.jpg' %}">
+          </a>
+          <span class="product-sale-label">sale!</span>
+          <ul class="social">
+              <li><a href="#" data-tip="Quick View"><i class="fa fa-eye"></i></a></li>
+              <li><a href="#" data-tip="Add to wishlist"><i class="fa fa-heart"></i></a></li>
+          </ul>
+          <div class="product-rating">
+            <ul class="client_review">
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star" aria-hidden="true"></span>
+              <span class="fa fa-star" aria-hidden="true"></span>
+            
+        </ul>
+              <a class="add-to-cart" href="#"> ADD TO CART </a>
+          </div>
+      </div>
+      <div class="product-content">
+          <h3 class="title"><a href="#">Women's Tshirt</a></h3>
+          <div class="price">$19.00</div>
+      </div>
+  </div>
+  </div>
+
+
+
+  <div style="padding: 5px;">
+  <div class="product-grid">
+      <div class="product-image">
+          <a href="#" class="image">
+            <img class="pic-1" src="{% static 'images/img-3.jpg' %}">
+            <img class="pic-2" src="{% static 'images/img-4.jpg' %}">
+          </a>
+          <span class="product-sold-label">Sold!</span>
+          <ul class="social">
+              <li><a href="#" data-tip="Quick View"><i class="fa fa-eye"></i></a></li>
+              <li><a href="#" data-tip="Add to wishlist"><i class="fa fa-heart"></i></a></li>
+          </ul>
+          <div class="product-rating">
+            <ul class="client_review">
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star" aria-hidden="true"></span>
+              <span class="fa fa-star" aria-hidden="true"></span>
+            
+        </ul>
+              <a class="add-to-cart" href="#"> ADD TO CART </a>
+          </div>
+      </div>
+      <div class="product-content">
+          <h3 class="title"><a href="#">Women's Tshirt</a></h3>
+          <div class="price">$19.00</div>
+      </div>
+  </div>
+  </div>
+
+
+  <div style="padding: 5px;">
+  <div class="product-grid">
+      <div class="product-image">
+          <a href="#" class="image">
+              <img class="pic-1" src="{% static 'images/img-3.jpg' %}">
+            <img class="pic-2" src="{% static 'images/img-4.jpg' %}">
+          </a>
+          <span class="product-sale-label">sale!</span>
+          <ul class="social">
+              <li><a href="#" data-tip="Quick View"><i class="fa fa-eye"></i></a></li>
+              <li><a href="#" data-tip="Add to wishlist"><i class="fa fa-heart"></i></a></li>
+          </ul>
+          <div class="product-rating">
+            <ul class="client_review">
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star" aria-hidden="true"></span>
+              <span class="fa fa-star" aria-hidden="true"></span>
+            
+        </ul>
+              <a class="add-to-cart" href="#"> ADD TO CART </a>
+          </div>
+      </div>
+      <div class="product-content">
+          <h3 class="title"><a href="#">Women's Tshirt</a></h3>
+          <div class="price">$19.00</div>
+      </div>
+  </div>
+  </div>
+
+
+
+  <div style="padding: 5px;">
+  <div class="product-grid">
+      <div class="product-image">
+          <a href="#" class="image">
+              <img class="pic-1" src="{% static 'images/img-3.jpg' %}">
+            <img class="pic-2" src="{% static 'images/img-4.jpg' %}">
+          </a>
+          <span class="product-sale-label">sale!</span>
+          <ul class="social">
+              <li><a href="#" data-tip="Quick View"><i class="fa fa-eye"></i></a></li>
+              <li><a href="#" data-tip="Add to wishlist"><i class="fa fa-heart"></i></a></li>
+          </ul>
+          <div class="product-rating">
+            <ul class="client_review">
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star" aria-hidden="true"></span>
+              <span class="fa fa-star" aria-hidden="true"></span>
+            
+        </ul>
+              <a class="add-to-cart" href="#"> ADD TO CART </a>
+          </div>
+      </div>
+      <div class="product-content">
+          <h3 class="title"><a href="#">Women's Tshirt</a></h3>
+          <div class="price">$19.00</div>
+      </div>
+  </div>
+  </div>
+
+
+  <div style="padding: 5px;">
+  <div class="product-grid">
+      <div class="product-image">
+          <a href="#" class="image">
+              <img class="pic-1" src="{% static 'images/img-3.jpg' %}">
+            <img class="pic-2" src="{% static 'images/img-4.jpg' %}">
+          </a>
+          <span class="product-sale-label">sale!</span>
+          <ul class="social">
+              <li><a href="#" data-tip="Quick View"><i class="fa fa-eye"></i></a></li>
+              <li><a href="#" data-tip="Add to wishlist"><i class="fa fa-heart"></i></a></li>
+          </ul>
+          <div class="product-rating">
+            <ul class="client_review">
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star checked" aria-hidden="true"></span>
+              <span class="fa fa-star" aria-hidden="true"></span>
+              <span class="fa fa-star" aria-hidden="true"></span>
+            
+        </ul>
+              <a class="add-to-cart" href="#"> ADD TO CART </a>
+          </div>
+      </div>
+      <div class="product-content">
+          <h3 class="title"><a href="#">Women's Tshirt</a></h3>
+          <div class="price">$19.00</div>
+      </div>
+  </div>
+  </div> {% endcomment %}
+
+</div>
+  </div>
+  <a href="{% url 'product:products' %}" class="primary_button" style="margin: 0 auto;">Buy More</a>
+</div>   
+
+    </div>
+    
+  </div>
+</section>
+
+
+<!-- what-we-do section start -->
+<section class="content_area001">
+  <div class="container">
+
+    <div class="row">
+      <div class="col-md-12 col-sm-12 col-xs-12">
+          <h3>Documents For GST Registration</h3>
+          <span class="line"></span>
+  
+      <p>
+        Goods and Services Tax or GST is a simplified tax payment system that emerged on July 1, 2017. It is levied on everyone who is dealing with the supply of goods and services all over in India. It has been emerged to bring uniformity in the indirect tax structure by replacing all taxes which is existed before the introduction of GST such as service tax, excise duty, etc. In the shot, GST has the concept "One Nation One Tax."
+
+For every goods and product, everyone has to pay the tax and the main fundamental one is the goods and services tax (GST), this is the process of collecting the tax on behalf of the government. GST was established as one nation – one tax by the government. GST Registration will provide as the main fundamental branch for every variety of the tax line such as Central Excise, service tax, and luxury tax, etc… Only after registering under GST anyone can claim for the credit of the tax paid. GST reduces the number of indirect taxes which has to be paid. For registered retailers, there will be no hidden tax to be paid other than the GST. It is levied on every goods and service sold for domestic consumptions. Even though GST is paid by the consumers it is given to the government by the business of selling goods and services. GST reduces the complications in the tax payment and the tax administrators also make a unique tax payment system for every business domain in our nation. Since GST is a unique tax system competition among the states for the tax and revenue will be reduced at a high rate. GST mainly aims to make a simplified and single tax system. The establishment of the GST increases the efficiency in the business and reduces every unnecessary tax. GST not only simplifying the tax system but also increases the revenue and reduces the tax outflow from the competing stream of the consumers and the exporters. GST increases the growth of our nation and replaces every indirect tax on goods and services which is provided by the state and the central.
+      </p>
+    </div>
+    </div>
+
+
+
+
+
+
+<h3>Tags Cloud</h3>
+<span class="line"></span>
+<div class="row">
+  <div class="col-md-12 col-sm-12 col-xs-12">
+<div class="tags_cloud">
+<a href="https://admissionbangalore.co.in/tag/alliance/" title="Alliance">Alliance</a>
+      <a href="https://admissionbangalore.co.in/tag/alliance-college/" title="Alliance College">Alliance College</a>
+      <a href="https://admissionbangalore.co.in/tag/alliance-college-of-liberal-arts/" title="Alliance College of Liberal Arts">Alliance College of Liberal Arts</a>
+      <a href="https://admissionbangalore.co.in/tag/alliance-school-of-business/" title="Alliance School of Business">Alliance School of Business</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-science-colleges-in-bangalore/" title="Allied Health &amp; Science Colleges in Bangalore">Allied Health &amp; Science Colleges in Bangalore</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-science-colleges-in-karnataka/" title="Allied Health &amp; Science Colleges in Karnataka">Allied Health &amp; Science Colleges in Karnataka</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-and-sciences/" title="Allied Health And Sciences">Allied Health And Sciences</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-and-sciences-bangalore/" title="Allied Health And Sciences Bangalore">Allied Health And Sciences Bangalore</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-and-sciences-colleges-in-bangalore/" title="Allied Health And Sciences Colleges in Bangalore">Allied Health And Sciences Colleges in Bangalore</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-and-sciences-colleges-in-karnataka/" title="Allied Health And Sciences Colleges in Karnataka">Allied Health And Sciences Colleges in Karnataka</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-and-sciences-karnataka/" title="Allied Health And Sciences Karnataka">Allied Health And Sciences Karnataka</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-science/" title="Allied Health Science">Allied Health Science</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences/" title="Allied Health Sciences">Allied Health Sciences</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences-colleges/" title="Allied Health Sciences Colleges">Allied Health Sciences Colleges</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences-colleges-in-bangalore/" title="Allied Health Sciences Colleges in Bangalore">Allied Health Sciences Colleges in Bangalore</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences-colleges-in-india/" title="Allied Health Sciences Colleges in India">Allied Health Sciences Colleges in India</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences-colleges-in-karnataka/" title="Allied Health Sciences Colleges in Karnataka">Allied Health Sciences Colleges in Karnataka</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences-colleges-in-mangalore/" title="Allied Health Sciences Colleges in Mangalore">Allied Health Sciences Colleges in Mangalore</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences-colleges-in-mysore/" title="Allied Health Sciences Colleges in Mysore">Allied Health Sciences Colleges in Mysore</a>
+      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences-colleges-karnataka/" title="Allied Health Sciences Colleges Karnataka">Allied Health Sciences Colleges Karnataka</a>
+
+</div>
+</div>
+</div>
+
+</div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="offerd-service-section">
+      <h2>OFFERED SERVICES IN INDIA</h2>
+      <div class="offerd-service">
+        <div class="offerd-service_padd">
+          <div>
+            <a href="#">
+              <div class="offerd-service-section-clm-cntnt">
+                <div>
+                  <div class="offerd-srvs-clm-icon">
+                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                  </div>
+                  <div class="offerd-srvs-clm-text">
+                    <h5>OET Coaching</h5>
+                    <span>Brest Accociatnjnhfd 1</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+        <div class="offerd-service_padd">
+          <div>
+            <a href="#">
+              <div class="offerd-service-section-clm-cntnt">
+                <div>
+                  <div class="offerd-srvs-clm-icon">
+                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                  </div>
+                  <div class="offerd-srvs-clm-text">
+                    <h5>OET Coaching</h5>
+                    <span>Brest Accociat 2</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+        <div class="offerd-service_padd">
+          <div>
+            <a href="#">
+              <div class="offerd-service-section-clm-cntnt">
+                <div>
+                  <div class="offerd-srvs-clm-icon">
+                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                  </div>
+                  <div class="offerd-srvs-clm-text">
+                    <h5>OET Coaching</h5>
+                    <span>Brest Accociat 3</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+        <div class="offerd-service_padd">
+          <div>
+            <a href="#">
+              <div class="offerd-service-section-clm-cntnt">
+                <div>
+                  <div class="offerd-srvs-clm-icon">
+                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                  </div>
+                  <div class="offerd-srvs-clm-text">
+                    <h5>OET Coaching</h5>
+                    <span>Brest Accociat 4</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+        <div class="offerd-service_padd">
+          <div>
+            <div class="offerd-service-section-clm-cntnt">
+              <div>
+                <a href="#">
+                  <div class="offerd-srvs-clm-icon">
+                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                  </div>
+                  <div class="offerd-srvs-clm-text">
+                    <h5>OET Coaching</h5>
+                    <span>Brest Accociat 5</span>
+                  </div>
+              </div>
+            </div>
+            </a>
+          </div>
+        </div>
+        <div class="offerd-service_padd">
+          <div>
+            <a href="#">
+              <div class="offerd-service-section-clm-cntnt">
+                <div>
+                  <div class="offerd-srvs-clm-icon">
+                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                  </div>
+                  <div class="offerd-srvs-clm-text">
+                    <h5>OET Coaching</h5>
+                    <span>Brest Accociat 6</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+        <div class="offerd-service_padd">
+          <div>
+            <a href="#">
+              <div class="offerd-service-section-clm-cntnt">
+                <div>
+                  <div class="offerd-srvs-clm-icon">
+                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                  </div>
+                  <div class="offerd-srvs-clm-text">
+                    <h5>OET Coaching</h5>
+                    <span>Brest Accociat 7</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+        <div class="offerd-service_padd">
+          <div>
+            <a href="#">
+              <div class="offerd-service-section-clm-cntnt">
+                <div>
+                  <div class="offerd-srvs-clm-icon">
+                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                  </div>
+                  <div class="offerd-srvs-clm-text">
+                    <h5>OET Coaching</h5>
+                    <span>Brest Accociat 8</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+        <div class="offerd-service_padd">
+          <div>
+            <a href="#">
+              <div class="offerd-service-section-clm-cntnt">
+                <div>
+                  <div class="offerd-srvs-clm-icon">
+                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                  </div>
+                  <div class="offerd-srvs-clm-text">
+                    <h5>OET Coaching</h5>
+                    <span>Brest Accociat 8</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+        <div class="offerd-service_padd">
+          <div>
+            <a href="#">
+              <div class="offerd-service-section-clm-cntnt">
+                <div>
+                  <div class="offerd-srvs-clm-icon">
+                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                  </div>
+                  <div class="offerd-srvs-clm-text">
+                    <h5>OET Coaching</h5>
+                    <span>Brest Accociat 8</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- offered-service section end -->
+
+
+<!-- recent artical-section start -->
+
+<section>
+  <div class="recent-artical-secton">
+    <h2>RECENT ARTICLES</h2>
+    <div class="recent-artical-cntnt-clm">
+      <div class="recent-artical">
+        <div class="recent-artical_padd">
+          <div class="team-slider-pad-cntnt">
+            <div>
+              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
+            </div>
+          </div>
+        </div>
+        <div class="recent-artical_padd">
+          <div class="team-slider-pad-cntnt">
+            <div>
+              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
+            </div>
+          </div>
+        </div>
+        <div class="recent-artical_padd">
+          <div class="team-slider-pad-cntnt">
+            <div>
+              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
+            </div>
+          </div>
+        </div>
+        <div class="recent-artical_padd">
+          <div class="team-slider-pad-cntnt">
+            <div>
+              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
+            </div>
+          </div>
+        </div>
+        <div class="recent-artical_padd">
+          <div class="team-slider-pad-cntnt">
+            <div>
+              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
+            </div>
+          </div>
+        </div>
+        <div class="recent-artical_padd">
+          <div class="team-slider-pad-cntnt">
+            <div>
+              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
+            </div>
+          </div>
+        </div>
+        <div class="recent-artical_padd">
+          <div class="team-slider-pad-cntnt">
+            <div>
+              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
+            </div>
+          </div>
+        </div>
+        <div class="recent-artical_padd">
+          <div class="team-slider-pad-cntnt">
+            <div>
+              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
+            </div>
+          </div>
+        </div>
+        <div class="recent-artical_padd">
+          <div class="team-slider-pad-cntnt">
+            <div>
+              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- recent artical-section end -->
+
+
+<section class="blog_section">
+  
+  <div class="container">
+
+      
+   <h3>LATEST ARTICLES</h3>
+   <span class="line"></span>
+   <div class="blog-slider">
+   
+     <article>
+     <p class="date_cat_blog">
+ <a href="#" style="left: 10px;">Registration</a>
+ <a href="#" style="right: 80px; ">January 30, 2024</a>
+     </p>
+<figure class="featured-media">
+<a href="#"><img src="{% static 'images/food-887348_640.jpg' %}" alt=""></a>
+</figure>
+<h4 class="blog_slider_article_h2"><a href="#">What is the difference between Copyright and Trademark Registration</a></h4>
+<p style="text-align:left;">What is the difference between Copyright and Trademark Registration</p>
+<a href="#" class="primary_button" style="visibility: visible; ">Read More</a>
+     </article>
+     
+     
+     <article>
+     <p class="date_cat_blog">
+ <a href="#" style="left: 10px;">Registration</a>
+ <a href="#" style="right: 80px; ">January 30, 2024</a>
+     </p>
+<figure class="featured-media">
+<a href="#"><img src="{% static 'images/food-887348_640.jpg' %}" alt=""></a>
+</figure>
+<h4 class="blog_slider_article_h2"><a href="#">What is the difference between Copyright and Trademark Registration</a></h4>
+<p style="text-align:left;">What is the difference between Copyright and Trademark Registration</p>
+<a href="#" class="primary_button" style="visibility: visible; ">Read More</a>
+     </article>
+     
+     
+     
+     <article>
+     <p class="date_cat_blog">
+ <a href="#" style="left: 10px;">Registration</a>
+ <a href="#" style="right: 80px; ">January 30, 2024</a>
+     </p>
+<figure class="featured-media">
+<a href="#"><img src="{% static 'images/food-887348_640.jpg' %}" alt=""></a>
+</figure>
+<h4 class="blog_slider_article_h2"><a href="#">What is the difference between Copyright and Trademark Registration</a></h4>
+<p style="text-align:left;">What is the difference between Copyright and Trademark Registration</p>
+<a href="#" class="primary_button" style="visibility: visible; ">Read More</a>
+     </article>
+     
+     
+     
+     <article>
+     <p class="date_cat_blog">
+ <a href="#" style="left: 10px;">Registration</a>
+ <a href="#" style="right: 80px; ">January 30, 2024</a>
+     </p>
+<figure class="featured-media">
+<a href="#"><img src="{% static 'images/food-887348_640.jpg' %}" alt=""></a>
+</figure>
+<h4 class="blog_slider_article_h2"><a href="#">What is the difference between Copyright and Trademark Registration</a></h4>
+<p style="text-align:left;">What is the difference between Copyright and Trademark Registration</p>
+<a href="#" class="primary_button" style="visibility: visible; ">Read More</a>
+     </article>
+   
+   </div>
+ </div>
+
+</section>  
+
+{% endblock content %}
+
+{% block scripts %}
+
+{% endblock scripts %}

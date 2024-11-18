@@ -1,0 +1,63 @@
+# Byte-compiled files
+*.pyc
+__pycache__/
+
+# Logs
+*.log
+
+# Virtual environment
+venv/
+env/
+.venv/
+.env/
+
+# IDE and editor settings
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Django-specific
+/db.sqlite3
+/media/
+/staticfiles/
+
+# Python egg files
+*.egg
+*.egg-info/
+dist/
+build/
+*.manifest
+
+# Environment variables
+.env
+
+# Node modules (if using npm/yarn for frontend)
+node_modules/
+
+# Backup and temporary files
+*.bak
+*.swp
+*.tmp
+*.~ 
+*.DS_Store
+
+# Design files
+*.psd
+*.xcf
+
+# Generated files
+*.pot
+*.mo
+
+# Coverage reports
+.coverage
+htmlcov/
+*.cover
+
+# Docker
+*.pid
+*.seed
+*.override
+docker-compose*.yml
+.env.docker
