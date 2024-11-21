@@ -150,17 +150,17 @@ class AddProductSubCategoryView(BaseProductSubCategoryView, CreateView):
             name = request.POST.get("name")
             name = name.strip() if name else None
 
-            categorySlug = request.POST.get("category")
+            category_slug = request.POST.get("category")
 
-            if not categorySlug or not name:
+            if not category_slug or not name:
                 error_msg = "Name of sub category is required."
-                if not categorySlug:
+                if not category_slug:
                     error_msg = "Category is required."
 
                 messages.error(request, f"Failed! {error_msg}")
                 return redirect(self.redirect_url)
             
-            category = get_object_or_404(ProductCategory, slug = categorySlug)
+            category = get_object_or_404(ProductCategory, slug = category_slug)
             
             sub_category, created = self.model.objects.get_or_create(name = name, category = category)
 
@@ -190,17 +190,17 @@ class UpdateProductSubCategoryView(BaseProductSubCategoryView, UpdateView):
             name = request.POST.get("name")
             name = name.strip() if name else None
 
-            categorySlug = request.POST.get("category")
+            category_slug = request.POST.get("category")
 
-            if not categorySlug or not name:
+            if not category_slug or not name:
                 error_msg = "Name of sub category is required."
-                if not categorySlug:
+                if not category_slug:
                     error_msg = "Category is required."
 
                 messages.error(request, f"Failed! {error_msg}")
                 return redirect(self.redirect_url)
             
-            category = get_object_or_404(ProductCategory, slug = categorySlug)                        
+            category = get_object_or_404(ProductCategory, slug = category_slug)                        
 
             if not self.model.objects.filter(name = name, category = category).exists():
                 self.object = self.get_object()
@@ -229,6 +229,44 @@ class ListProductSubCategoryView(BaseProductSubCategoryView, ListView):
     queryset = ProductSubCategory.objects.all().order_by("name")
     template_name = "customer_product/sub_category/list.html"    
     context_object_name = "sub_categories"
+
+
+def get_sub_categories_and_sizes(request):
+        data = {}
+        try:
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                categorySlug = request.GET.get("category")
+
+                if categorySlug:
+                    category = get_object_or_404(ProductCategory, slug = categorySlug)
+
+                    sub_categories = list(ProductSubCategory.objects.filter(category = category).values("name", "slug"))
+                    sizes = Size.objects.filter(category = category)
+
+                    list_sizes = []
+                    for size in sizes:
+                        list_sizes.append({
+                            "name": size.name,
+                            "standard": size.standard if size.standard else None,
+                            "slug": size.slug
+                        })
+
+                    data.update({
+                        "sub_categories": sub_categories,
+                        "sizes": list_sizes
+                        })
+
+        except Http404:
+            data = {"error": "Invalid category"}
+
+        except Exception as e:
+            error_msg = "Error in getting sub categories and sizes."
+            logger.exception(f"{error_msg}: {e}")
+
+            data = {"error": error_msg}
+        
+        return JsonResponse(data)
+
 
 
 class DeleteProductSubCategoryView(BaseProductSubCategoryView, View):
@@ -377,19 +415,19 @@ class AddSizeView(BaseSizeView, CreateView):
             if name:
                 names = name.split(',')
             
-            categorySlug = request.POST.get("category")
+            category_slug = request.POST.get("category")
             standard = request.POST.get("standard")
 
-            if not name or not categorySlug:
+            if not name or not category_slug:
                 if not name:
                     error_msg = "Failed! Name is required."
 
-                if not categorySlug:
+                if not category_slug:
                     error_msg = "Failed! Category is required."
 
                 return redirect(self.redirect_url)            
 
-            category = get_object_or_404(ProductCategory, slug = categorySlug)
+            category = get_object_or_404(ProductCategory, slug = category_slug)
             
             for name in names:
                 name = name.strip()
@@ -440,19 +478,19 @@ class UpdateSizeView(BaseSizeView, UpdateView):
             name = request.POST.get("name")
             name = name.strip() if name else None
             
-            categorySlug = request.POST.get("category")
+            category_slug = request.POST.get("category")
             standard = request.POST.get("standard")
 
-            if not name or not categorySlug:
+            if not name or not category_slug:
                 if not name:
                     error_msg = "Failed! Name is required."
 
-                if not categorySlug:
+                if not category_slug:
                     error_msg = "Failed! Category is required."
 
                 return redirect(self.redirect_url)            
 
-            category = get_object_or_404(ProductCategory, slug = categorySlug)
+            category = get_object_or_404(ProductCategory, slug = category_slug)
             
             self.object = self.get_object()
 
@@ -657,7 +695,8 @@ class AddProductView(BaseProductView, CreateView):
         error_msg = "Failed! Server Error."
         try:
             name = request.POST.get("name").strip() if request.POST.get("name") else None
-            categorySlug = request.POST.get("category")
+            category_slug = request.POST.get("category")
+            sub_category_slug = request.POST.get("sub_category")
             brandSlug = request.POST.get("brand")
             image = request.FILES.get("image")
             sku = request.POST.get("sku").strip() if request.POST.get("sku") else None
@@ -672,9 +711,12 @@ class AddProductView(BaseProductView, CreateView):
             weight = request.POST.get("weight").strip() if request.POST.get("weight") else None
             unit = request.POST.get("unit").strip() if request.POST.get("unit") else None
 
+            print(unit)
+
             required_fields = {
                 "Name": name,
-                "Product Category": categorySlug,
+                "Product Category": category_slug,
+                "Product Sub Category": sub_category_slug,
                 "Brand": brandSlug,
                 "Product Image": image,
                 "Stock": stock,
@@ -732,12 +774,13 @@ class AddProductView(BaseProductView, CreateView):
                     messages.error(request, "Enter a valid height.")
                     return redirect(self.redirect_url)                            
                 
-            category = get_object_or_404(ProductCategory, slug = categorySlug)
+            category = get_object_or_404(ProductCategory, slug = category_slug)
+            sub_category = get_object_or_404(ProductSubCategory, slug = sub_category_slug)
             brand = get_object_or_404(Brand, slug = brandSlug)
 
             product, created = self.model.objects.get_or_create(
-                name = name, category = category, brand = brand, image = image,
-                sku = sku, stock = stock, price = price,
+                name = name, category = category, sub_category = sub_category, 
+                brand = brand, image = image, sku = sku, stock = stock, price = price,
                 description = description, length = length if length else 0, width = width if width else 0,
                 height = height if height else 0, weight = weight if weight else 0, unit = unit if unit else None
                 )
@@ -777,6 +820,8 @@ class AddProductView(BaseProductView, CreateView):
 
         except Http404:
             error_msg = "Failed. Invalid Category."
+            if category:
+                error_msg = "Failed! Invalid sub category"
 
         except Exception as e:
             logger.exception(f"Error in adding product: {e}")            
@@ -807,6 +852,7 @@ class UpdateProductView(BaseProductView, UpdateView):
             context["sizes"] = Size.objects.filter(category = self.object.category)
             context["colors"] = Color.objects.all()
             context["units"] = sorted(["mm", "cm", "m"])
+            context["sub_categories"] = ProductSubCategory.objects.filter(category = self.object.category)
         except Exception as e:
             logger.warning(f"Error in loading context data of update product view: {e}")
         return context
@@ -815,7 +861,8 @@ class UpdateProductView(BaseProductView, UpdateView):
         error_msg = "Failed! Server Error."
         try:
             name = request.POST.get("name").strip() if request.POST.get("name") else None
-            categorySlug = request.POST.get("category")
+            category_slug = request.POST.get("category")
+            sub_category_slug = request.POST.get("sub_category")
             brandSlug = request.POST.get("brand")
             image = request.FILES.get("image")
             sku = request.POST.get("sku").strip() if request.POST.get("sku") else None
@@ -832,7 +879,8 @@ class UpdateProductView(BaseProductView, UpdateView):
 
             required_fields = {
                 "Name": name,
-                "Product Category": categorySlug,
+                "Product Category": category_slug,
+                "Product Sub Category": sub_category_slug,
                 "Brand": brandSlug,
                 "Stock": stock,
                 "Price": price                
@@ -889,7 +937,8 @@ class UpdateProductView(BaseProductView, UpdateView):
                     messages.error(request, "Enter a valid height.")
                     return redirect(self.redirect_url)                            
                 
-            category = get_object_or_404(ProductCategory, slug = categorySlug)
+            category = get_object_or_404(ProductCategory, slug = category_slug)
+            sub_category = get_object_or_404(ProductSubCategory, slug = sub_category_slug)
             brand = get_object_or_404(Brand, slug = brandSlug)
 
             self.object = self.get_object()
@@ -903,7 +952,7 @@ class UpdateProductView(BaseProductView, UpdateView):
             self.object.unit = unit if unit else None
 
             if not self.model.objects.filter(
-                name = name, category = category, brand = brand, image = image,
+                name = name, category = category, sub_category = sub_category, brand = brand, image = image,
                 sku = sku, stock = stock, price = price,
                 description = description, length = length, width = width,
                 height = height, weight = weight, unit = unit
@@ -911,6 +960,7 @@ class UpdateProductView(BaseProductView, UpdateView):
 
                 self.object.name = name
                 self.object.category = category
+                self.object.sub_category = sub_category
                 self.object.brand = brand
                 self.object.image = image
                 self.object.sku = sku
@@ -992,37 +1042,3 @@ class DeleteProductView(BaseProductView, View):
             logger.exception(f"Error in deleting product object: {e}")
             messages.error(request, "Failed! Server Error.")
             return redirect(self.redirect_url)
-        
-
-class CategoryFilteredSizesView(BaseProductView, ListView):
-    model = Size
-    queryset = Size.objects.all()
-
-    def get(self, request, *args, **kwargs):
-        data = {}
-        try:
-            if request.headers.get("x-requested-with") == "XMLHttpRequest":
-                categorySlug = request.GET.get("category")
-                category = get_object_or_404(ProductCategory, slug = categorySlug)
-
-                filtered_query = self.queryset.filter(category = category)
-
-                list_sizes = []
-                for size in filtered_query:
-                    list_sizes.append({
-                        "name": size.name,
-                        "standard": size.standard if size.standard else None,
-                        "slug": size.slug
-                    })
-
-                data["sizes"] = list_sizes
-
-        except Http404:
-            data["error"] = "Invalid Category"
-
-        except Exception as e:
-            data["error"] = "Failed! Server Error"
-
-        return JsonResponse(data)
-
-                

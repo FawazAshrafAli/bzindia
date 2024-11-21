@@ -7,7 +7,7 @@ from .views import (CustomerHomeView,
                     AddSizeView, DeleteSizeView, UpdateSizeView, ListSizeView,
                     AddColorView, DeleteColorView, UpdateColorView, ListColorView, 
                     AddProductView, DeleteProductView, UpdateProductView, ListProductView,
-                    CategoryFilteredSizesView)
+                    get_sub_categories_and_sizes)
 
 app_name = "customer"
 
@@ -23,6 +23,7 @@ urlpatterns = [
     path('product_sub_categories/', ListProductSubCategoryView.as_view(), name="product_sub_categories"),
     path('update_product_sub_category/<str:slug>', UpdateProductSubCategoryView.as_view(), name="update_product_sub_category"),
     path('delete_product_sub_category/<str:slug>', DeleteProductSubCategoryView.as_view(), name="delete_product_sub_category"),
+    path('get_product_sub_categories/', get_sub_categories_and_sizes, name="get_product_sub_categories"),
 
     path('add_brand/', AddBrandView.as_view(), name="add_brand"),
     path('brands/', ListBrandView.as_view(), name="brands"),
@@ -44,5 +45,5 @@ urlpatterns = [
     path('update_product/<str:slug>', UpdateProductView.as_view(), name="update_product"),
     path('delete_product/<str:slug>', DeleteProductView.as_view(), name="delete_product"),
 
-    path('get_sizes/', CategoryFilteredSizesView.as_view(), name="get_sizes"),
+    path('get_sub_categories_and_sizes/', get_sub_categories_and_sizes, name="get_sub_categories_and_sizes"),
 ]

@@ -145,6 +145,7 @@ class Product(models.Model):
     description = models.TextField(null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    sub_category = models.ForeignKey(SubCategory, on_delete=models.CASCADE)
     stock = models.PositiveIntegerField(default=0)
     sku = models.CharField(max_length=100, unique=True, blank=True, null=True)    
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
@@ -153,7 +154,7 @@ class Product(models.Model):
     # Additional fields
     colors = models.ManyToManyField(Color)
     sizes = models.ManyToManyField(Size)
-    weight = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    weight = models.CharField(max_length=50, null=True, blank=True)
     image = models.ImageField(upload_to='product_images/', blank=True, null=True)
 
     length = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
@@ -161,7 +162,7 @@ class Product(models.Model):
     height = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     unit = models.CharField(max_length=50, null=True, blank=True)
 
-    slug = models.SlugField(blank=True, null=True)
+    slug = models.SlugField(blank=True, null=True, max_length=500)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)

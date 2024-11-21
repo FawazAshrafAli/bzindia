@@ -74,15 +74,15 @@
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="brand-dropdown">Brand <span class="text-danger">*</span></label>
-                                <select class="form-control" id="brand-dropdown" name="brand" required>
-                                    <option value="" hidden disabled selected>Select Brand</option>
-                                    {% for brand in brands %}
-                                    <option value="{{brand.slug}}" {% if brand.slug == product.brand.slug %}selected{% endif %}>{{brand.name}}</option>
+                                <label for="sub-category-dropdown">Sub Category <span class="text-danger">*</span></label>
+                                <select class="form-control" id="sub-category-dropdown" name="sub_category" required>
+                                    <option value="" hidden disabled selected>Select Sub Category</option>
+                                    {% for sub_category in sub_categories %}
+                                    <option value="{{sub_category.slug}}" {% if sub_category.slug == product.sub_category.slug %}selected{% endif %}>{{sub_category.name}}</option>
                                     {% endfor %}
                                 </select>
                                 <div class="invalid-feedback">
-                                    Please provide the brand.
+                                    Please provide the category.
                                 </div>
                                 <div class="valid-feedback">
                                     Looks good!
@@ -101,8 +101,25 @@
                                     Looks good!
                                 </div>
                                 {% if product.image %}<p id="current-image"><small>Current Image: <a href="{{product.image.url}}" target="_blank">{{product.image.name}}</a></small></p>{% endif %}
-                            </div>                            
+                            </div>
                             <div class="col-md-6 mb-3">
+                                <label for="brand-dropdown">Brand <span class="text-danger">*</span></label>
+                                <select class="form-control" id="brand-dropdown" name="brand" required>
+                                    <option value="" hidden disabled selected>Select Brand</option>
+                                    {% for brand in brands %}
+                                    <option value="{{brand.slug}}" {% if brand.slug == product.brand.slug %}selected{% endif %}>{{brand.name}}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please provide the brand.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>                                                                                                                                                                                                                          
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-4 mb-3">
                                 <label for="sku-input">SKU</label>
                                 <input type="text" class="form-control" id="sku-input" name="sku" placeholder="SKU" value="{{product.sku}}">
                                 <div class="invalid-feedback">
@@ -112,10 +129,7 @@
                                     Looks good!
                                 </div>
                             </div>                            
-                                                                                                                                           
-                        </div>
-                        <div class="form-row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="stock-input">Stock <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="stock-input" name="stock" placeholder="Stock" value="{{product.stock}}" required>
                                 <div class="invalid-feedback">
@@ -125,7 +139,7 @@
                                     Looks good!
                                 </div>
                             </div> 
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="price-input">Price <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="price-input" name="price" placeholder="Price" value="{{product.price}}" required>
                                 <div class="invalid-feedback">
@@ -450,14 +464,13 @@
 
             if (!unitDropdown) {
                 if (validLength || validWidth || validHeight) {
-                    $('#unit-dropdown').prop('disabled', false)
+                    $('#unit-dropdown').prop('disabled', false);
                     $('#unit-dropdown').addClass('is-invalid');
                     $('#unit-dropdown').focus();
                     formValid = false;
                 }
 
             } else {
-                $('#unit-dropdown').prop('disabled', true)
                 $('#unit-dropdown').addClass('is-valid');
                 $('#unit-dropdown').blur();
             }
@@ -519,7 +532,6 @@
                 
                 if (["length-input", "width-input", "height-input"].includes($(this).prop('id'))) {
                     if (distancePattern.test(thisValue)) {
-                        console.log("entered")
                         $(this).removeClass('is-invalid').addClass('is-valid');                  
                     } else {
                         $(this).removeClass('is-valid').addClass('is-invalid');
@@ -602,17 +614,17 @@
             $('#unit-dropdown').prop('disabled', false);
         }
 
-        // Get Size
-        $('#category-dropdown').on('change', function () {
-            const category = $(this).val();
-
+        // Get Size and Sub Categories
+        function getSubCategoriesAndSizes(category) {
             $.ajax({
                 type: 'GET',
-                url: '/customer/get_sizes/',
+                url: '/customer/get_sub_categories_and_sizes/',
                 dataType: 'json',
                 data: {"category": category},
                 success: response => {
                     let sizes = response.sizes;
+                    let subCategories = response.sub_categories
+
                     $('#size-dropdown').html(`<option value="" hidden disabled selected>Select Size</option>`);
                     if (sizes && sizes.length) {
                         sizes.forEach(size => {
@@ -625,10 +637,29 @@
                     } else {
                         $('#size-dropdown').html(`<option value="" disabled selected>No size for the selected category</option>`);
                     }
+
+                    $('#sub-category-dropdown').html(`<option value="" hidden disabled selected>Select Sub Category</option>`);
+                    if (subCategories && subCategories.length) {
+                        subCategories.forEach(subCategory => {
+                            if (subCategory.standard) {
+                                $('#sub-category-dropdown').append(`<option value="${subCategory.slug}">${subCategory.name}&nbsp;&nbsp;&nbsp; ${subCategory.standard}</option>`)
+                            } else {
+                                $('#sub-category-dropdown').append(`<option value="${subCategory.slug}">${subCategory.name}</option>`)
+                            }
+                        })
+                    } else {
+                        $('#sub-category-dropdown').html(`<option value="" disabled selected>Selected Catalog</option>`);
+                    }
                 },
                 error: error => console.error("Error: ", error),
             })
-        })
+        }
+
+        $('#category-dropdown').on('change', function () {
+            const category = $(this).val();
+
+            getSubCategoriesAndSizes(category);
+        });        
     })
 </script>
 {% endblock scripts %}

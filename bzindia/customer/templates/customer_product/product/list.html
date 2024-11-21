@@ -91,7 +91,9 @@
 										</label>
 									</th>
 									<th>Product</th>
+									<th>Brand</th>
 									<th>Category</th>
+									<th>Sub Category</th>
 									<th>SKU</th>
 									<th>Stock</th>
 									<th>Price</th>
@@ -111,9 +113,11 @@
 									<td>
 										<a href="#" class="avatar"><img alt="" src="{% if product.image %}{{product.image.url}}{% else %}{% static 'assets/img/c-logo2.png' %}{% endif %}"></a>
 										<a href="#" class="product-detail-toggle" data-bs-toggle="modal" data-bs-target="#product-detail-modal" data-name="{{product.name}}" {% if product.image %}data-image="{{product.image.url}}"{% endif %} data-description="{{product.description}}" data-price="{{product.price}}" data-category="{{product.category.name}}" data-brand="{{product.brand.name}}" data-stock="{{product.stock}}" data-sku="{{product.sku}}" data-colors="{{product.get_colors|safe}}" data-sizes="{{product.get_sizes}}" data-dimensions="{{product.get_dimension}}" data-weight="{{product.get_weight}}" data-created="{{product.created}}" data-updated="{{product.updated}}"
-										>{{product.name}}</a>
+										>{{product.name|slice:':25'}}{% if product.name|length > 25%}. . .{% endif %}</a>
 									</td>
+									<td>{{product.brand.name}}</td>
 									<td>{{product.category.name}}</td>
+									<td>{{product.sub_category.name}}</td>
 									<td>{{product.sku}}</td>
 									<td>{{product.stock}}</td>
 									<td>&#8377; {{product.price}}</td>

@@ -1,11 +1,37 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.core.cache import cache
 from django.shortcuts import render
 import requests
+import csv
 import time
 import os
 
 from .models import State, District, Place, TestedCoordinates, RetestedCoordinates
+
+def generate_location_csv(request):
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = "attachment; filename=location_india.csv"  # Remove quotes
+
+    writer = csv.writer(response)
+
+    # Write the header row to the CSV
+    writer.writerow(["Place", "District", "State", "Pincode", "Latitude", "Longitude"])
+
+    # Efficient query using select_related to avoid multiple database hits for related fields
+    places = Place.objects.all().select_related('district', 'state').order_by("name")
+
+    # Write the data rows to the CSV
+    for place in places:
+        writer.writerow([
+            place.name,
+            place.district.name,  # Assuming `district` is a ForeignKey
+            place.state.name,     # Assuming `state` is a ForeignKey
+            place.pincode,
+            place.latitude,
+            place.longitude
+        ])
+
+    return response
 
 def populate_location_data():
     # For India
@@ -43,8 +69,6 @@ def populate_location_data():
     # kerala Inside rectangle
     top_left = (10.95, 74.05)
     bottom_right = (8.3, 77.35)
-
-
 
     api_key = os.getenv('OPENCAGE_API_KEY')
     base_url = 'https://api.opencagedata.com/geocode/v1/json'
@@ -212,8 +236,8 @@ def update_location_data():
     api_key = os.getenv('OPENCAGE_API_KEY')
     base_url = 'https://api.opencagedata.com/geocode/v1/json'
 
-    lat_step = 0.07
-    lon_step = 0.07
+    lat_step = 0.05
+    lon_step = 0.05
 
     latitude = top_left[0]
     

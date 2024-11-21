@@ -74,6 +74,31 @@
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
+                                <label for="sub-category-dropdown">Sub Category <span class="text-danger">*</span></label>
+                                <select class="form-control" id="sub-category-dropdown" name="sub_category" required>
+                                    <option value="" hidden disabled selected>Select Sub Category</option>                                    
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please provide the sub category.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="col-md-6 mb-3">
+                                <label for="image-input">Image <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" id="image-input" name="image" required>
+                                <div class="invalid-feedback">
+                                    Please provide product image.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
                                 <label for="brand-dropdown">Brand <span class="text-danger">*</span></label>
                                 <select class="form-control" id="brand-dropdown" name="brand" required>
                                     <option value="" hidden disabled selected>Select Brand</option>
@@ -87,21 +112,10 @@
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
-                            </div>                            
+                            </div>                                                                                                                                                                     
                         </div>
-                        
                         <div class="form-row">
-                            <div class="col-md-6 mb-3">
-                                <label for="image-input">Image <span class="text-danger">*</span></label>
-                                <input type="file" class="form-control" id="image-input" name="image" required>
-                                <div class="invalid-feedback">
-                                    Please provide product image.
-                                </div>
-                                <div class="valid-feedback">
-                                    Looks good!
-                                </div>
-                            </div>                            
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="sku-input">SKU</label>
                                 <input type="text" class="form-control" id="sku-input" name="sku" placeholder="SKU">
                                 <div class="invalid-feedback">
@@ -110,11 +124,8 @@
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
-                            </div>                            
-                                                                                                                                           
-                        </div>
-                        <div class="form-row">
-                            <div class="col-md-6 mb-3">
+                            </div>
+                            <div class="col-md-4 mb-3">
                                 <label for="stock-input">Stock <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="stock-input" name="stock" placeholder="Stock" required>
                                 <div class="invalid-feedback">
@@ -124,7 +135,7 @@
                                     Looks good!
                                 </div>
                             </div> 
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="price-input">Price <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="price-input" name="price" placeholder="Price" required>
                                 <div class="invalid-feedback">
@@ -269,6 +280,7 @@
             }
 
             const categoryDropdown = $('#category-dropdown').val();
+            const subCategoryDropdown = $('#sub-category-dropdown').val();
 
             const brandDropdown = $('#brand-dropdown').val();
 
@@ -330,6 +342,16 @@
             } else {
                 $('#category-dropdown').addClass('is-valid');
                 $('#category-dropdown').blur();
+                
+            }
+
+            if (!subCategoryDropdown) {
+                $('#sub-category-dropdown').addClass('is-invalid');
+                $('#sub-category-dropdown').focus();
+                formValid = false;
+            } else {
+                $('#sub-category-dropdown').addClass('is-valid');
+                $('#sub-category-dropdown').blur();
                 
             }
 
@@ -447,7 +469,7 @@
                 }
 
             } else {
-                $('#unit-dropdown').prop('disabled', true)
+                // $('#unit-dropdown').prop('disabled', true)
                 $('#unit-dropdown').addClass('is-valid');
                 $('#unit-dropdown').blur();
             }
@@ -557,8 +579,8 @@
 
         // changing
 
-        $('#category-dropdown, #brand-dropdown, #unit-dropdown, #image-input').on('change', function () {
-            if (($(this).prop('id') == 'category-dropdown' || $(this).prop('id') == 'brand-dropdown') && !$(this).val()) {
+        $('#category-dropdown, #sub-category-dropdown, #brand-dropdown, #unit-dropdown, #image-input').on('change', function () {
+            if (($(this).prop('id') == 'category-dropdown' || $(this).prop('id') == 'sub-category-dropdown' || $(this).prop('id') == 'brand-dropdown') && !$(this).val()) {
                 $(this).removeClass('is-valid').addClass('is-invalid');
 
             } else {
@@ -586,20 +608,45 @@
             }
         })        
 
-        $('#unit-dropdown').prop('disabled', true);
+        let length = $('#length-input').val();
+        let width = $('#width-input').val();
+        let height = $('#height-input').val();
+
+        let validLength;
+        let validWidth;
+        let validHeight;
+
+        if (length) {
+            length = length.trim();
+            validLength = distancePattern.test(length);
+        }
+
+        if (width) {
+            width = width.trim();
+            validWidth = distancePattern.test(width);
+        }
+
+        if (height) {
+            height = height.trim();
+            validHeight = distancePattern.test(height);
+        }
+
+        if (!validLength && !validWidth && !validHeight) {
+            $('#unit-dropdown').prop('disabled', true);
+        }
 
 
-        // Get Size
-        $('#category-dropdown').on('change', function () {
-            const category = $(this).val();
-
+        // Get Size and Sub Categories
+        function getSubCategoriesAndSizes(category) {
             $.ajax({
                 type: 'GET',
-                url: '/customer/get_sizes/',
+                url: '/customer/get_sub_categories_and_sizes/',
                 dataType: 'json',
                 data: {"category": category},
                 success: response => {
                     let sizes = response.sizes;
+                    let subCategories = response.sub_categories
+
                     $('#size-dropdown').html(`<option value="" hidden disabled selected>Select Size</option>`);
                     if (sizes && sizes.length) {
                         sizes.forEach(size => {
@@ -612,10 +659,35 @@
                     } else {
                         $('#size-dropdown').html(`<option value="" disabled selected>No size for the selected category</option>`);
                     }
+
+                    $('#sub-category-dropdown').html(`<option value="" hidden disabled selected>Select Sub Category</option>`);
+                    if (subCategories && subCategories.length) {
+                        subCategories.forEach(subCategory => {
+                            if (subCategory.standard) {
+                                $('#sub-category-dropdown').append(`<option value="${subCategory.slug}">${subCategory.name}&nbsp;&nbsp;&nbsp; ${subCategory.standard}</option>`)
+                            } else {
+                                $('#sub-category-dropdown').append(`<option value="${subCategory.slug}">${subCategory.name}</option>`)
+                            }
+                        })
+                    } else {
+                        $('#sub-category-dropdown').html(`<option value="" disabled selected>Selected Catalog</option>`);
+                    }
                 },
                 error: error => console.error("Error: ", error),
             })
-        })
+        }
+
+        $('#category-dropdown').on('change', function () {
+            const category = $(this).val();
+
+            getSubCategoriesAndSizes(category);
+        });
+
+        if ($('#category-dropdown').val()) {
+            const category = $('#category-dropdown').val();
+
+            getSubCategoriesAndSizes(category);
+        }
     })
 </script>
 {% endblock scripts %}
