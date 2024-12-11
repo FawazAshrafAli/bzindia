@@ -105,3 +105,10 @@ class RetestedCoordinates(models.Model):
 
     def str(self):
         return f"{self.latitude}-{self.longitude}"
+    
+
+class TestPincode(models.Model):
+    pincode = models.PositiveIntegerField()
+
+    def __str__(self):
+        return self.pincode

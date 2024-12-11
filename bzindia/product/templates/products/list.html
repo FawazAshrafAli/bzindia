@@ -11,7 +11,7 @@
 </style>
 
 <!--banner-slider start -->
-<section class="bg-half" style="background: #005353 url(images/bg-pattran.png);">
+<section class="bg-half" style="background: #005353 url(/static/images/bg-pattran.png);">
  
             <div class="container">
                 <div class="filter-box">
@@ -984,29 +984,13 @@ For every goods and product, everyone has to pay the tax and the main fundamenta
             }
             
             const checkedDimensions = response.checked_dimensions;
-            console.log(checkedDimensions);
             const dimensions = response.dimensions;
-            // if (dimensions && dimensions.length > 0) {
-            //   $('#dimension-div').show();
-            //   $('#dimension-div ul').empty();
-            //   dimensions.forEach(dimension => {
-            //     $('#dimension-div ul').append(`<li><input type="checkbox" class="dimensions-checkbox" name="product-categori" value="${dimension.name}" ><a href="#">${dimension.name} (${dimension.count})</a></li>`)
-            //   })
-            // } else {
-            //   $('#dimension-div').hide();
-            // }
 
             if (dimensions && dimensions.length > 0) {
-              $('#dimension-div ul').empty(); // Clear existing content
+              $('#dimension-div ul').empty();
 
               dimensions.forEach(dimension => {
-                // Check if the dimension is in the checkedDimensions array
                 const isChecked = checkedDimensions && checkedDimensions.includes(dimension.name);
-
-                // Add to current catalog dimensions
-                // $('#current-catalog-dimensions').append(`<li><a href="#">${dimension.name}</a></li>`);
-
-                // Add to dimension list with appropriate checkbox state
                 $('#dimension-div ul').append(`
                   <li>                    
                     <label for="dimension-checkbox-${dimension.name}"><input class="dimensions-checkbox" id="dimension-checkbox-${dimension.name}" type="checkbox" name="product-categori"
@@ -1017,16 +1001,43 @@ For every goods and product, everyone has to pay the tax and the main fundamenta
               });
             }
 
+            const checkedColors = response.checked_colors;
             const colors = response.colors;
+
+            console.log(checkedColors)
+            console.log(colors)
+
             if (colors && colors.length > 0) {
-              $('#color-div').show();
               $('#color-div ul').empty();
+
               colors.forEach(color => {
-                $('#color-div ul').append(`<li><span class="${color.name.toLowerCase()}" style="background-color: ${color.hexa}"></span><a href="#">${color.name} (${color.count})</a></li>`)
-              })
-            } else {
-              $('#color-div').hide();
+                const isChecked = checkedColors && checkedColors.includes(color.slug);
+                $('#color-div ul').append(`                  
+                  <li>
+                    <label for="colors-checkbox-${color.slug}" style="display:flex; align-items:center;"><input class="colors-checkbox" type="checkbox" id="color-checkbox-${color.slug}"
+                    ${isChecked ? 'checked' : ''} value="${color.slug}" style="width: fit-content; margin: 0 13px 0 0;" >
+                    <span class="${color.name.toLowerCase()}" style="background-color: ${color.hexa}; margin: 0 5px 0 0;" ></span>
+                    ${color.name} (${color.count})</label>
+                  </li>
+                `);
+              });
             }
+
+            // <li>                    
+            //         <label for="dimension-checkbox-${dimension.name}"><input class="dimensions-checkbox" id="dimension-checkbox-${dimension.name}" type="checkbox" name="product-categori"
+            //           ${isChecked ? 'checked' : ''} value="${dimension.name}">
+            //           ${dimension.name} (${dimension.count})</label>
+            //       </li>
+
+            // if (colors && colors.length > 0) {
+            //   $('#color-div').show();
+            //   $('#color-div ul').empty();
+            //   colors.forEach(color => {
+            //     $('#color-div ul').append(`<li><label for="colors-checkbox-${color.slug}" style="display:flex; align-items:center;"><input class="colors-checkbox" type="checkbox" id="color-checkbox-${color.slug}" value="${color.slug}" style="width: fit-content; margin: 0 13px 0 0;" /><span class="${color.name.toLowerCase()}" style="background-color: ${color.hexa}; margin: 0 5px 0 0;" ></span>${color.name} (${color.count})</label></li>`)
+            //   })
+            // } else {
+            //   $('#color-div').hide();
+            // }
           },
           error: error => console.error("Error: ", error),
         });
@@ -1099,6 +1110,29 @@ For every goods and product, everyone has to pay the tax and the main fundamenta
 
         const data = {
           "checked_dimensions": checkedDimensions,
+          "checked_brands": checkedBrands,
+          "category": category,
+          "sub_category": sub_category
+        };
+        get_products(data);
+      });
+
+      $(document).on('change', '.colors-checkbox', function () {
+        let checkedColors = [];
+        let checkedBrands = [];
+        const category = $('#category-dropdown').val();
+        const sub_category = $('#catalog-dropdown').val();
+
+        $('.colors-checkbox:checked').each(function () {
+            checkedColors.push($(this).val());
+        });
+
+        $('.brands-checkbox:checked').each(function () {
+          checkedBrands.push($(this).val());
+        });
+
+        const data = {
+          "checked_colors": checkedColors,
           "checked_brands": checkedBrands,
           "category": category,
           "sub_category": sub_category

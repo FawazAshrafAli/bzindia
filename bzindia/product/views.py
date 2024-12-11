@@ -22,13 +22,15 @@ class ProductListView(BaseHomeView, ListView):
         category_slug = request.GET.get("category")
         checked_brands = request.GET.getlist("checked_brands[]")
         checked_dimensions = request.GET.getlist("checked_dimensions[]")
+        checked_colors = request.GET.getlist("checked_colors[]")
 
         data = {
             "keywords": keywords,
             "sub_category_slug": sub_category_slug,
             "category_slug": category_slug,
             "checked_brands": checked_brands,
-            "checked_dimensions": checked_dimensions
+            "checked_dimensions": checked_dimensions,
+            "checked_colors": checked_colors
         }
 
         return data
@@ -110,14 +112,14 @@ class ProductListView(BaseHomeView, ListView):
 
                 filtering_data = self.get_filter_data(request)
 
-                products = product_brands = product_dimensions = self.queryset
+                products = brand_products = dimension_products = color_products = self.queryset
 
                 if filtering_data["category_slug"]:
                     category = get_object_or_404(Category, slug = filtering_data["category_slug"])
 
                     sub_categories = list(SubCategory.objects.filter(category = category).values("name", "slug"))
 
-                    products = product_brands = product_dimensions = products.filter(category = category)                                  
+                    products = brand_products = dimension_products = color_products = products.filter(category = category)                                  
 
                     list_products = []
                     for product in products:
@@ -137,7 +139,7 @@ class ProductListView(BaseHomeView, ListView):
                     sub_category = get_object_or_404(SubCategory, slug = filtering_data["sub_category_slug"])
 
                     if sub_category:
-                        products = product_brands = product_dimensions = products.filter(sub_category = sub_category)               
+                        products = brand_products = dimension_products = color_products = products.filter(sub_category = sub_category)               
 
                     list_products = []
                     for product in products:
@@ -153,7 +155,7 @@ class ProductListView(BaseHomeView, ListView):
                     if sub_category:
                         data["current_catalog"] = sub_category.name
 
-                    dimensions = {product.get_dimension for product in product_dimensions}
+                    dimensions = {product.get_dimension for product in dimension_products}
 
                     list_dimensions = []
                     for dimension in dimensions:
@@ -167,8 +169,8 @@ class ProductListView(BaseHomeView, ListView):
                     data["dimensions"] = list_dimensions
 
                 if filtering_data["checked_brands"]:                    
-                    product_brands = products                    
-                    products = products.filter(brand__slug__in=filtering_data["checked_brands"])
+                    brand_products = products                    
+                    products = products.filter(brand__slug__in=filtering_data["checked_brands"]).distinct()
 
                     list_products = []
                     for product in products:
@@ -197,15 +199,13 @@ class ProductListView(BaseHomeView, ListView):
                     data["products"] = list_products
 
                 if filtering_data["checked_dimensions"]:
-                    product_dimensions = products
+                    dimension_products = products
 
                     dimension_products = []
 
                     for product in products:                        
                         if product.get_dimension in filtering_data["checked_dimensions"]:
                             dimension_products.append(product)                   
-
-                    print(dimension_products)                
 
                     list_products = []
                     for product in dimension_products:
@@ -233,8 +233,38 @@ class ProductListView(BaseHomeView, ListView):
 
                     data["products"] = list_products
 
+                if filtering_data["checked_colors"]:                    
+                    color_products = products                    
+                    products = products.filter(colors__slug__in=filtering_data["checked_colors"]).distinct()
 
-                brands_ids = product_brands.values_list('brand', flat=True).distinct()
+                    list_products = []
+                    for product in products:
+                        list_products.append({
+                            "name": product.name,
+                            "image": product.image.url,
+                            "price": product.price,
+                            "slug": product.slug
+                        })                    
+
+                    data["products"] = list_products
+                    data["checked_colors"] = filtering_data["checked_colors"]
+                    if filtering_data["checked_dimensions"]:
+                        data["checked_dimensions"] = filtering_data["checked_dimensions"]
+
+                else:
+                    list_products = []
+                    for product in products:
+                        list_products.append({
+                            "name": product.name,
+                            "image": product.image.url,
+                            "price": product.price,
+                            "slug": product.slug
+                        })
+
+                    data["products"] = list_products
+
+
+                brands_ids = brand_products.values_list('brand', flat=True).distinct()
                 brands = Brand.objects.filter(id__in =brands_ids)
 
                 list_brands = []
@@ -242,23 +272,30 @@ class ProductListView(BaseHomeView, ListView):
                     list_brands.append({
                         "name": brand.name,             
                         "slug": brand.slug,
-                        "count": product_brands.filter(brand = brand).count()
+                        "count": brand_products.filter(brand = brand).count()
                     })
 
-                data["brands"] = list_brands            
+                data["brands"] = list_brands
 
-                color_ids = products.values_list('colors__id', flat=True).distinct()
-                colors = Color.objects.filter(id__in = color_ids)
 
-                color_counts = products.values('colors__id').annotate(product_count=Count('id'))
-                color_count_map = {item['colors__id']: item['product_count'] for item in color_counts}
+                color_counts = (
+                    color_products
+                    .values('colors__id')
+                    .annotate(count=Count('id', distinct=True))
+                    .order_by('colors__name')
+                )
+
+                color_ids = [item['colors__id'] for item in color_counts]
+                colors = Color.objects.filter(id__in=color_ids)
+
+                color_count_map = {item['colors__id']: item['count'] for item in color_counts}                
 
                 list_colors = []
                 for color in colors:
                     list_colors.append({
                         "name": color.name,
-                        "hexa": color.hexa,             
                         "slug": color.slug,
+                        "hexa": color.hexa,
                         "count": color_count_map.get(color.id, 0)
                     })
 
