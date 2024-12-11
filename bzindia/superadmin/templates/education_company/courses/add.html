@@ -1,0 +1,395 @@
+
+{% extends "admin_base/base.html" %}
+{% load static %}
+
+{% block title %}Add {{education_company.name}} Course{% endblock title %}
+
+{% block content %}
+			
+<!-- Page Content -->
+<div class="content container-fluid">
+	
+	<!-- Page Header -->
+	<div class="crms-title row bg-white mb-4">
+		<div class="col  p-0">
+			<h3 class="page-title">
+			<span class="page-title-icon bg-gradient-primary text-white me-2">
+				<i class="la la-columns"></i>
+			</span> Add {{education_company.name}} Course </h3>
+		</div>
+		<div class="col p-0 text-end">
+			<ul class="breadcrumb bg-white float-end m-0 ps-0 pe-0">
+				<li class="breadcrumb-item"><a href="index.html" {{education_company.name}}>Course</a></li>
+				<li class="breadcrumb-item active">Add {{education_company.name}} Course</li>
+			</ul>
+		</div>
+	</div>
+	<!-- /Page Header -->
+	
+	<!-- Content Starts -->
+    <div class="row">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <div class="col-lg-12">
+            <form method="post" action="{% url 'superadmin:add_course' education_company.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-course-form" novalidate>
+                {% csrf_token %}
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title mb-0" >{{education_company.name}} Course Name</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <label for="name-input" >{{education_company.name}} Course Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name-input" placeholder="Course Name" name="name" required>
+                                <div class="invalid-feedback">
+                                    Please enter a name for the course.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                            
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-6 mb-3">
+                                <label for="category-dropdown">Program <span class="text-danger">*</span></label>
+                                <select class="form-control" id="program-dropdown" name="program" required>
+                                    <option value="" hidden disabled selected>Select Degree Level</option>
+                                    <option value="Bachelor of Science">Bachelor of Science</option>
+                                    <option value="Bachelor of Arts">Bachelor of Arts</option>
+                                    <option value="Bachelor of Technologies">Bachelor of Technologies</option>
+                                    <option value="Master of Science">Master of Science</option>
+                                    <option value="Master of Arts">Master of Arts</option>
+                                    <option value="Master of Technologies">Master of Technologies</option>
+                                    <option value="Diploma">Diploma</option>
+                                    <option value="Master Diploma">Master Diploma</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please provide the program.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="sub-category-dropdown">Specialization <span class="text-danger">*</span></label>
+                                <select class="form-control" id="specialization-dropdown" name="specialization" required>
+                                    <option value="" hidden disabled selected>Select Specialization</option>
+                                    <option value="Mechanical">Mechanical</option>
+                                    <option value="Electronics and Communication">Electronics and Communication</option>
+                                    <option value="Computer Science">Computer Science</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please provide the specialization.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="col-md-6 mb-3">
+                                <label for="image-input">Course Image <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" id="image-input" name="image" required>
+                                <div class="invalid-feedback">
+                                    Please provide product image.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="brand-dropdown">Course Mode <span class="text-danger">*</span></label>
+                                <select class="form-control" id="mode-dropdown" name="mode" required>
+                                    <option value="" hidden disabled selected>Select Course Mode</option>                                   
+                                    <option value="Online">Online</option>
+                                    <option value="Offline">Offline</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please provide the mode of the course.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>                                                                                                                                                                     
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-6 mb-3">
+                                <label for="sku-input">Course Duration</label>
+                                <input type="number" class="form-control" id="duration-input" name="duration" placeholder="Course Duration (in months)">
+                                <div class="invalid-feedback">
+                                    Please enter a valid course dutaion.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>                            
+                            <div class="col-md-6 mb-3">
+                                <label for="price-input">Price <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="price-input" name="price" placeholder="Price" required>
+                                <div class="invalid-feedback">
+                                    Please enter a valid price.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-sm-12">
+                                <label class="col-form-label">Description </label>
+                                <textarea class="form-control" rows="3" id="description" name="description" placeholder="Description"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>                
+
+                <div class="text-center">
+                    <button type="button" class="btn btn-primary" id="submit-button">Submit</button>
+                </div>
+            </form>
+                
+		
+	<!-- /Content End -->
+	
+</div>
+<!-- /Page Content -->
+				
+{% endblock content %}
+
+{% block scripts %}
+<script>
+    $(document).ready(() => {
+        
+        let durationPattern = /^[1-9]\d*$/;
+        let pricePattern = /^(?!0(\.0{1,2})?$)(\$?)([1-9][0-9]*(\.[0-9]{1,2})?)$/;
+
+        function validateForm() {  
+            const formValid = true       
+
+            let name = $('#name-input').val();
+            if (name) {
+                name = name.trim();
+            }
+
+            const programDropdown = $('#program-dropdown').val();
+            const specializationDropdown = $('#specialization-dropdown').val();
+
+            const modeDropdown = $('#mode-dropdown').val();
+
+            const imageInput = $('#image-input')[0];
+            const image = imageInput.files[0];                        
+            
+            let duration = $('#duration-input').val();
+            if (duration) {
+                duration = duration.trim();
+            }
+
+            let price = $('#price-input').val();
+            if (price) {
+                price = price.trim();
+            }            
+
+            if (!name) {
+                $('#name-input').removeClass('is-valid').addClass('is-invalid');
+                $('#name-input').focus();
+                formValid = false;
+
+            } else {
+                $('#name-input').removeClass('is-invalid').addClass('is-valid');
+                $('#name-input').blur();
+                
+            }            
+
+            if (!programDropdown) {
+                $('#program-dropdown').addClass('is-invalid');
+                $('#program-dropdown').focus();
+                formValid = false;
+            } else {
+                $('#program-dropdown').addClass('is-valid');
+                $('#program-dropdown').blur();
+                
+            }
+
+            if (!specializationDropdown) {
+                $('#specialization-dropdown').addClass('is-invalid');
+                $('#specialization-dropdown').focus();
+                formValid = false;
+            } else {
+                $('#specialization-dropdown').addClass('is-valid');
+                $('#specialization-dropdown').blur();
+                
+            }
+
+            if (!modeDropdown) {
+                $('#mode-dropdown').addClass('is-invalid');
+                $('#mode-dropdown').focus();
+                formValid = false;
+            } else {
+                $('#mode-dropdown').addClass('is-valid');
+                $('#mode-dropdown').blur();
+                
+            }
+
+            if (!image) {
+                $('#image-input').addClass('is-invalid');
+                $('#image-input').focus();
+                formValid = false;
+            } else {
+                $('#image-input').addClass('is-valid');
+                $('#image-input').blur();
+                
+            }
+            
+            if (duration && !durationPattern.test(duration)) {
+                $('#duration-input').removeClass('is-valid').addClass('is-invalid');
+                $('#duration-input').focus();
+                formValid = false;
+
+            } else {
+                $('#duration-input').removeClass('is-invalid').remove('is-valid');
+                $('#duration-input').blur();
+                
+            }
+
+            if (!price || !pricePattern.test(price)) {
+                $('#price-input').removeClass('is-valid').addClass('is-invalid');
+                $('#price-input').focus();
+                formValid = false;
+
+            } else {
+                $('#price-input').removeClass('is-invalid').addClass('is-valid');
+                $('#price-input').blur();
+                
+            }
+            
+            if (formValid == true) {
+                $('#add-course-form').submit()
+            }
+
+        }
+
+        $('#submit-button').click(validateForm);
+
+        // Inputting
+
+        $('#name-input, #duration-input, #price-input').on('input', function () {
+            let thisValue = $(this).val();
+            if (thisValue) {
+                thisValue = thisValue.trim();
+            }
+
+            if (!thisValue) {
+                if ($(this).prop('id') == "name-input") {
+                    $(this).removeClass('is-valid').removeClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-valid').addClass('is-invalid');                
+                }
+            } else {
+                 if ($(this).prop('id') == "price-input" && !pricePattern.test(thisValue)) {
+                    $(this).removeClass('is-valid').addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid').addClass('is-valid');
+                }
+            }
+
+            if (thisValue) {
+                if ($(this).prop('id') == "duration-input") {
+                    if (durationPattern.test(thisValue)) {
+                        $(this).removeClass('is-invalid').addClass('is-valid');                    
+                    } else {
+                        $(this).removeClass('is-valid').addClass('is-invalid');
+                    }
+                }
+                            
+            }
+            
+        });
+
+        // changing
+
+        $('#program-dropdown, #specialization-dropdown, #mode-dropdown, #unit-dropdown, #image-input').on('change', function () {
+            if (($(this).prop('id') == 'program-dropdown' || $(this).prop('id') == 'sub-category-dropdown' || $(this).prop('id') == 'brand-dropdown') && !$(this).val()) {
+                $(this).removeClass('is-valid').addClass('is-invalid');
+
+            } else {
+                $(this).removeClass('is-invalid').addClass('is-valid');
+            }
+
+            if ($(this).prop('id') == 'image-input' || $(this).prop('id') == 'logo-input') {
+                let imageInput = $('#image-input')[0];
+                let image = imageInput.files[0];                
+                if (!image) {
+                    $(this).removeClass('is-valid').addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid').addClass('is-valid');
+                }
+            }
+                        
+        })        
+        
+
+        // Get Size and Sub Categories
+        function getSubCategoriesAndSizes(category) {
+            $.ajax({
+                type: 'GET',
+                url: '/customer/get_sub_categories_and_sizes/',
+                dataType: 'json',
+                data: {"category": category},
+                success: response => {
+                    let sizes = response.sizes;
+                    let subCategories = response.sub_categories
+
+                    $('#size-dropdown').html(`<option value="" hidden disabled selected>Select Size</option>`);
+                    if (sizes && sizes.length) {
+                        sizes.forEach(size => {
+                            if (size.standard) {
+                                $('#size-dropdown').append(`<option value="${size.slug}">${size.name}&nbsp;&nbsp;&nbsp; ${size.standard}</option>`)
+                            } else {
+                                $('#size-dropdown').append(`<option value="${size.slug}">${size.name}</option>`)
+                            }
+                        })
+                    } else {
+                        $('#size-dropdown').html(`<option value="" disabled selected>No size for the selected category</option>`);
+                    }
+
+                    $('#sub-category-dropdown').html(`<option value="" hidden disabled selected>Select Sub Category</option>`);
+                    if (subCategories && subCategories.length) {
+                        subCategories.forEach(subCategory => {
+                            if (subCategory.standard) {
+                                $('#sub-category-dropdown').append(`<option value="${subCategory.slug}">${subCategory.name}&nbsp;&nbsp;&nbsp; ${subCategory.standard}</option>`)
+                            } else {
+                                $('#sub-category-dropdown').append(`<option value="${subCategory.slug}">${subCategory.name}</option>`)
+                            }
+                        })
+                    } else {
+                        $('#sub-category-dropdown').html(`<option value="" disabled selected>Selected Catalog</option>`);
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            })
+        }
+
+        $('#category-dropdown').on('change', function () {
+            const category = $(this).val();
+
+            getSubCategoriesAndSizes(category);
+        });
+
+        if ($('#category-dropdown').val()) {
+            const category = $('#category-dropdown').val();
+
+            getSubCategoriesAndSizes(category);
+        }
+    })
+</script>
+{% endblock scripts %}

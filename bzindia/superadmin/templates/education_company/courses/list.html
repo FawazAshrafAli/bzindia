@@ -1,7 +1,7 @@
 {% extends "admin_base/base.html" %}
 {% load static %}
 
-{% block title %}Companies{% endblock title %}
+{% block title %}Courses{% endblock title %}
 
 {% block content %}
 			
@@ -13,12 +13,12 @@
 			<h3 class="page-title m-0">
 			<span class="page-title-icon bg-gradient-primary text-white me-2">
 				<i class="feather-database"></i>
-			</span> Companies </h3>
+			</span> Courses </h3>
 		</div>
 		<div class="col text-end">
 			<ul class="breadcrumb bg-white float-end m-0 ps-0 pe-0">
 				<li class="breadcrumb-item"><a href="index.html">Dashboard</a></li>
-				<li class="breadcrumb-item active">Companies</li>
+				<li class="breadcrumb-item active">Courses</li>
 			</ul>
 		</div>
 	</div>
@@ -32,11 +32,11 @@
 					<div class="dropdown-menu">
 						<a class="dropdown-item" href="#">Recently Viewed</a>
 						<a class="dropdown-item" href="#">Items I'm following</a>
-						<a class="dropdown-item" href="#">All Companies</a>
-						<a class="dropdown-item" href="#">Companies added in the last 24 hours</a>
-						<a class="dropdown-item" href="#">Companies added in the last 7 days</a>
-						<a class="dropdown-item" href="#">Companies with no notes in the last month</a>
-						<a class="dropdown-item" href="#">Companies with no notes in the last 7 days</a>
+						<a class="dropdown-item" href="#">All Courses</a>
+						<a class="dropdown-item" href="#">Courses added in the last 24 hours</a>
+						<a class="dropdown-item" href="#">Courses added in the last 7 days</a>
+						<a class="dropdown-item" href="#">Courses with no notes in the last month</a>
+						<a class="dropdown-item" href="#">Courses with no notes in the last 7 days</a>
 					</div>
 				</div>
 			</div>
@@ -53,7 +53,7 @@
 						</div>
 					</li>
 					<li class="list-inline-item">
-						<a href={% url 'superadmin:add_company' %} class="add btn btn-gradient-primary font-weight-bold text-white todo-list-add-btn btn-rounded" id="add-company">New Company</a>
+						<a href={% url 'superadmin:add_course' education_company.slug %} class="add btn btn-gradient-primary font-weight-bold text-white todo-list-add-btn btn-rounded" id="add-course">New Course</a>
 					</li>
 				</ul>
 			</div>
@@ -84,17 +84,17 @@
 											<span class="checkmark"></span>
 										</label>
 									</th>
-									<th>Company</th>
-									<th>Type</th>
-									<th>Contact Number 1</th>
-									<th>Contact Number 2</th>
-									<th>Whatsapp Number</th>
-									<th>Email</th>
+									<th>Name</th>
+									<th>Program</th>
+									<th>Specialization</th>
+									<th>Mode</th>
+									<th>Duration</th>
+									<th>Price</th>
 									<th class="text-end">Actions</th>
 								</tr>
 							</thead>
 							<tbody>
-								{% for company in companies %}
+								{% for course in courses %}
 								<tr>
 									<td class="checkBox">
 										<label class="container-checkbox">
@@ -103,20 +103,20 @@
 										</label>
 									</td>
 									<td>
-										<a href="#" class="avatar"><img alt="" src="{% if company.favicon %}{{company.favicon.url}}{% else %}{% static 'assets/img/c-logo2.png' %}{% endif %}"></a>
-										<a href="#" data-bs-toggle="modal" data-bs-target="#company-details">{{company.name}}</a>
+										<a href="#" class="avatar"><img alt="" src="{% if course.image %}{{course.image.url}}{% else %}{% static 'assets/img/c-logo2.png' %}{% endif %}"></a>
+										<a href="#" data-bs-toggle="modal" data-bs-target="#course-details">{{course.name}}</a>
 									</td>
-									<td>{{company.type.name}}</td>
-									<td>{{company.phone1}}</td>
-									<td>{{company.phone2}}</td>
-									<td>{{company.whatsapp}}</td>
-									<td>{{company.email}}</td>
+									<td>{{course.program}}</td>
+									<td>{{course.specialization}}</td>
+									<td>{{course.mode}}</td>
+									<td>{{course.duration}} Months</td>
+                                    <td>&#8377;{{course.price}}</td>
 									<td class="text-center">
 										<div class="dropdown dropdown-action">
 											<a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="material-icons">more_vert</i></a>
 											<div class="dropdown-menu dropdown-menu-right">
-												<a class="dropdown-item" href="{% url 'superadmin:update_company' company.slug %}">Edit This Company</a>
-												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{company.name}}" data-slug="{{company.slug}}" >Remove This Company</a>
+												<a class="dropdown-item" href="{% url 'superadmin:update_company' course.slug %}">Edit This Company</a>
+												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{course.name}}" data-slug="{{course.slug}}" >Remove This Company</a>
 											</div>
 										</div>
 									</td>
