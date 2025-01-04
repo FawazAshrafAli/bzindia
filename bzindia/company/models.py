@@ -48,6 +48,9 @@ class Company(models.Model):
 
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return self.name
+
     class Meta:
         db_table = "company"
         ordering = ["name"]
