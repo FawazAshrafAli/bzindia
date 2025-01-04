@@ -1,0 +1,27 @@
+from django.shortcuts import render
+from django.http import JsonResponse
+import logging
+
+from .models import SubCategory
+
+logger = logging.getLogger(__name__)
+
+def get_sub_categories(request):
+    try:
+        if request.method != "GET":
+            return JsonResponse({"status": "failed", "error": "Method not allowed"}, status=405)    
+        
+        company_slug = request.GET.get("company_slug")
+        category_slug = request.GET.get("category_slug")
+
+        if not company_slug or not category_slug:
+            return JsonResponse({"status": "failed", "error": "Bad Request"}, status=400)
+        
+        sub_categories = list(SubCategory.objects.filter(company__slug = company_slug, category__slug = category_slug).values("name", "slug"))
+
+        return JsonResponse({"status": "success", "sub_categories": sub_categories}, status=200)
+
+    except Exception as e:
+        logger.exception(f"Error in get sub categories function of service app: {e}")
+        return JsonResponse({"status": "failed", "error": "Some unexpected error occured."}, status=500)
+
