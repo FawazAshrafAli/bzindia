@@ -66,7 +66,7 @@ class AddProductCategoryView(BaseProductCategoryView, CreateView):
         
         except Exception as e:
             logger.error(f"Error in creating product category: {e}")
-            messages.error("Server Error.")
+            messages.error(request, "Server Error.")
 
         return redirect(self.redirect_url)
     
@@ -99,7 +99,7 @@ class UpdateProductCategoryView(BaseProductCategoryView, UpdateView):
         
         except Exception as e:
             logger.error(f"Error in updating product category: {e}")
-            messages.error("Server Error.")
+            messages.error(request, "Server Error.")
 
         return redirect(self.redirect_url)    
     
@@ -176,7 +176,7 @@ class AddProductSubCategoryView(BaseProductSubCategoryView, CreateView):
         
         except Exception as e:
             logger.error(f"Error in creating product sub category: {e}")
-            messages.error("Server Error.")
+            messages.error(request, "Server Error.")
 
         return redirect(self.redirect_url)
     
@@ -220,7 +220,7 @@ class UpdateProductSubCategoryView(BaseProductSubCategoryView, UpdateView):
         
         except Exception as e:
             logger.error(f"Error in updating product sub category: {e}")
-            messages.error("Server Error.")
+            messages.error(request, "Server Error.")
 
         return redirect(self.redirect_url)
     
@@ -324,7 +324,7 @@ class AddBrandView(BaseBrandView, CreateView):
         
         except Exception as e:
             logger.error(f"Error in creating product brand: {e}")
-            messages.error("Server Error.")
+            messages.error(request, "Server Error.")
 
         return redirect(self.redirect_url)
     
@@ -357,7 +357,7 @@ class UpdateBrandView(BaseBrandView, UpdateView):
         
         except Exception as e:
             logger.error(f"Error in updating product brand: {e}")
-            messages.error("Server Error.")
+            messages.error(request, "Server Error.")
 
         return redirect(self.redirect_url)
     
@@ -579,7 +579,6 @@ class AddColorView(BaseColorView, CreateView):
             
             color, created = self.model.objects.get_or_create(name = name, hexa = hexa)
 
-
             if created:
                 messages.success(request, "Success! Color created.")
                 return redirect(self.success_url)            
@@ -710,8 +709,6 @@ class AddProductView(BaseProductView, CreateView):
             height = request.POST.get("height").strip() if request.POST.get("height") else None
             weight = request.POST.get("weight").strip() if request.POST.get("weight") else None
             unit = request.POST.get("unit").strip() if request.POST.get("unit") else None
-
-            print(unit)
 
             required_fields = {
                 "Name": name,
