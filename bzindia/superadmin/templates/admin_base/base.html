@@ -363,8 +363,8 @@
 				                 
 				                </div>
 				                <div class="nav-profile-text d-flex flex-column">
-				                  <span class="font-weight-bold mb-2">David Grey. H</span>
-				                  <span class="text-white text-small">Project Manager</span>
+				                  <span class="font-weight-bold mb-2"> {{request.user.username}}</span>
+				                  <span class="text-white text-small">Administrator</span>
 				                </div>
 				                <i class="mdi mdi-bookmark-check text-success nav-profile-badge"></i>
 				              </a>
@@ -381,20 +381,31 @@
 							</li> {% endcomment %}
 
 							<li class="submenu">
-								<a href="javascript:void(0);" {% if company_page or company_type_page %} class="active" {% endif %}><i class="fa fa-building"></i> <span>Company</span> <span class="menu-arrow"></span></a>
+								<a href="javascript:void(0);" {% if company_page %} class="active" {% endif %}><i class="fa fa-building"></i> <span>Company</span> <span class="menu-arrow"></span></a>
 								<ul class="sub-menus">
 									
-									<li class="submenu">												
-										<a href="javascript:void(0);" {% if company_list_page %} class="active" {% endif %}> <span> Company Type</span> <span class="menu-arrow"></span></a>
-										<ul class="sub-menus">
-											<li><a href="javascript:void(0);">Add Company</a></li>
-											{% for company_type_obj in company_types %}
-											<li><a href="{% url 'superadmin:filtered_companies' company_type_obj.slug %}" {% if company_type_obj.slug == company_type.slug %} class="active" {% endif %}>{{company_type_obj.name}} Companies</a></li>
-											{% endfor %}
-											{% comment %} <li><a href="{% url 'superadmin:companies' %}" {% if company_list_page %} class="active" {% endif %}>List Companies</a></li> {% endcomment %}
-										</ul>
-									</li>
-									<li><a href="javascript:void(0);">Add Company Type</a></li>
+									<li><a href="{% url 'superadmin:companies' %}" {% if company_list_page %} class="active" {% endif %}>Companies</a></li>
+									<li><a href="{% url 'superadmin:add_company' %}">Add Company</a></li>																			
+
+									{% if service_page %}
+									<li><a href="{% url 'superadmin:add_service' current_company.slug %}">Add Service</a></li>
+									{% elif service_category_page %}
+									<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_service_category_modal">Add Service Category</a></li>
+									{% elif service_sub_category_page %}
+									<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_service_sub_category_modal">Add Service Sub Category</a></li>
+									{% elif registration_page %}
+									<li><a {% if add_registration_page %}class="active"{% endif %} href="{% url 'superadmin:add_registration' current_company.slug %}">Add Registration</a></li>
+									{% elif registration_type_page %}
+									<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_registration_type_modal">Add Registration Type</a></li>
+									{% elif registration_sub_type_page %}
+									<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_registration_sub_type_modal">Add Sub Registration Type</a></li>
+									{% elif course_program_page %}
+									<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_course_program_modal">Add Course Program</a></li>
+									{% elif course_page %}
+									<li><a href="{% url 'superadmin:add_course' current_company.slug %}">Add Course</a></li>
+									{% elif course_specialization_page %}
+									<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_course_specialization_modal">Add Course Specialization</a></li>
+									{% endif %}									
 									
 									{% comment %} <li class="submenu">												
 										<a href="javascript:void(0);" {% if company_type_page %} class="active subdrop" {% endif %}> <span> Company Type</span> <span class="menu-arrow"></span></a>
@@ -403,6 +414,15 @@
 											<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_company_type" >Add Company Type</a></li>
 										</ul>
 									</li> {% endcomment %}
+								</ul>
+							</li>
+
+							<li class="submenu">
+								<a href="javascript:void(0);" {% if company_type_page %} class="active" {% endif %}><i class="fa fa-building"></i> <span>Company Type</span> <span class="menu-arrow"></span></a>
+								<ul class="sub-menus">
+									
+									<li><a href="{% url 'superadmin:company_types' %}" {% if company_type_list_page %} class="active" {% endif %}>Company Types</a></li>
+									<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_company_type">Add Company Type</a></li>
 								</ul>
 							</li>
 
@@ -542,6 +562,13 @@
 												<ul class="sub-menus">
 													<li><a href="{% url 'superadmin:post_offices' %}">List Post Offices</a></li>
 													<li><a href="javascript:void(0);">Add Post Office</a></li>
+												</ul>
+											</li>
+											<li class="submenu">												
+												<a href="javascript:void(0);"> <span> TouristAttraction</span> <span class="menu-arrow"></span></a>
+												<ul class="sub-menus">
+													<li><a href="{% url 'superadmin:tourist_attractions' %}">List TouristAttractions</a></li>
+													<li><a href="javascript:void(0);">Add TouristAttraction</a></li>
 												</ul>
 											</li>
 											<!-- <li class="submenu">												

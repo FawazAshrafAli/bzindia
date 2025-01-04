@@ -1,12 +1,23 @@
 {% extends "admin_company/base/base.html" %}
 {% load static %}
 
+{% block styles %}
+<style>
+	.text-area-field {
+		max-width: 145px !important;
+		white-space: normal !important;
+		word-wrap: break-word !important;
+		overflow-wrap: break-word !important;
+	}
+</style>
+{% endblock styles %}
+
 {% block company_content %}
 	<div class="row">
 		<div class="col-md-12">
 			<div class="card">
 				<div class="card-header">									
-					<h5 class="card-title">Categories</h5>
+					<h5 class="card-title">Registration Types</h5>
 				</div>		
 				<div class="card-body">
 					<div class="table-responsive">
@@ -19,26 +30,36 @@
 											<span class="checkmark"></span>
 										</label>
 									</th>
-									<th>Category Name</th>									
+									<th>Sub Type</th>
+									<th>Type</th>
+									<th>Time Required</th>
+									<th>Price</th>
+									<th class="text-area-field">Required Documents</th>
+									<th class="text-area-field">Additional Info</th>
 									<th class="text-end">Actions</th>
 								</tr>
 							</thead>
 							<tbody>
-								{% for category in categories %}
+								{% for registration in registrations %}
 								<tr>
 									<td class="checkBox">
 										<label class="container-checkbox">
-											<input type="checkbox">
+											<input registration="checkbox">
 											<span class="checkmark"></span>
 										</label>
 									</td>									
-									<td>{{category.name}}</td>									
+									<td>{{registration.sub_type.name}}</td>
+									<td>{{registration.sub_type.type.name}}</td>
+									<td>{{registration.time_required}}</td>
+									<td>{{registration.price}}</td>
+									<td class="text-area-field">{{registration.required_documents}}</td>
+									<td class="text-area-field">{{registration.additional_info}}</td>
 									<td class="text-end">
 										<div class="dropdown dropdown-action">
 											<a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="material-icons">more_vert</i></a>
 											<div class="dropdown-menu dropdown-menu-right">
-												<a class="dropdown-item edit-toggle-btn" href="#" data-bs-toggle="modal" data-bs-target="#update_category" data-name="{{category.name}}" data-slug="{{category.slug}}">Edit This Category</a>
-												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{category.name}}" data-slug="{{category.slug}}" >Remove This Product Category</a>
+												<a class="dropdown-item edit-toggle-btn" href="{% url 'superadmin:update_registration' current_company.slug registration.slug %}">Edit This Registration Type</a>
+												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{registration.sub_type.name}}" data-slug="{{registration.slug}}" >Remove This Registration Type</a>
 											</div>
 										</div>
 									</td>
@@ -69,11 +90,11 @@
 				<div class="row">
 					<div class="col-md-12">
 						<form id="deletion-form" method="get">
-							<h4><span class="text-danger">Removing</span> Product Category. . .</h4>
+							<h4><span class="text-danger">Removing</span> Registration. . .</h4>
 							<div class="form-group row">
 								<div class="col-md-12">
 									<label class="col-form-label">Are you sure?</label> <br>
-									<p><i>Product Category:</i> <span id="deleting-object"></span></p>
+									<p><i>Registration:</i> <span id="deleting-object"></span></p>
 								</div>
 							</div>							
 														
@@ -91,26 +112,26 @@
 	</div><!-- modal-dialog -->
 </div><!-- modal -->
 
-<!-- Product Category Modal (Start) -->
-<div class="modal fade" id="update_category" tabindex="-1" role="dialog" aria-modal="true">
+<!-- Edit Registration Type Modal (Start) -->
+<div class="modal fade" id="edit_registration_type_modal" tabindex="-1" role="dialog" aria-modal="true">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 
 			<div class="modal-header">
-				<h4 class="modal-title text-center">Add Product Category</h4>
+				<h4 class="modal-title text-center">Edit Registration Type</h4>
 				<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
 			  </div>
 
 			<div class="modal-body">
 				<div class="row">
 					<div class="col-md-12">
-						<form method="post" action="#" class="needs-validation" id="update-category-form" novalidate>
+						<form method="post" action="#" class="needs-validation" id="edit-service-type-form" novalidate>
 							{% csrf_token %}
-							<h4>Product Category</h4>
+							<h4>Registration Type</h4>
 							<div class="form-group row">
 								<div class="col-md-12"><label class="col-form-label">Name <span class="text-danger">*</span></label></div>
 								<div class="col-md-12">
-									<input class="form-control" type="text" id="name-input" placeholder="Name of Product Category" name="name">
+									<input class="form-control" type="text" id="edit-name-input" placeholder="Name of Registration Type" name="name">
 									<div class="invalid-feedback">
 										Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
 									</div>
@@ -118,9 +139,13 @@
 										Looks good!
 									</div>
 								</div>
+								<div class="col-md-12"><label class="col-form-label">Description </label></div>
+								<div class="col-md-12">
+									<textarea class="form-control" name="description" id="edit-description-input" placeholder="Description"></textarea>									
+								</div>
 							</div>									
 							<div class="text-center py-3">
-								<button type="button" class="border-0 btn btn-primary btn-gradient-primary btn-rounded" id="submit-button">Save</button>&nbsp;&nbsp;
+								<button type="button" class="border-0 btn btn-primary btn-gradient-primary btn-rounded" id="update-button">Save</button>&nbsp;&nbsp;
 								<button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">Cancel</button>
 							</div>
 						</form>
@@ -132,7 +157,8 @@
 		</div><!-- modal-content -->
 	</div><!-- modal-dialog -->
 </div><!-- modal -->
-<!-- Product Category Modal (End) -->
+<!-- Registration Type Modal (End) -->
+ 
 {% endblock modal %}
 
 {% block scripts %}
@@ -140,29 +166,37 @@
 	$(document).ready(() => {
 		$('.delete-btn').click( function () {
 			const name = $(this).data('name');
-			const slug = $(this).data('slug');
+			const slug = `{{current_company.slug}}`;
+			const registrationSlug = $(this).data('slug');
+
+			const actionUrl = `{% url 'superadmin:remove_registration' 'dummySlug' 'dummyRegistrationSlug' %}`.replace('dummySlug', slug).replace('dummyRegistrationSlug', registrationSlug);
 
 			$('#deleting-object').html(name);
-			$('#deletion-form').prop('action', `/customer/delete_product_category/${slug}`);
+			$('#deletion-form').prop('action', actionUrl);
 		});
 
 		$('.edit-toggle-btn').click(function () {
-			const name = $(this).data('name');					
-			const slug = $(this).data('slug');
+			const name = $(this).data('name');
+			const slug = `{{current_company.slug}}`;
+			const registrationTypeSlug = $(this).data('slug');
+			const description = $(this).data('description');
 
-			$('#name-input').val(name);	
-			$('#update-category-form').prop('action', `/customer/update_product_category/${slug}`);
+			const actionUrl = `{% url 'superadmin:update_registration_type' 'dummySlug' 'dummyRegistrationTypeSlug' %}`.replace('dummySlug', slug).replace('dummyRegistrationTypeSlug', registrationTypeSlug);
+
+			$('#edit-name-input').val(name);
+			$('#edit-description-input').val(description);
+			$('#edit-service-type-form').prop('action', actionUrl);
 		});
 
 		let namePattern = /^[a-zA-Z\s'-]+$/;
 
-		// Scripts of Product Category (Start)
-		function validateUpdateCategoryForm() {  
+		// Scripts of Registration Type (Start)
+		function validateAddServiceCategoryForm() {  
 			let formValid = true       
 
-			const productCategory = $('#name-input').val().trim();            
+			const serviceCategory = $('#name-input').val().trim();            
 
-			if (!productCategory || !namePattern.test(productCategory)) {
+			if (!serviceCategory || !namePattern.test(serviceCategory)) {
 				$('#name-input').addClass('is-invalid');
 				$('#name-input').focus();
 				formValid = false;
@@ -174,15 +208,38 @@
 			}            
 
 			if (formValid == true) {
-				$('#update-category-form').submit()
+				$('#add-service-type-form').submit()
 			}            
 		}    
 
-		$('#submit-button').click(() => validateUpdateCategoryForm());
+		$('#submit-button').click(() => validateAddServiceCategoryForm());
+
+		function validateEditServiceCategoryForm() {  
+			let formValid = true       
+
+			const serviceCategory = $('#edit-name-input').val().trim();            
+
+			if (!serviceCategory || !namePattern.test(serviceCategory)) {
+				$('#edit-name-input').addClass('is-invalid');
+				$('#edit-name-input').focus();
+				formValid = false;
+
+			} else {
+				$('#edit-name-input').addClass('is-valid');
+				$('#edit-name-input').blur();
+						
+			}            
+
+			if (formValid == true) {
+				$('#edit-service-type-form').submit()
+			}            
+		}    
+
+		$('#update-button').click(() => validateEditServiceCategoryForm());
 		
 		// Inputting
 
-		$('#name-input').on('input', function () {
+		$('#name-input, #edit-name-input').on('input', function () {
 			if (!$(this).val()) {
 				$(this).removeClass('is-valid').addClass('is-invalid');
 			} else {
@@ -193,7 +250,7 @@
 				}
 			}
 		});
-		// Scripts of Product Category (End)
+		// Scripts of Registration Type (End)
 	});
 </script>
 {% endblock scripts %}

@@ -2,7 +2,7 @@
 {% extends "admin_base/base.html" %}
 {% load static %}
 
-{% block title %}Add {{current_company.name}} Course{% endblock title %}
+{% block title %}Update Course{% endblock title %}
 
 {% block content %}
 			
@@ -15,12 +15,12 @@
 			<h3 class="page-title">
 			<span class="page-title-icon bg-gradient-primary text-white me-2">
 				<i class="la la-columns"></i>
-			</span> Add {{current_company.name}} Course </h3>
+			</span> Update Course </h3>
 		</div>
 		<div class="col p-0 text-end">
 			<ul class="breadcrumb bg-white float-end m-0 ps-0 pe-0">
 				<li class="breadcrumb-item"><a href="index.html" {{current_company.name}}>Course</a></li>
-				<li class="breadcrumb-item active">Add {{current_company.name}} Course</li>
+				<li class="breadcrumb-item active">Update Course</li>
 			</ul>
 		</div>
 	</div>
@@ -37,17 +37,17 @@
         {% endif %}
 
         <div class="col-lg-12">
-            <form method="post" action="{% url 'superadmin:add_course' current_company.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-course-form" novalidate>
+            <form method="post" action="{% url 'superadmin:update_course' current_company.slug course.slug %}" class="needs-validation" enctype="multipart/form-data" id="edit-course-form" novalidate>
                 {% csrf_token %}
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title mb-0" >{{current_company.name}} Course Name</h4>
+                        <h4 class="card-title mb-0" >Course Name</h4>
                     </div>
                     <div class="card-body">
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                <label for="name-input" >{{current_company.name}} Course Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="name-input" placeholder="Course Name" name="name" required>
+                                <label for="name-input" >Course Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name-input" placeholder="Course Name" name="name" value="{{course.name}}" required>
                                 <div class="invalid-feedback">
                                     Please enter a name for the course.
                                 </div>
@@ -63,7 +63,7 @@
                                 <select class="form-control" id="program-dropdown" name="program" required>
                                     <option value="" hidden disabled selected>Select Degree Level</option>
                                     {% for program in programs %}
-                                    <option value="{{program.slug}}">{{program.name}}</option>
+                                    <option value="{{program.slug}}" {% if program.slug == course.program.slug %}selected{% endif %}>{{program.name}}</option>
                                     {% endfor %}                                    
                                 </select>
                                 <div class="invalid-feedback">
@@ -76,7 +76,10 @@
                             <div class="col-md-6 mb-3">
                                 <label for="sub-category-dropdown">Specialization <span class="text-danger">*</span></label>
                                 <select class="form-control" id="specialization-dropdown" name="specialization" required>
-                                    <option value="" hidden disabled selected>Select Specialization</option>                                                                       
+                                    <option value="" hidden disabled selected>Select Specialization</option>
+                                    {% for specialization in specializations %}
+                                    <option value="{{specialization.slug}}"  {% if specialization.slug == course.specialization.slug %}selected{% endif %}>{{specialization.name}}</option>
+                                    {% endfor %}                                                               
                                 </select>
                                 <div class="invalid-feedback">
                                     Please provide the specialization.
@@ -90,9 +93,10 @@
                             <div class="col-md-4 mb-3">
                                 <label for="brand-dropdown">Course Mode <span class="text-danger">*</span></label>
                                 <select class="form-control" id="mode-dropdown" name="mode" required>
-                                    <option value="" hidden disabled selected>Select Course Mode</option>                                   
-                                    <option value="Online">Online</option>
-                                    <option value="Offline">Offline</option>
+                                    <option value="" hidden disabled selected>Select Course Mode</option>
+                                    {% for mode in modes %}                                
+                                    <option value="{{mode}}" {% if mode == course.mode %}selected{% endif %}>{{mode}}</option>
+                                    {% endfor %}
                                 </select>
                                 <div class="invalid-feedback">
                                     Please provide the mode of the course.
@@ -103,7 +107,7 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="sku-input">Course Duration</label>
-                                <input type="number" class="form-control" id="duration-input" name="duration" placeholder="Course Duration (in months)">
+                                <input type="number" class="form-control" id="duration-input" name="duration" value="{% if course.duration %}{{course.duration}}{% endif %}" placeholder="Course Duration (in months)">
                                 <div class="invalid-feedback">
                                     Please enter a valid course dutaion.
                                 </div>
@@ -113,7 +117,7 @@
                             </div>                            
                             <div class="col-md-4 mb-3">
                                 <label for="price-input">Price <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="price-input" name="price" placeholder="Price" required>
+                                <input type="text" class="form-control" id="price-input" name="price" value="{% if course.price %}{{course.price}}{% endif %}" placeholder="Price" required>
                                 <div class="invalid-feedback">
                                     Please enter a valid price.
                                 </div>
@@ -126,7 +130,7 @@
                         <div class="form-group row">
                             <div class="col-sm-12">
                                 <label class="col-form-label">Description </label>
-                                <textarea class="form-control" rows="3" id="description" name="description" placeholder="Description"></textarea>
+                                <textarea class="form-control" rows="3" id="description" name="description" placeholder="Description">{% if course.description %}{{course.description}}{% endif %}</textarea>
                             </div>
                         </div>
                     </div>
@@ -239,7 +243,7 @@
             }
             
             if (formValid == true) {
-                $('#add-course-form').submit()
+                $('#edit-course-form').submit()
             }
 
         }
@@ -256,7 +260,7 @@
 
             if (!thisValue) {
                 if ($(this).prop('id') == "name-input") {
-                    $(this).removeClass('is-valid').removeClass('is-invalid');
+                    $(this).removeClass('is-valid').addClass('is-invalid');
                 } else {
                     $(this).removeClass('is-valid').addClass('is-invalid');                
                 }
@@ -269,6 +273,10 @@
             }
 
             if (thisValue) {
+                if (thisValue < 0) {
+                    $(this).val(0);
+                }
+
                 if ($(this).prop('id') == "duration-input") {
                     if (durationPattern.test(thisValue)) {
                         $(this).removeClass('is-invalid').addClass('is-valid');                    

@@ -6,7 +6,7 @@
 		<div class="col-md-12">
 			<div class="card">
 				<div class="card-header">									
-					<h5 class="card-title">Categories</h5>
+					<h5 class="card-title">Service Categories</h5>
 				</div>		
 				<div class="card-body">
 					<div class="table-responsive">
@@ -37,8 +37,8 @@
 										<div class="dropdown dropdown-action">
 											<a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="material-icons">more_vert</i></a>
 											<div class="dropdown-menu dropdown-menu-right">
-												<a class="dropdown-item edit-toggle-btn" href="#" data-bs-toggle="modal" data-bs-target="#update_category" data-name="{{category.name}}" data-slug="{{category.slug}}">Edit This Category</a>
-												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{category.name}}" data-slug="{{category.slug}}" >Remove This Product Category</a>
+												<a class="dropdown-item edit-toggle-btn" href="#" data-bs-toggle="modal" data-bs-target="#edit_service_category_modal" data-name="{{category.name}}" data-slug="{{category.slug}}">Edit This Category</a>
+												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{category.name}}" data-slug="{{category.slug}}" >Remove This Category</a>
 											</div>
 										</div>
 									</td>
@@ -69,11 +69,11 @@
 				<div class="row">
 					<div class="col-md-12">
 						<form id="deletion-form" method="get">
-							<h4><span class="text-danger">Removing</span> Product Category. . .</h4>
+							<h4><span class="text-danger">Removing</span> Service Category. . .</h4>
 							<div class="form-group row">
 								<div class="col-md-12">
 									<label class="col-form-label">Are you sure?</label> <br>
-									<p><i>Product Category:</i> <span id="deleting-object"></span></p>
+									<p><i>Service Category:</i> <span id="deleting-object"></span></p>
 								</div>
 							</div>							
 														
@@ -91,26 +91,26 @@
 	</div><!-- modal-dialog -->
 </div><!-- modal -->
 
-<!-- Product Category Modal (Start) -->
-<div class="modal fade" id="update_category" tabindex="-1" role="dialog" aria-modal="true">
+<!-- Service Category Modal (Start) -->
+<div class="modal fade" id="add_service_category_modal" tabindex="-1" role="dialog" aria-modal="true">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 
 			<div class="modal-header">
-				<h4 class="modal-title text-center">Add Product Category</h4>
+				<h4 class="modal-title text-center">Add Service Category</h4>
 				<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
 			  </div>
 
 			<div class="modal-body">
 				<div class="row">
 					<div class="col-md-12">
-						<form method="post" action="#" class="needs-validation" id="update-category-form" novalidate>
+						<form method="post" action="{% url 'superadmin:add_service_category' current_company.slug %}" class="needs-validation" id="add-service-category-form" novalidate>
 							{% csrf_token %}
-							<h4>Product Category</h4>
+							<h4>Service Category</h4>
 							<div class="form-group row">
 								<div class="col-md-12"><label class="col-form-label">Name <span class="text-danger">*</span></label></div>
 								<div class="col-md-12">
-									<input class="form-control" type="text" id="name-input" placeholder="Name of Product Category" name="name">
+									<input class="form-control" type="text" id="name-input" placeholder="Name of Service Category" name="name">
 									<div class="invalid-feedback">
 										Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
 									</div>
@@ -132,7 +132,50 @@
 		</div><!-- modal-content -->
 	</div><!-- modal-dialog -->
 </div><!-- modal -->
-<!-- Product Category Modal (End) -->
+<!-- Service Category Modal (End) -->
+
+<!-- Edit Service Category Modal (Start) -->
+<div class="modal fade" id="edit_service_category_modal" tabindex="-1" role="dialog" aria-modal="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+
+			<div class="modal-header">
+				<h4 class="modal-title text-center">Edit Service Category</h4>
+				<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
+			  </div>
+
+			<div class="modal-body">
+				<div class="row">
+					<div class="col-md-12">
+						<form method="post" action="#" class="needs-validation" id="edit-service-category-form" novalidate>
+							{% csrf_token %}
+							<h4>Service Category</h4>
+							<div class="form-group row">
+								<div class="col-md-12"><label class="col-form-label">Name <span class="text-danger">*</span></label></div>
+								<div class="col-md-12">
+									<input class="form-control" type="text" id="edit-name-input" placeholder="Name of Service Category" name="name">
+									<div class="invalid-feedback">
+										Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
+									</div>
+									<div class="valid-feedback">
+										Looks good!
+									</div>
+								</div>
+							</div>									
+							<div class="text-center py-3">
+								<button type="button" class="border-0 btn btn-primary btn-gradient-primary btn-rounded" id="update-button">Save</button>&nbsp;&nbsp;
+								<button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">Cancel</button>
+							</div>
+						</form>
+					</div>
+				</div>
+
+			</div>
+
+		</div><!-- modal-content -->
+	</div><!-- modal-dialog -->
+</div><!-- modal -->
+<!-- Edit Service Category Modal (End) -->
 {% endblock modal %}
 
 {% block scripts %}
@@ -140,29 +183,32 @@
 	$(document).ready(() => {
 		$('.delete-btn').click( function () {
 			const name = $(this).data('name');
-			const slug = $(this).data('slug');
+			const slug = `{{current_company.slug}}`
+			const categorySlug = $(this).data('slug');
 
 			$('#deleting-object').html(name);
-			$('#deletion-form').prop('action', `/customer/delete_product_category/${slug}`);
+			$('#deletion-form').prop('action', `/admin/remove_service_category/${slug}/${categorySlug}/`);
 		});
 
 		$('.edit-toggle-btn').click(function () {
-			const name = $(this).data('name');					
-			const slug = $(this).data('slug');
+			const name = $(this).data('name');
+			const slug = `{{current_company.slug}}`;
+			const categorySlug = $(this).data('slug');
+			const actionUrl = `{% url 'superadmin:update_service_category' 'dummySlug' 'dummyCategorySlug'  %}`.replace('dummySlug', slug).replace('dummyCategorySlug', categorySlug);
 
-			$('#name-input').val(name);	
-			$('#update-category-form').prop('action', `/customer/update_product_category/${slug}`);
+			$('#edit-name-input').val(name);	
+			$('#edit-service-category-form').prop('action', actionUrl);
 		});
 
 		let namePattern = /^[a-zA-Z\s'-]+$/;
 
-		// Scripts of Product Category (Start)
-		function validateUpdateCategoryForm() {  
+		// Scripts of Service Category (Start)
+		function validateAddServiceCategoryForm() {  
 			let formValid = true       
 
-			const productCategory = $('#name-input').val().trim();            
+			const serviceCategory = $('#name-input').val().trim();            
 
-			if (!productCategory || !namePattern.test(productCategory)) {
+			if (!serviceCategory || !namePattern.test(serviceCategory)) {
 				$('#name-input').addClass('is-invalid');
 				$('#name-input').focus();
 				formValid = false;
@@ -174,26 +220,50 @@
 			}            
 
 			if (formValid == true) {
-				$('#update-category-form').submit()
+				$('#add-service-category-form').submit()
 			}            
 		}    
 
-		$('#submit-button').click(() => validateUpdateCategoryForm());
+		$('#submit-button').click(() => validateAddServiceCategoryForm());
+
+		// Scripts of Edit Service Category (Start)
+		function validateEditServiceCategoryForm() {  
+			let formValid = true       
+
+			const serviceCategory = $('#edit-name-input').val().trim();            
+
+			if (!serviceCategory || !namePattern.test(serviceCategory)) {
+				$('#edit-name-input').addClass('is-invalid');
+				$('#edit-name-input').focus();
+				formValid = false;
+
+			} else {
+				$('#edit-name-input').addClass('is-valid');
+				$('#edit-name-input').blur();
+						
+			}            
+
+			if (formValid == true) {
+				$('#edit-service-category-form').submit()
+			}            
+		}    
+
+		$('#update-button').click(() => validateEditServiceCategoryForm());
 		
 		// Inputting
 
-		$('#name-input').on('input', function () {
+		$('#name-input, #edit-name-input').on('input', function () {
 			if (!$(this).val()) {
 				$(this).removeClass('is-valid').addClass('is-invalid');
 			} else {
-				if ($(this).prop('id') === "name-input" && !namePattern.test($(this).val())) {
+				if (($(this).prop('id') === "name-input" || $(this).prop('id') === "edit-name-input") && !namePattern.test($(this).val())) {
 					$(this).removeClass('is-valid').addClass('is-invalid');
 				} else {
 					$(this).removeClass('is-invalid').addClass('is-valid');
 				}
 			}
 		});
-		// Scripts of Product Category (End)
+		// Scripts of Service Category (End)
 	});
 </script>
 {% endblock scripts %}
