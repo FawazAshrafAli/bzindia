@@ -198,45 +198,21 @@ def update_location_data():
     # top_left = (35.2, 68.1)
     # bottom_right = (6.7, 93.8)
 
-    # For JK
+    # Jammu And Kashmir
     # top_left = (36.5, 73.2) # fetched till 0.5 precision
     # bottom_right = (32.1, 80.3) # fetched till 0.5 precision
 
-    
-    # top_left = (35.2, 68.1)
-    # bottom_right = (6.7, 93.8)
-
-    # For madhya pradesh
+    # Madhya Pradesh
     # top_left = (24.5, 74.7) # fetched till 0.1 precision
-    # bottom_right = (18.4, 81.8) # fetched till 0.1 precision
+    # bottom_right = (18.4, 81.8) # fetched till 0.1 precision            
 
-    # Center Land
-    # top_left = (26.9, 72.7) # fetched till 0.1 precision
-    # bottom_right = (20.5, 86.8) # fetched till 0.1 precision
+    # Kerala
+    # top_left = (12.7, 74.8) # fetched till 0.05 precision
+    # bottom_right = (8.2, 77.4) # fetched till 0.05 precision
 
-    # Lower land
-    # top_left = (29.5, 75.5)
-    # bottom_right = (10.1, 79.2)
-
-    # Center Rectangle
-    # top_left = (26.3, 71.0) # fetched till 0.1 precision
-    # bottom_right = (21.8, 87.7) # fetched till 0.1 precision
-
-    # North to South Rectangle
-    # top_left = (30.1, 74.0) # fetched till 0.03 precision till (16.95), (75.05)
-    # bottom_right = (12.6, 79.7) # fetched till 0.03 precision till (16.95), (75.05)
-
-    # For kerala
-    # top_left = (13.1, 74.8)
-    # bottom_right = (8.2, 77.4)
-
-    # kerala Inside rectangle
-    # top_left = (10.9, 74.0) # fetched till 0.03 precision
-    # bottom_right = (8.3, 77.3) # fetched till 0.03 precision
-
-    # Gujarat (Inner)
-    # top_left = (23.9, 68.9) # fetched till 0.03 precision
-    # bottom_right = (20.6, 72.3) # fetched till 0.03 precision
+    # Gujarat
+    # top_left = (24.7, 68.1) # fetched till 0.1 precision
+    # bottom_right = (20.1, 74.4) # fetched till 0.1 precision
 
     # Karnataka
     # top_left = (18.4, 74.0) # fetched till 0.03 precision
@@ -255,21 +231,112 @@ def update_location_data():
     # bottom_right = (8.0, 80.3) # fetched till 0.03 precision
 
     # Andhra Pradesh
-    top_left = (19.1, 76.7)
-    bottom_right = (12.6, 84.7)
+    # top_left = (19.1, 76.7) # fetched till 0.03 precision
+    # bottom_right = (12.6, 84.7) # fetched till 0.03 precision
 
     # Maharashtra
     # top_left = (22.0, 72.6) # fetched till 0.03 precision
     # bottom_right = (15.6, 80.8) # fetched till 0.03 precision
 
+    # Jharkhand
+    # top_left = (25.3, 83.3) # fetched till 0.05 precision
+    # bottom_right = (21.9, 87.9) # fetched till 0.05 precision
+
+    # Haryana
+    # top_left = (30.9, 74.4) # fetched till 0.05 precision
+    # bottom_right = (27.6, 77.6) # fetched till 0.05 precision
+
+    # West Bengal
+    # top_left = (27.2, 85.5) # fetched till 0.05 precision
+    # bottom_right = (21.5, 89.8) # fetched till 0.05 precision
+
+    # Punjab
+    # top_left = (32.5, 73.8) # fetched till 0.03 precision
+    # bottom_right = (29.5, 77.9) # fetched till 0.03 precision
+    
+    # Uttar Pradesh
+    # top_left = (30.4, 77.0) # Ended midway at 0.03 precision
+    # bottom_right = (23.8, 84.6) # Ended midway at 0.03 precision
+
+    # Meghalaya
+    # top_left = (26.1, 89.8) # fetched till 0.05 precision
+    # bottom_right = (25.0, 92.8) # fetched till 0.05 precision
+
+    # Manipur
+    # top_left = (25.6, 92.9) # fetched till 0.05 precision
+    # bottom_right = (23.8, 94.7) # fetched till 0.05 precision
+
+    # Mizoram
+    # top_left = (24.5, 92.2) # fetched till 0.05 precision
+    # bottom_right = (21.9, 93.4) # fetched till 0.05 precision
+
+    # Tripura
+    # top_left = (25.5, 91.1) # fetched till 0.05 precision
+    # bottom_right = (22.9, 92.3) # fetched till 0.05 precision
+
+    # Nagaland
+    # top_left = (27.0, 93.3) # fetched till 0.05 precision
+    # bottom_right = (25.1, 95.2) # fetched till 0.05 precision
+
+    # Goa
+    # top_left = (15.8, 73.6) # fetched till 0.01 precision
+    # bottom_right = (14.9, 74.3) # fetched till 0.01 precision
+
+    # Odisha
+    # top_left = (22.5, 81.3) # fetched till 0.05 precision
+    # bottom_right = (17.8, 87.4) # fetched till 0.05 precision
+
+    # Rajasthan
+    # top_left = (30.1, 69.4) # fetched till 0.05 precision
+    # bottom_right = (23.0, 78.2) # fetched till 0.05 precision
+
+    # Himachal Pradesh
+    # top_left = (33.2, 75.5) # fetched till 0.05 precision
+    # bottom_right = (30.3, 79.0) # fetched till 0.05 precision
+
+    # Uttarakhand
+    # top_left = (31.4, 77.7) # fetched till 0.05 precision
+    # bottom_right = (28.7, 81.0) # fetched till 0.05 precision
+
+    # Puducherry (Pondicherry)
+    # top_left = (11.9, 79.7) # fetched till 0.01 precision
+    # bottom_right = (11.8, 79.8) # fetched till 0.01 precision
+
+    # Sikkim
+    # top_left = (28.1, 88.0) # fetched till 0.01 precision
+    # bottom_right = (27.0, 88.9) # fetched till 0.01 precision
+
+    # Assam
+    # top_left = (28.2, 89.4) # fetched till 0.05 precision
+    # bottom_right = (24.8, 96.0) # fetched till 0.05 precision
+
+    # Arunachal Pradesh
+    # top_left = (29.4, 91.5) # fetched till 0.05 precision
+    # bottom_right = (26.4, 97.4) # fetched till 0.05 precision
+
+    # Chandigarh
+    # top_left = (30.7, 76.7) # fetched till 0.01 precision
+    # bottom_right = (30.6, 76.8) # fetched till 0.01 precision
+
+    # Andaman And Nicobar Islands
+    # top_left = (13.6, 92.2) # fetched till 0.07 precision
+    # bottom_right = (6.7, 93.9) # fetched till 0.07 precision
+
+    # Delhi
+    # top_left = (28.9, 76.8) # fetched till 0.01 precision
+    # bottom_right = (28.4, 77.4) # fetched till 0.01 precision
+
+    # Bihar
+    top_left = (27.6, 83.3)
+    bottom_right = (24.2, 88.3)
 
     api_key = os.getenv('OPENCAGE_API_KEY')
     base_url = 'https://api.opencagedata.com/geocode/v1/json'
 
-    lat_step = 0.07
-    lon_step = 0.07
+    top_left = (26.99, 87.86)
 
-    top_left = (15.18, 76.98)
+    lat_step = 0.01
+    lon_step = 0.01
 
     latitude = top_left[0]
     
@@ -280,9 +347,9 @@ def update_location_data():
             request_count = cache.get('opencage_requested', 0)
             
             if not RetestedCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
-                if request_count <= 20000:
+                if request_count <= 15000:
                     try:
-                        print(f"Querying ({latitude}), ({longitude})")
+                        print(f"Querying Coordinates: ({latitude}, {longitude})")
                         response = requests.get(f"{base_url}?q={latitude}+{longitude}&key={api_key}")
                         response.raise_for_status()                        
                         
@@ -306,15 +373,17 @@ def update_location_data():
                                     state, _ = State.objects.get_or_create(name=state_name)
                                     district, _ = District.objects.get_or_create(name=district_name, state=state)
 
-                                    Place.objects.update_or_create(
-                                        district=district,
-                                        state=state,
-                                        pincode=pincode,
-                                        latitude=data["results"][0]["geometry"]["lat"],
-                                        longitude=data["results"][0]["geometry"]["lng"],
-                                        defaults={"name": place}
-                                    )
-                                    print(f"Place updated for {place}, {district.name}, {state.name}")
+                                    if not Place.objects.filter(name = place, district = district, state = state, pincode = pincode).exists():
+
+                                        Place.objects.create(
+                                            name = place,
+                                            district=district,
+                                            state=state,
+                                            pincode=pincode,
+                                            latitude=data["results"][0]["geometry"]["lat"],
+                                            longitude=data["results"][0]["geometry"]["lng"]
+                                        )
+                                        print(f"Place created for {place}, {district.name}, {state.name}")
                         
                         RetestedCoordinates.objects.create(latitude=latitude, longitude=longitude)
                         
@@ -329,14 +398,11 @@ def update_location_data():
                     print("You have used up your daily API call limit.")
                     break
 
-            # Increment longitude and round for precision
             longitude += lon_step
             longitude = round(longitude, 2)
 
-        # Decrement latitude and round for precision
         latitude -= lat_step
         latitude = round(latitude, 2)
-
 
 def row_generator(csv_data):
     for index, row in csv_data.iterrows():

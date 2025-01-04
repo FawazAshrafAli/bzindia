@@ -103,6 +103,8 @@ class RetestedCoordinates(models.Model):
     latitude = models.FloatField()
     longitude = models.FloatField()
 
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
     def str(self):
         return f"{self.latitude}-{self.longitude}"
     
