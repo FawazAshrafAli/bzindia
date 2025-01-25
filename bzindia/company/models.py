@@ -36,6 +36,7 @@ class Company(models.Model):
     phone2 = models.CharField(max_length=50)
     whatsapp = models.CharField(max_length=50)
     email = models.EmailField(max_length=254)
+    description = models.TextField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
