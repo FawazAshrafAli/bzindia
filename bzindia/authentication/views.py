@@ -3,7 +3,17 @@ from django.views.generic import TemplateView, View, RedirectView
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.contrib import messages
+from django.contrib.auth.models import User
+from django.http import JsonResponse
+from django.core.mail import send_mail
+from django.utils import timezone
+from datetime import timedelta
+from django.conf import settings
 import logging
+from random import randint
+
+from superadmin.views import AdminBaseView
+from .models import EmailVerificationOtp
 
 logger = logging.getLogger(__name__)
 
@@ -118,9 +128,59 @@ class LogoutView(RedirectView):
         return redirect(self.redirect_url)
 
 
+class SendEmailVerificationOtpView(AdminBaseView, View):
+    model = EmailVerificationOtp
+
+    def post(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            otp = randint(100000, 999999)
+            new_email = request.POST.get("new_email")
+
+            if not user or not otp or not new_email:
+                return JsonResponse({"status": "failed", "error_msg": "Bad Request"}, status=400)
+            
+            self.model.objects.update_or_create(user = user, defaults={"otp": otp, "email": new_email})
+
+            subject = "Your OTP Code For Email Verification"
+            message = f"Your OTP code for email verification is {otp}. It is valid for the next 10 minutes."
+            email_from = settings.EMAIL_HOST_USER
+            recipient_list = [new_email]
+
+            send_mail(subject, message, email_from, recipient_list)
+
+            return JsonResponse({"status": "success"}, status=201)
+
+        except Exception as e:
+            logger.exception(f"Error in SendVerificationEmailOtpView of authentication app: {e}")
+            return JsonResponse({"status": "failed", "error_msg": "An unexpected error occured"}, status=500)
 
         
+class VerifyEmailView(AdminBaseView, View):
+    model = EmailVerificationOtp
+
+    def get(self, request, *args, **kwargs):
+        try:
+            otp = request.GET.get("otp")
+            user = request.user
+            username = user.username
+
+            if not otp or not user:
+                return JsonResponse({"status": "failed", "error_msg": "Bad Request"}, status=400)
+            
+            otp_obj = self.model.objects.filter(user = user, otp = otp).first()
+
+            if not otp_obj:
+                return JsonResponse({"status": "failed", "user_msg": "Invalid OTP"}, status=400)
+            
+            if timezone.now() > otp_obj.updated + timedelta(minutes=10):
+                return JsonResponse({"status": "failed", "user_msg": "OTP has expired. Please request a new OTP"}, status=408)
+            
+            return JsonResponse({"status": "success"}, status=200)
+
+        except Exception as e:
+            logger.exception(f"Error in VerifyEmailView of authentication app: {e}")
+            return JsonResponse({"status": "failed", "error_msg": "An unexpected error occured"}, status=500)
+
+
     
-        
-        
-        
