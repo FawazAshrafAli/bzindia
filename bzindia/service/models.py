@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.text import slugify
 
 from company.models import Company
+from locations.models import UniqueState
 
 class Category(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="service_category_company")
@@ -106,3 +107,38 @@ class Service(models.Model):
         db_table = "services"
         ordering = ["name"]
     
+
+class Enquiry(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="service_enquiry_company")
+
+    phone = models.CharField(max_length=20)
+    email = models.EmailField(max_length=254)
+    service = models.ForeignKey(Service, on_delete=models.CASCADE)
+    state = models.ForeignKey(UniqueState, on_delete=models.CASCADE)
+    message = models.TextField()
+
+    slug = models.SlugField(null=True, blank=True)
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.company.name}-{self.service.name}-{self.email}")
+            slug = base_slug
+
+            count = 1
+            while Enquiry.objects.filter(slug = slug).exists():
+                slug = f"{base_slug}-{count}"
+                count += 1
+
+            self.slug = slug
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.company.name}-{self.service.name}-{self.email}"
+    
+    class Meta:
+        db_table = "service_enquiries"
+        ordering = ["-created"]
