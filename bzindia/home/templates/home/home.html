@@ -86,8 +86,36 @@
               </p>
  
               <ul class="row list-default" style="padding:10px 0 20px 0;">
-                <li class="col col-md-6 col-12">passport all Directors</li>
-                <li class="col col-md-6 col-12">Cancelled Cheque of firm or passbook first page </li>
+                {% if company.type.name == "Service" %}
+                {% for category in service_categories %}
+                {% if category.company == company %}
+                <li class="col col-md-6 col-12">{{category.name}}</li>
+                {% endif %}
+                {% endfor %}
+
+                {% elif company.type.name == "Product" %}
+                {% for category in product_categories %}
+                {% if category.company == company %}
+                <li class="col col-md-6 col-12">{{category.name}}</li>
+                {% endif %}
+                {% endfor %}
+
+                {% elif company.type.name == "Education" %}
+                {% for program in course_programs %}
+                {% if program.company == company %}
+                <li class="col col-md-6 col-12">{{program.name}}</li>
+                {% endif %}
+                {% endfor %}
+
+                {% elif company.type.name == "Registration" %}
+                {% for type in registration_types %}
+                {% if type.company == company %}
+                <li class="col col-md-6 col-12">{{type.name}}</li>
+                {% endif %}
+                {% endfor %}
+
+                {% endif %}
+                {% comment %} <li class="col col-md-6 col-12">Cancelled Cheque of firm or passbook first page </li>
                 <li class="col col-md-6 col-12">Photo of all Directors.</li>
                 <li class="col col-md-6 col-12">Name of the business</li>
                 <li class="col col-md-6 col-12">Nature of business</li>
@@ -99,7 +127,7 @@
                 <li class="col col-md-6 col-12">Certificate of incorporation</li>
                 <li class="col col-md-6 col-12">Board Resolution</li>
                 <li class="col col-md-6 col-12">Mobile no and Email id office and all the directors</li>
-                <li class="col col-md-6 col-12">Digital Signature</li>
+                <li class="col col-md-6 col-12">Digital Signature</li> {% endcomment %}
               </ul>
 
               <a href="{% url 'company:company_home' company.slug %}" class="primary_button">Read More</a>
@@ -181,7 +209,30 @@
       <h2>OFFERED SERVICES IN INDIA</h2>
       <div class="offerd-service" style="padding-bottom: 30px;">
       
-<div style="padding: 5px;">
+        {% for service in services %}
+        <div style="padding: 5px;">
+          <div class="position_relative img-scale max_size">
+            <figure class="picher_doc">
+              <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+              <div class="opacity-medium bg-extra-black"></div>
+              <div class="date_top">
+                <span>{{service.company}}</span>
+              </div>
+              <div class="inner_text">
+                <h3 class="show_tital">{{service.name}}</h3>
+
+                <p class="display_block">
+                  {{service.sub_category.name}}
+                </p>
+              
+                <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+              </div>
+            </figure>
+          </div>
+        </div>
+        {% endfor %}
+
+{% comment %} <div style="padding: 5px;">
 <div class="position_relative img-scale max_size">
   <figure class="picher_doc">
     <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
@@ -279,27 +330,7 @@
       <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
     </div>
   </figure>
-</div></div>
-
-<div style="padding: 5px;">
-<div class="position_relative img-scale max_size">
-  <figure class="picher_doc">
-    <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
-    <div class="opacity-medium bg-extra-black"></div>
-    <div class="date_top">
-      <span>Office Building</span>
-    </div>
-    <div class="inner_text">
-      <h3 class="show_tital">Big bugets for startup</h3>
-
-      <p class="display_block">
-        A Rich Heritage &amp; Brand History
-      </p>
-    
-      <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
-    </div>
-  </figure>
-</div></div>
+</div></div> {% endcomment %}
 
 
       </div>
