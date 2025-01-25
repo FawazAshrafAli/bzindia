@@ -4,6 +4,27 @@
 
 {% block title %}Add {{current_company.name}} Course{% endblock title %}
 
+{% block styles %}
+<style>
+    .add-button {
+        color: green;
+        background: #fff;
+        border: none;
+        box-shadow: 0 0 3px silver;
+        width: 50px;
+    }
+
+    .add-button:hover {
+        color: #fff;
+        background: linear-gradient(to bottom, lime, green, darkgreen);
+    }
+
+    .add-button:active {
+        background: darkgreen;
+    }
+</style>
+{% endblock styles %}
+
 {% block content %}
 			
 <!-- Page Content -->
@@ -41,12 +62,12 @@
                 {% csrf_token %}
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title mb-0" >{{current_company.name}} Course Name</h4>
+                        <h4 class="card-title mb-0" >Course Name</h4>
                     </div>
                     <div class="card-body">
-                        <div class="form-row">
-                            <div class="col-md-12 mb-3">
-                                <label for="name-input" >{{current_company.name}} Course Name <span class="text-danger">*</span></label>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name-input" >Course Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="name-input" placeholder="Course Name" name="name" required>
                                 <div class="invalid-feedback">
                                     Please enter a name for the course.
@@ -55,9 +76,20 @@
                                     Looks good!
                                 </div>
                             </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="name-input" >Image <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" id="image-input" name="image" required>
+                                <div class="invalid-feedback">
+                                    Image is required.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
                             
                         </div>
-                        <div class="form-row">
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="category-dropdown">Program <span class="text-danger">*</span></label>
                                 <select class="form-control" id="program-dropdown" name="program" required>
@@ -86,9 +118,9 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-row">
+                        <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label for="brand-dropdown">Course Mode <span class="text-danger">*</span></label>
+                                <label for="mode-dropdown">Course Mode <span class="text-danger">*</span></label>
                                 <select class="form-control" id="mode-dropdown" name="mode" required>
                                     <option value="" hidden disabled selected>Select Course Mode</option>                                   
                                     <option value="Online">Online</option>
@@ -102,7 +134,7 @@
                                 </div>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label for="sku-input">Course Duration</label>
+                                <label for="duration-input">Course Duration</label>
                                 <input type="number" class="form-control" id="duration-input" name="duration" placeholder="Course Duration (in months)">
                                 <div class="invalid-feedback">
                                     Please enter a valid course dutaion.
@@ -121,14 +153,21 @@
                                     Looks good!
                                 </div>
                             </div>
+                        </div>                        
+
+                        <div class="form-group row">
+                            <div class="col-sm-12">
+                                <label class="col-form-label">Summary </label>
+                                <textarea class="form-control" rows="3" id="summary-input" name="summary" placeholder="Summary"></textarea>
+                            </div>
                         </div>
 
                         <div class="form-group row">
                             <div class="col-sm-12">
                                 <label class="col-form-label">Description </label>
-                                <textarea class="form-control" rows="3" id="description" name="description" placeholder="Description"></textarea>
+                                <textarea class="froala-editor" rows="3" id="description-input" name="description" placeholder="Description"></textarea>
                             </div>
-                        </div>
+                        </div>                        
                     </div>
                 </div>                
 
@@ -340,7 +379,9 @@
             const program = $(this).val();
 
             getSpecializations(program);
-        });        
+        });
+        
+        intializeFroala();        
     })
 </script>
 {% endblock scripts %}

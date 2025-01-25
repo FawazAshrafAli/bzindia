@@ -82,7 +82,7 @@
 												</td>
 												<td>
 													<a href="{% url 'superadmin:company' company.slug %}" class="avatar"><img alt="" src="{% if company.favicon %}{{company.favicon.url}}{% else %}{% static 'assets/img/c-logo2.png' %}{% endif %}"></a>
-													<a href="{% url 'superadmin:company' company.slug %}">{{company.name}}</a>
+													<a href="{% url 'superadmin:company' company.slug %}" title="{{company.description}}">{{company.name}}</a>
 												</td>
 												<td>{{company.type.name}}</td>
 												<td>{{company.phone1}}</td>

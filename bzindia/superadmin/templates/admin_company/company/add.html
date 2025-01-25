@@ -44,7 +44,7 @@
                         <h4 class="card-title mb-0">Company Name</h4>
                     </div>
                     <div class="card-body">
-                        <div class="form-row">
+                        <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label for="company-input">Company Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="company-input" placeholder="Company Name" name="name" required>
@@ -57,7 +57,7 @@
                             </div>
                             
                         </div>
-                        <div class="form-row">
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="company-type-dropdown">Company Type <span class="text-danger">*</span></label>
                                 <select class="form-control" id="company-type-dropdown" name="type" required>
@@ -85,7 +85,7 @@
                             </div>                                                        
                         </div>
                         
-                        <div class="form-row">
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="favicon-input">Fav Icon <span class="text-danger">*</span></label>
                                 <input type="file" class="form-control" id="favicon-input" name="favicon" required>
@@ -101,6 +101,19 @@
                                 <input type="file" class="form-control" id="logo-input" name="logo" required>
                                 <div class="invalid-feedback">
                                     Please provide logo image.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>                            
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="description-input">Description <span class="text-danger">*</span></label>
+                                <textarea name="description" id="description-input" placeholder="description" required></textarea>
+                                <div class="invalid-feedback">
+                                    Please provide favicon image.
                                 </div>
                                 <div class="valid-feedback">
                                     Looks good!

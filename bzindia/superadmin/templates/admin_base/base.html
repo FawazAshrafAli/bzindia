@@ -52,6 +52,8 @@
 			<script src="assets/js/html5shiv.min.js"></script>
 			<script src="assets/js/respond.min.js"></script>
 		<![endif] -->
+		<!-- Froala Editor CSS -->
+		<link href='https://cdn.jsdelivr.net/npm/froala-editor@4.0.10/css/froala_editor.pkgd.min.css' rel='stylesheet' type='text/css' />
 		{% block styles %}{% endblock styles %}
     </head>
     <body id="skin-color" class="inter">
@@ -326,7 +328,7 @@
 						</a>
 						<div class="dropdown-menu">
 							<a class="dropdown-item" href="profile.html">My Profile</a>
-							<a class="dropdown-item" href="settings.html">Settings</a>
+							<a class="dropdown-item" href="{% url 'superadmin:settings' %}">Settings</a>
 							<a class="dropdown-item" href="{% url 'authentication:logout' %}">Logout</a>
 						</div>
 					</li>
@@ -338,7 +340,7 @@
 					<a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
 					<div class="dropdown-menu dropdown-menu-right">
 						<a class="dropdown-item" href="profile.html">My Profile</a>
-						<a class="dropdown-item" href="settings.html">Settings</a>
+						<a class="dropdown-item" href="{% url 'superadmin:settings' %}">Settings</a>
 						<a class="dropdown-item" href="{% url 'authentication:logout' %}">Logout</a>
 					</div>
 				</div>
@@ -374,7 +376,7 @@
 							</li>
 							<li> 
 								<a href="#" {% if home_page %} class="active" {% endif %} ><i class="feather-home"></i> <span>Home</span></a>
-							</li>							
+							</li>
 							
 							{% comment %} <li> 
 								<a href="{% url 'superadmin:companies' %}" {% if company_page %} class="active" {% endif %} ><i class="fa fa-building"></i> <span>Company</span></a>
@@ -402,18 +404,13 @@
 									{% elif course_program_page %}
 									<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_course_program_modal">Add Course Program</a></li>
 									{% elif course_page %}
-									<li><a href="{% url 'superadmin:add_course' current_company.slug %}">Add Course</a></li>
+									<li><a {% if add_course_page %}class="active"{% endif %} href="{% url 'superadmin:add_course' current_company.slug %}">Add Course</a></li>
 									{% elif course_specialization_page %}
 									<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_course_specialization_modal">Add Course Specialization</a></li>
+									{% elif course_detail_page %}
+									<li><a {% if course_detail_page %}class="active"{% endif %} href="{% url 'superadmin:add_course_details' current_company.slug %}">Add Course Detail</a></li>
 									{% endif %}									
-									
-									{% comment %} <li class="submenu">												
-										<a href="javascript:void(0);" {% if company_type_page %} class="active subdrop" {% endif %}> <span> Company Type</span> <span class="menu-arrow"></span></a>
-										<ul class="sub-menus" {% if company_type_page %} style="display: block;" {% endif %}>
-											<li><a href="{% url 'superadmin:company_types' %}" {% if company_type_page %} class="active" {% endif %}>List Company Types</a></li>
-											<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_company_type" >Add Company Type</a></li>
-										</ul>
-									</li> {% endcomment %}
+																	
 								</ul>
 							</li>
 
@@ -424,111 +421,11 @@
 									<li><a href="{% url 'superadmin:company_types' %}" {% if company_type_list_page %} class="active" {% endif %}>Company Types</a></li>
 									<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_company_type">Add Company Type</a></li>
 								</ul>
+							</li>							
+
+							<li> 
+								<a href="{% url 'superadmin:directories' %}" {% if directory_page %} class="active" {% endif %} ><i class="feather-book"></i> <span>Directories</span></a>
 							</li>
-
-							{% comment %} <li class="submenu">
-								<a href="javascript:void(0);" {% if company_page or company_type_page %} class="active" {% endif %}><i class="fa fa-building"></i> <span>Company</span> <span class="menu-arrow"></span></a>
-								<ul class="sub-menus">
-									
-									<li class="submenu">												
-										<a href="javascript:void(0);" {% if company_list_page %} class="active" {% endif %}> <span> Companies</span> <span class="menu-arrow"></span></a>
-										<ul class="sub-menus">
-											<li><a href="{% url 'superadmin:companies' %}" {% if company_list_page %} class="active" {% endif %}>List Companies</a></li>
-											<li><a href="javascript:void(0);">Add Company</a></li>
-										</ul>
-									</li>
-									
-									<li class="submenu">												
-										<a href="javascript:void(0);" {% if company_type_page %} class="active subdrop" {% endif %}> <span> Company Type</span> <span class="menu-arrow"></span></a>
-										<ul class="sub-menus" {% if company_type_page %} style="display: block;" {% endif %}>
-											<li><a href="{% url 'superadmin:company_types' %}" {% if company_type_page %} class="active" {% endif %}>List Company Types</a></li>
-											<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_company_type" >Add Company Type</a></li>
-										</ul>
-									</li>
-								</ul>
-							</li> {% endcomment %}
-
-							{% comment %} <li class="submenu">
-								<a href="javascript:void(0);" {% if product_company_page %} class="active" {% endif %}><i class="feather-box"></i> <span>Product Companies</span> <span class="menu-arrow"></span></a>
-								<ul class="sub-menus">
-									{% for company in product_companies %}
-									<li class="submenu">										
-										<a href="javascript:void(0);" {% if company.slug == product_company.slug %} class="active subdrop" {% endif %}> <span>{{company.name}}</span> <span class="menu-arrow"></span></a>
-										<ul class="sub-menus" {% if company.slug == product_company.slug %} style="display: block;" {% endif %}>
-											<li class="submenu">												
-												<a href="javascript:void(0);" {% if company.slug == product_company.slug and products_page %} class="active subdrop" {% endif %}> <span> Products</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus">
-													<li><a href="{% url 'superadmin:products' company.slug %}" {% if company.slug == product_company.slug and products_page %} class="active" {% endif %}>List Products</a></li>
-													<li><a href="javascript:void(0);">Add Product</a></li>
-												</ul>
-											</li>
-											<li class="submenu">												
-												<a href="javascript:void(0);" {% if company.slug == product_company.slug and brands_page %} class="active subdrop" {% endif %}> <span> Brands</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus" {% if company.slug == product_company.slug and brands_page %} style="display: block;" {% endif %}>
-													<li><a href="{% url 'superadmin:brands' company.slug %}" {% if company.slug == product_company.slug and brands_page %} class="active" {% endif %}>List Brands</a></li>
-													<li><a href="javascript:void(0);" class="add-brand-toggle-btn" data-bs-toggle="modal" data-bs-target="#add_product_brand" data-company-slug="{{company.slug}}">Add Brand</a></li>
-												</ul>
-											</li>
-											<li class="submenu">												
-												<a href="javascript:void(0);" {% if company.slug == product_company.slug and categories_page %} class="active subdrop" {% endif %}> <span> Categories</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus">
-													<li><a href="{% url 'superadmin:categories' company.slug %}">List Categories</a></li>
-													<li><a href="javascript:void(0);" class="add-category-toggle-btn" data-bs-toggle="modal" data-bs-target="#add_product_category" data-company-slug="{{company.slug}}">Add Category</a></li>
-												</ul>
-											</li>
-											<li class="submenu">												
-												<a href="javascript:void(0);" {% if company.slug == product_company.slug and sub_categories_page %} class="active subdrop" {% endif %}> <span> Sub Categories</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus" {% if company.slug == product_company.slug and sub_categories_page %} style="display: block;" {% endif %}>
-													<li><a href="{% url 'superadmin:sub_categories' company.slug %}" {% if company.slug == product_company.slug and sub_categories_page %} class="active" {% endif %}>List Sub Categories</a></li>
-													<li><a href="javascript:void(0);" class="add-sub-category-toggle-btn" data-bs-toggle="modal" data-bs-target="#add_product_sub_category" data-company-slug="{{company.slug}}">Add Sub Category</a></li>
-												</ul>
-											</li>
-											<li class="submenu">												
-												<a href="javascript:void(0);" {% if company.slug == product_company.slug and colors_page %} class="active subdrop" {% endif %}> <span> Colors</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus">
-													<li><a href="{% url 'superadmin:colors' company.slug %}">List Colors</a></li>
-													<li><a href="javascript:void(0);" class="add-color-toggle-btn" data-bs-toggle="modal" data-bs-target="#add_product_color" data-company-slug="{{company.slug}}">Add Color</a></li>
-												</ul>
-											</li>
-											<li class="submenu">												
-												<a href="javascript:void(0);"> <span> Sizes</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus">
-													<li><a href="javascript:void(0);">List Sizes</a></li>
-													<li><a href="javascript:void(0);">Add Size</a></li>
-												</ul>
-											</li>
-										</ul>
-									</li>
-									{% endfor %}							
-								</ul>
-							</li> {% endcomment %}
-							
-							{% comment %} <li class="submenu">
-								<a href="javascript:void(0);" {% if education_company_page %} class="active" {% endif %}><i class="feather-book-open"></i> <span>Education Companies</span> <span class="menu-arrow"></span></a>
-								<ul class="sub-menus">
-									{% for company in education_companies %}
-									<li class="submenu">										
-										<a href="javascript:void(0);" {% if company.slug == education_company.slug %} class="active subdrop" {% endif %}> <span>{{company.name}}</span> <span class="menu-arrow"></span></a>
-										<ul class="sub-menus" {% if company.slug == education_company.slug %} style="display: block;" {% endif %}>
-											<li class="submenu">												
-												<a href="javascript:void(0);" {% if company.slug == education_company.slug and course_page %} class="active subdrop" {% endif %}> <span> Course</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus" {% if company.slug == education_company.slug and course_page %} style="display: block;" {% endif %}>
-													<li><a href="{% url 'superadmin:courses' company.slug %}" {% if company.slug == education_company.slug and course_list_page %} class="active" {% endif %}>List Courses</a></li>
-													<li><a href="{% url 'superadmin:add_course' company.slug %}" {% if company.slug == education_company.slug and add_course_page %} class="active" {% endif %}>Add Course</a></li>
-												</ul>
-											</li>
-											<li class="submenu">												
-												<a href="javascript:void(0);" {% if company.slug == education_company.slug and program_page %} class="active subdrop" {% endif %}> <span> Program</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus" {% if company.slug == education_company.slug and program_page %} style="display: block;" {% endif %}>
-													<li><a href="{% url 'superadmin:course_programs' company.slug %}" {% if company.slug == education_company.slug and program_list_page %} class="active" {% endif %}>List Programs</a></li>
-													<li><a href="{% url 'superadmin:add_course' company.slug %}" {% if company.slug == education_company.slug and add_program_page %} class="active" {% endif %}>Add Program</a></li>
-												</ul>
-											</li>											
-										</ul>
-									</li>
-									{% endfor %}							
-								</ul>
-							</li> {% endcomment %}
 
 							<li class="submenu">
 								<a href="javascript:void(0);"><i class="feather-book"></i> <span>Directory</span> <span class="menu-arrow"></span></a>
@@ -567,46 +464,28 @@
 											<li class="submenu">												
 												<a href="javascript:void(0);"> <span> TouristAttraction</span> <span class="menu-arrow"></span></a>
 												<ul class="sub-menus">
-													<li><a href="{% url 'superadmin:tourist_attractions' %}">List TouristAttractions</a></li>
+													<li><a href="{% url 'superadmin:destinations' %}">List TouristAttractions</a></li>
 													<li><a href="javascript:void(0);">Add TouristAttraction</a></li>
 												</ul>
-											</li>
-											<!-- <li class="submenu">												
-												<a href="javascript:void(0);"> <span> Categories</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus">
-													<li><a href="#">List Categories</a></li>
-													<li><a href="javascript:void(0);" class="add-category-toggle-btn" data-bs-toggle="modal" data-bs-target="#add_product_category" data-company-slug="{{company.slug}}">Add Category</a></li>
-												</ul>
-											</li> -->
-											<!-- <li class="submenu">												
-												<a href="javascript:void(0);"> <span> Sub Categories</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus">
-													<li><a href="#">List Sub Categories</a></li>
-													<li><a href="javascript:void(0);" class="add-sub-category-toggle-btn" data-bs-toggle="modal" data-bs-target="#add_product_sub_category" data-company-slug="{{company.slug}}">Add Sub Category</a></li>
-												</ul>
-											</li> -->
-											<!-- <li class="submenu">												
-												<a href="javascript:void(0);"> <span> Colors</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus">
-													<li><a href="#">List Colors</a></li>
-													<li><a href="javascript:void(0);" class="add-color-toggle-btn" data-bs-toggle="modal" data-bs-target="#add_product_color" data-company-slug="{{company.slug}}">Add Color</a></li>
-												</ul>
-											</li> -->
-											<!-- <li class="submenu">												
-												<a href="javascript:void(0);"> <span> Sizes</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus">
-													<li><a href="javascript:void(0);">List Sizes</a></li>
-													<li><a href="javascript:void(0);">Add Size</a></li>
-												</ul>
-											</li> -->
+											</li>											
 										</ul>
 										<li><a href="javascript:void(0);"> <span>Add Directory Type</span></a></li>
 									</li>
 								</ul>
 							</li>
+
+							<li class="submenu">
+								<a href="javascript:void(0);" {% if custom_page %}class="active"{% endif %}><i class="feather-file"></i> <span>Custom Pages</span> <span class="menu-arrow"></span></a>
+								<ul class="sub-menus">									
+									<li class="submenu">										
+										<li><a href="{% url 'superadmin:custom_pages' %}" {% if custom_page %}class="active"{% endif %}> <span>Custom Pages</span></a></li>
+										<li><a href="{% url 'superadmin:add_custom_page' %}"> <span>Add Custom Page</span></a></li>
+									</li>
+								</ul>
+							</li>
 														
 							<li> 
-								<a href="settings.html"><i class="feather-settings"></i> <span>Settings</span></a>
+								<a href="{% url 'superadmin:settings' %}"><i class="feather-settings"></i> <span>Settings</span></a>
 							</li>							
 						</ul>
 					</div>
@@ -1065,13 +944,13 @@
 		<!-- Chart JS -->
 		<script src="{% static 'assets/plugins/morris/morris.min.js' %}"></script>
 		<script src="{% static 'assets/plugins/raphael/raphael.min.js' %}"></script>
-		<script src="{% static 'assets/js/chart.js' %}"></script>
-		<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
-		<script src="{% static 'assets/js/chartsLine.js' %}"> </script>        								
+		{% comment %} <script src="{% static 'assets/js/chart.js' %}"></script> {% endcomment %}
+		{% comment %} <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script> {% endcomment %}
+		{% comment %} <script src="{% static 'assets/js/chartsLine.js' %}"></script>        								 {% endcomment %}
         		
-		<script src="{% static 'assets/js/linebar.min.js' %}"></script>
-		<script src="{% static 'assets/js/piechart.js' %}"></script>
-		<script src="{% static 'assets/js/apex.min.js' %}"></script>
+		{% comment %} <script src="{% static 'assets/js/linebar.min.js' %}"></script> {% endcomment %}
+		{% comment %} <script src="{% static 'assets/js/piechart.js' %}"></script> {% endcomment %}
+		{% comment %} <script src="{% static 'assets/js/apex.min.js' %}"></script> {% endcomment %}
         				
 
         <!-- Select2 JS -->
@@ -1093,7 +972,7 @@
 		<!-- Custom JS -->
 		<script src="{% static 'assets/js/app.js' %}"></script>
 
-        <script src="{% static 'assets/js/dynamicActive.js' %}"></script>
+        <!-- <script src="{% static 'assets/js/dynamicActive.js' %}"></script> -->
 		
 		<script>
 			$(document).ready(() => {
@@ -1364,5 +1243,18 @@
 			
 
 		{% block scripts %}{% endblock scripts %}
+		<!-- Froala Editor JS -->
+		<script type='text/javascript' src='https://cdn.jsdelivr.net/npm/froala-editor@latest/js/froala_editor.pkgd.min.js'></script>
+
+		<script>
+			function intializeFroala() {
+				new FroalaEditor('.froala-editor', {
+					// Options (optional)
+					toolbarInline: false,
+					placeholderText: 'Start typing here...',
+					charCounterCount: true,
+				});
+			}
+		</script>	
     </body>
 </html>

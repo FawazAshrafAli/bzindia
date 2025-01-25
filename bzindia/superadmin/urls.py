@@ -13,6 +13,7 @@ from .views import (
     AddCourseView, CourseListView, RemoveCourseView, UpdateCourseView,
     CourseProgramListView, AddCourseProgramView, RemoveCourseProgramView, UpdateCourseProgramView,
     CourseSpecializationListView, AddCourseSpecializationView, RemoveCourseSpecializationView, UpdateCourseSpecializationView,
+    ListCourseEnquiryView, AddCourseDetailView, CourseDetailsListView, CourseDetailView,
 
     # Service Company
     ListServiceView, AddServiceView, RemoveServiceView, UpdateServiceView,
@@ -24,9 +25,21 @@ from .views import (
     ListRegistrationTypeView, AddRegistrationTypeView, RemoveRegistrationTypeView, UpdateRegistrationTypeView,
     ListRegistrationSubTypeView, AddRegistrationSubTypeView, RemoveRegistrationSubTypeView, UpdateRegistrationSubTypeView,
 
-    ListPostOfficeView, ListBankView, ListCourtView, ListPoliceStationView, ListTouristAttractionView,
+    # Directory
+    BaseDirectoryView,
+    ListPostOfficeView, ListBankView, ListCourtView, ListPoliceStationView, ListDestinationView,
 
-    CompanyView
+    CompanyView,
+
+    SettingsView, UpdatePasswordView, UpdateUserDetailView,
+
+    # Custom pages
+    AddCustomPageView, AddAboutUsPageView, AddContactUsPageView, AddFaqPageView,
+    AddPrivacyPolicyPageView, AddTermsAndConditionsPageView,
+    BaseCustomPageView, ListAboutUsView, ListContactUsView, ListFaqView,
+    ListPrivacyPolicyView, ListTermsAndConditionsView, AddShippingAndDeliveryPolicyPageView,
+    ListShippingAndDeliveryPolicyView, ListCancellationAndRefundPolicyView,
+    AddCancellationAndRefundPolicyPageView
     )
 
 app_name = "superadmin"
@@ -71,6 +84,11 @@ urlpatterns = [
     path('courses/<str:slug>', CourseListView.as_view(), name="courses"),
     path('remove_course/<str:slug>/<str:course_slug>/', RemoveCourseView.as_view(), name="remove_course"),
     path('update_course/<str:slug>/<str:course_slug>/', UpdateCourseView.as_view(), name="update_course"),
+    path('course_enquiries/<str:slug>', ListCourseEnquiryView.as_view(), name="course_enquiries"),
+
+    path('add_course_details/<str:slug>', AddCourseDetailView.as_view(), name="add_course_details"),
+    path('course_details/<str:slug>', CourseDetailsListView.as_view(), name="course_details"),
+    path('course_detail/<str:slug>/<str:course_slug>', CourseDetailView.as_view(), name="course_detail"),
 
     path('course_programs/<str:slug>', CourseProgramListView.as_view(), name="course_programs"),
     path('add_course_program/<str:slug>', AddCourseProgramView.as_view(), name="add_course_program"),
@@ -116,13 +134,37 @@ urlpatterns = [
 
     # Directory
 
-    path('post_offices/', ListPostOfficeView.as_view(), name="post_offices"),
+    path('directories/', BaseDirectoryView.as_view(), name="directories"),
 
-    path('banks/', ListBankView.as_view(), name="banks"),
+    path('directories/post_offices/', ListPostOfficeView.as_view(), name="post_offices"),
 
-    path('courts/', ListCourtView.as_view(), name="courts"),
+    path('directories/banks/', ListBankView.as_view(), name="banks"),
 
-    path('police_stations/', ListPoliceStationView.as_view(), name="police_stations"),
+    path('directories/courts/', ListCourtView.as_view(), name="courts"),
 
-    path('tourist_attractions/', ListTouristAttractionView.as_view(), name="tourist_attractions"),
+    path('directories/police_stations/', ListPoliceStationView.as_view(), name="police_stations"),
+
+    path('directories/destinations/', ListDestinationView.as_view(), name="destinations"),
+
+    # Settings
+    path('settings/', SettingsView.as_view(), name="settings"),
+    path('update_password/', UpdatePasswordView.as_view(), name="update_password"),
+    path('update_user_details/', UpdateUserDetailView.as_view(), name="update_user_details"),
+
+    path('add_custom_page/', AddCustomPageView.as_view(), name="add_custom_page"),
+    path('add_about_us/', AddAboutUsPageView.as_view(), name="add_about_us"),
+    path('add_contact_us/', AddContactUsPageView.as_view(), name="add_contact_us"),
+    path('add_faq/', AddFaqPageView.as_view(), name="add_faq"),
+    path('add_privacy_policy/', AddPrivacyPolicyPageView.as_view(), name="add_privacy_policy"),
+    path('add_terms_and_conditions/', AddTermsAndConditionsPageView.as_view(), name="add_terms_and_conditions"),
+    path('add_shipping_and_delivery_policy/', AddShippingAndDeliveryPolicyPageView.as_view(), name="add_shipping_and_delivery_policy"),
+    path('add_cancellation_and_refund_policy/', AddCancellationAndRefundPolicyPageView.as_view(), name="add_cancellation_and_refund_policy"),
+    path('custom_pages/', BaseCustomPageView.as_view(), name="custom_pages"),
+    path('about_us/', ListAboutUsView.as_view(), name="about_us"),
+    path('contact_us/', ListContactUsView.as_view(), name="contact_us"),
+    path('faq/', ListFaqView.as_view(), name="faq"),
+    path('privacy_policies/', ListPrivacyPolicyView.as_view(), name="privacy_policies"),
+    path('terms_and_conditions/', ListTermsAndConditionsView.as_view(), name="terms_and_conditions"),
+    path('shipping_and_delivery_policies/', ListShippingAndDeliveryPolicyView.as_view(), name="shipping_and_delivery_policies"),
+    path('cancellation_and_refund_policies/', ListCancellationAndRefundPolicyView.as_view(), name="cancellation_and_refund_policies"),
 ]
