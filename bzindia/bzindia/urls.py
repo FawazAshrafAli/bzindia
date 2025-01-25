@@ -30,6 +30,10 @@ urlpatterns = [
     path('locations/', include('locations.urls', namespace="locations")),
     path('customer/', include('customer.urls', namespace="customer")),
     path('product/', include('product.urls', namespace="product")),
+    path('directory/', include('directory.urls', namespace="directory")),
+    path('service/', include('service.urls', namespace="service")),
+    path('education/', include('educational.urls', namespace="education")),
+    path('registration/', include('registration.urls', namespace="registration")),
 
     # api-urls
     path('company_api/', include('company_api.urls', namespace="company_api")),
