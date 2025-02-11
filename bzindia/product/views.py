@@ -1,7 +1,7 @@
 from django.db.models.query import QuerySet
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, Http404
-from django.views.generic import ListView
+from django.views.generic import ListView, View
 from django.db.models import Q, Count
 import logging
 
@@ -9,6 +9,52 @@ from .models import Product, Category, SubCategory, Brand, Color, Size
 from home.views import BaseHomeView
 
 logger = logging.getLogger(__name__)
+
+class GetSubCategoriesView(View):
+    model = SubCategory
+
+    def get(self, request, *args, **kwargs):
+        try:
+            if request.headers.get('x-requested-with') != "XMLHttpRequest":
+                return JsonResponse({"status": "failed", "error": "Method not allowed"}, status=405)    
+            
+            company_slug = request.GET.get("company_slug")
+            category_slug = request.GET.get("category_slug")
+
+            if not company_slug or not category_slug:
+                return JsonResponse({"status": "failed", "error": "Bad Request"}, status=400)
+            
+            sub_categories = list(self.model.objects.filter(company__slug = company_slug, category__slug = category_slug).values("name", "slug"))
+
+            return JsonResponse({"status": "success", "sub_categories": sub_categories}, status=200)
+
+        except Exception as e:
+            logger.exception(f"Error in get function of GetSubCategoriesView in product app: {e}")
+            return JsonResponse({"status": "failed", "error": "Some unexpected error occured."}, status=500)
+
+
+class GetProductsView(View):
+    model = Product
+
+    def get(self, request, *args, **kwargs):
+        try:
+            if request.headers.get('x-requested-with') != "XMLHttpRequest":
+                return JsonResponse({"status": "failed", "error": "Method not allowed"}, status=405)    
+            
+            company_slug = request.GET.get("company_slug")
+            sub_category_slug = request.GET.get("sub_category_slug")
+
+            if not company_slug or not sub_category_slug:
+                return JsonResponse({"status": "failed", "error": "Bad Request"}, status=400)
+            
+            products = list(self.model.objects.filter(company__slug = company_slug, sub_category__slug = sub_category_slug).values("name", "slug"))
+
+            return JsonResponse({"status": "success", "products": products}, status=200)
+
+        except Exception as e:
+            logger.exception(f"Error in get function of GetProductsView in product app: {e}")
+            return JsonResponse({"status": "failed", "error": "Some unexpected error occured."}, status=500)
+
 
 class ProductListView(BaseHomeView, ListView):
     model = Product
@@ -329,3 +375,4 @@ class ProductListView(BaseHomeView, ListView):
             return JsonResponse({"error": error_msg})
 
         return super().get(request, *args, **kwargs)
+    
