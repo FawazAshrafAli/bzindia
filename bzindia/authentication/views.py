@@ -49,9 +49,12 @@ class LoginView(TemplateView):
             else:  
                 user = authenticate(request, username = username.strip(), password = password)
 
-                if user is not None and user.is_superuser:
+                if user is not None:
                     login(request, user)
-                    url = self.success_url
+                    if user.is_superuser:
+                        url = self.success_url
+                    else:
+                        url = reverse_lazy('customer:home')
                 else:
                     error_message = "Failed! Invalid credentials."
                 
