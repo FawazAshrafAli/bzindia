@@ -271,6 +271,7 @@
 
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
   <link rel="stylesheet" href="{% static 'css/easy-responsive-tabs.css' %}">
+  {% block styles %}{% endblock styles %}  
 </head>
 
 <body>
@@ -725,6 +726,14 @@
      
      
     <script src="{% static 'easy-responsive-tabs.js' %}"></script>
+
+    <script>
+			$('.btn-secondary').click(function () {
+				if ($(this).html() == "Cancel") {
+					$('.btn-close').click();
+				}
+			});
+		</script>
      
     {% block scripts %}{% endblock scripts %}
   
