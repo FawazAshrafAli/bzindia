@@ -9,7 +9,7 @@ from datetime import timedelta
 import logging
 
 from company.models import Company
-from educational.models import Course, Program, Specialization, Faq as CourseFaq, Enquiry as EducationEnquiry
+from educational.models import Course, Program, Specialization, Faq as CourseFaq, Enquiry as CourseEnquiry
 from product.models import Category as ProductCategory, Brand, Size, Color, Product, SubCategory as ProductSubCategory
 from service.models import Service, Category as ServiceCategory, SubCategory as ServiceSubCategory, Enquiry as ServiceEnquiry, Faq as ServiceFaq
 from registration.models import RegistrationDetail, RegistrationType, RegistrationSubType, Faq as RegistrationFaq, Enquiry as RegistrationEnquiry
@@ -3026,5 +3026,49 @@ class DeleteCourseFaqView(BaseEducationFaqView, View):
         except Exception as e:
             logger.exception(f"Error in post function of DeleteCourseFaqView of customer app: {e}")
             messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+
+
+class ListCourseEnquiryView(BaseCustomerView, ListView):
+    model = CourseEnquiry
+    queryset = model.objects.none()
+    context_object_name = "enquiries"
+    template_name = "customer_education/enquiry/list.html"
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company)
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of ListCourseEnquiryView of customer app: {e}")
+            return self.queryset
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["course_enquiry_page"] = True
+
+        return context
+
+class DeleteCourseEnquiryView(BaseCustomerView, View):
+    model = CourseEnquiry
+    success_url = redirect_url = reverse_lazy('customer:course_enquiries')        
+    slug_url_kwarg = 'slug'
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(CourseEnquiry, slug = self.kwargs.get(self.slug_url_kwarg))
+            self.object.delete()
+
+            messages.success(request, "Success! Delete Course Enquiry")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid Course Enquiry")
+
+        except Exception as e:
+            messages.error(request, "Failed! An unexpected error occurred")
+            logger.exception(f"Error in post function of DeleteCourseEnquiryView of customer app: {e}")
 
         return redirect(self.redirect_url)

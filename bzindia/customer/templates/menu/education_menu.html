@@ -23,5 +23,5 @@
     </ul>
 </li>
 <li>
-    <a href="#" {% if course_enquiry_page %}class="active subdrop"{% endif %}><i class="feather-file"></i> <span> Enquiries</span></a>
+    <a href="{% url 'customer:course_enquiries' %}" {% if course_enquiry_page %}class="active subdrop"{% endif %}><i class="feather-file"></i> <span> Enquiries</span></a>
 </li>

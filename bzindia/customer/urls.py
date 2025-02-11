@@ -26,7 +26,8 @@ from .views import (CustomerHomeView,
                     # Education Company
                     CourseListView, AddCourseView, UpdateCourseView, DeleteCourseView,
                     ListCourseProgramView, ListCourseSpecializationView,
-                    AddCourseFaqView, ListCourseFaqView, UpdateCourseFaqView, DeleteCourseFaqView
+                    AddCourseFaqView, ListCourseFaqView, UpdateCourseFaqView, DeleteCourseFaqView,
+                    ListCourseEnquiryView, DeleteCourseEnquiryView,
                     )
 
 app_name = "customer"
@@ -130,4 +131,7 @@ urlpatterns = [
     path('course_faqs/', ListCourseFaqView.as_view(), name="course_faqs"),
     path('update_course_faq/<str:slug>', UpdateCourseFaqView.as_view(), name="update_course_faq"),
     path('delete_course_faq/<str:slug>', DeleteCourseFaqView.as_view(), name="delete_course_faq"),
+
+    path('course_enquiries/', ListCourseEnquiryView.as_view(), name="course_enquiries"),
+    path('delete_course_enquiry/<str:slug>', DeleteCourseEnquiryView.as_view(), name="delete_course_enquiry"),
 ]
