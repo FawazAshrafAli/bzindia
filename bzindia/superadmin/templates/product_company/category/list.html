@@ -92,12 +92,55 @@
 </div><!-- modal -->
 
 <!-- Product Category Modal (Start) -->
-<div class="modal fade" id="update_category" tabindex="-1" role="dialog" aria-modal="true">
+<div class="modal fade" id="add_product_category" tabindex="-1" role="dialog" aria-modal="true">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 
 			<div class="modal-header">
 				<h4 class="modal-title text-center">Add Product Category</h4>
+				<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
+			  </div>
+
+			<div class="modal-body">
+				<div class="row">
+					<div class="col-md-12">
+						<form method="post" action="#" class="needs-validation" id="add-product-category-form" novalidate>
+							{% csrf_token %}
+							<h4>Product Category</h4>
+							<div class="form-group row">
+								<div class="col-md-12"><label class="col-form-label">Name <span class="text-danger">*</span></label></div>
+								<div class="col-md-12">
+									<input class="form-control" type="text" id="product-category-name-input" placeholder="Name of Product Category" name="name">
+									<div class="invalid-feedback">
+										Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
+									</div>
+									<div class="valid-feedback">
+										Looks good!
+									</div>
+								</div>
+							</div>									
+							<div class="text-center py-3">
+								<button type="button" class="border-0 btn btn-primary btn-gradient-primary btn-rounded" id="category-submit-button">Add</button>&nbsp;&nbsp;
+								<button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">Cancel</button>
+							</div>
+						</form>
+					</div>
+				</div>
+
+			</div>
+
+		</div><!-- modal-content -->
+	</div><!-- modal-dialog -->
+</div><!-- modal -->
+<!-- Product Category Modal (End) -->		
+
+<!-- Product Category Modal (Start) -->
+<div class="modal fade" id="update_category" tabindex="-1" role="dialog" aria-modal="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+
+			<div class="modal-header">
+				<h4 class="modal-title text-center">Update Product Category</h4>
 				<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
 			  </div>
 

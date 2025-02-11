@@ -375,7 +375,7 @@
 								<span>Main</span>
 							</li>
 							<li> 
-								<a href="#" {% if home_page %} class="active" {% endif %} ><i class="feather-home"></i> <span>Home</span></a>
+								<a href="{% url 'superadmin:home' %}" {% if home_page %} class="active" {% endif %} ><i class="feather-home"></i> <span>Home</span></a>
 							</li>
 							
 							{% comment %} <li> 
@@ -388,6 +388,14 @@
 									
 									<li><a href="{% url 'superadmin:companies' %}" {% if company_list_page %} class="active" {% endif %}>Companies</a></li>
 									<li><a href="{% url 'superadmin:add_company' %}">Add Company</a></li>																			
+
+									{% if product_page %}
+									<li><a {% if add_product_page %}class="active"{% endif %} href="{% url 'superadmin:add_product' current_company.slug %}">Add Product</a></li>
+									{% elif product_categories_page %}
+									<li><a {% if add_product_page %}class="active"{% endif %} href="#" data-bs-toggle="modal" data-bs-target="#add_product_category">Add Category</a></li>
+									{% elif product_sub_categories_page %}
+									<li><a {% if add_product_page %}class="active"{% endif %} href="#" data-bs-toggle="modal" data-bs-target="#add_product_sub_category">Add Sub Category</a></li>
+									{% endif %}
 
 									{% if service_page %}
 									<li><a href="{% url 'superadmin:add_service' current_company.slug %}">Add Service</a></li>
@@ -409,13 +417,30 @@
 									<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_course_specialization_modal">Add Course Specialization</a></li>
 									{% elif course_detail_page %}
 									<li><a {% if course_detail_page %}class="active"{% endif %} href="{% url 'superadmin:add_course_details' current_company.slug %}">Add Course Detail</a></li>
+									
+									{% elif course_faq_page %}
+									<li><a {% if add_course_faq_page %}class="active"{% endif %} href="{% url 'superadmin:add_course_faq' current_company.slug %}">Add Course FAQ</a></li>
+									{% elif service_faq_page %}
+									<li><a {% if add_service_faq_page %}class="active"{% endif %} href="{% url 'superadmin:add_service_faq' current_company.slug %}">Add Service FAQ</a></li>
+									{% elif registration_faq_page %}
+									<li><a {% if add_registration_faq_page %}class="active"{% endif %} href="{% url 'superadmin:add_registration_faq' current_company.slug %}">Add Registration FAQ</a></li>
+									{% elif product_faq_page %}
+									<li><a {% if add_product_faq_page %}class="active"{% endif %} href="{% url 'superadmin:add_product_faq' current_company.slug %}">Add Product FAQ</a></li>
+									
+									{% elif client_page %}
+									<li><a {% if add_client_page %}class="active"{% endif %} href="{% url 'superadmin:add_client' current_company.slug %}">{% if current_company.type.name == 'Education' %}Add Corporate Partner{% else %}Add Client{% endif %}</a></li>
+
+									{% elif testimonial_page %}
+									<li><a {% if add_testimonial_page %}class="active"{% endif %} href="{% if current_company.type.name == Education %}{% url 'superadmin:add_student_testimonial' current_company.slug %}{% else %}{% url 'superadmin:add_testimonial' current_company.slug %}"{% endif %}>Add Testimonal</a></li>
+
+									{% elif product_review_page %}
+									<li><a {% if add_product_review_page %}class="active"{% endif %} href="{% url 'superadmin:add_product_reviews' current_company.slug %}">Add Review</a></li>
 									{% endif %}									
-																	
 								</ul>
 							</li>
 
 							<li class="submenu">
-								<a href="javascript:void(0);" {% if company_type_page %} class="active" {% endif %}><i class="fa fa-building"></i> <span>Company Type</span> <span class="menu-arrow"></span></a>
+								<a href="javascript:void(0);" {% if company_type_page %} class="active" {% endif %}><i class="fa fa-industry"></i> <span>Company Type</span> <span class="menu-arrow"></span></a>
 								<ul class="sub-menus">
 									
 									<li><a href="{% url 'superadmin:company_types' %}" {% if company_type_list_page %} class="active" {% endif %}>Company Types</a></li>
@@ -425,54 +450,7 @@
 
 							<li> 
 								<a href="{% url 'superadmin:directories' %}" {% if directory_page %} class="active" {% endif %} ><i class="feather-book"></i> <span>Directories</span></a>
-							</li>
-
-							<li class="submenu">
-								<a href="javascript:void(0);"><i class="feather-book"></i> <span>Directory</span> <span class="menu-arrow"></span></a>
-								<ul class="sub-menus">									
-									<li class="submenu">										
-										<a href="javascript:void(0);"> <span>Directory Type</span> <span class="menu-arrow"></span></a>
-										<ul class="sub-menus">											
-											<li class="submenu">												
-												<a href="javascript:void(0);"> <span> Bank</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus">
-													<li><a href="{% url 'superadmin:banks' %}">List Banks</a></li>
-													<li><a href="javascript:void(0);" class="add-brand-toggle-btn" data-bs-toggle="modal" data-bs-target="#add_product_brand" data-company-slug="{{company.slug}}">Add Bank</a></li>
-												</ul>
-											</li>
-											<li class="submenu">												
-												<a href="javascript:void(0);"> <span> Court</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus">
-													<li><a href="{% url 'superadmin:courts' %}">List Courts</a></li>
-													<li><a href="javascript:void(0);" class="add-brand-toggle-btn" data-bs-toggle="modal" data-bs-target="#add_product_brand" data-company-slug="{{company.slug}}">Add Court</a></li>
-												</ul>
-											</li>
-											<li class="submenu">												
-												<a href="javascript:void(0);"> <span> Police Station</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus">
-													<li><a href="{% url 'superadmin:police_stations' %}">List Police Stations</a></li>
-													<li><a href="javascript:void(0);">Add Police Station</a></li>
-												</ul>
-											</li>
-											<li class="submenu">												
-												<a href="javascript:void(0);"> <span> Post Office</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus">
-													<li><a href="{% url 'superadmin:post_offices' %}">List Post Offices</a></li>
-													<li><a href="javascript:void(0);">Add Post Office</a></li>
-												</ul>
-											</li>
-											<li class="submenu">												
-												<a href="javascript:void(0);"> <span> TouristAttraction</span> <span class="menu-arrow"></span></a>
-												<ul class="sub-menus">
-													<li><a href="{% url 'superadmin:destinations' %}">List TouristAttractions</a></li>
-													<li><a href="javascript:void(0);">Add TouristAttraction</a></li>
-												</ul>
-											</li>											
-										</ul>
-										<li><a href="javascript:void(0);"> <span>Add Directory Type</span></a></li>
-									</li>
-								</ul>
-							</li>
+							</li>						
 
 							<li class="submenu">
 								<a href="javascript:void(0);" {% if custom_page %}class="active"{% endif %}><i class="feather-file"></i> <span>Custom Pages</span> <span class="menu-arrow"></span></a>
@@ -548,110 +526,7 @@
 				</div><!-- modal-content -->
 			</div><!-- modal-dialog -->
 		</div><!-- modal -->
-		<!-- Brand Modal (End) -->
-
-		<!-- Product Category Modal (Start) -->
-		<div class="modal fade" id="add_product_category" tabindex="-1" role="dialog" aria-modal="true">
-			<div class="modal-dialog" role="document">
-				<div class="modal-content">
-
-					<div class="modal-header">
-						<h4 class="modal-title text-center">Add Product Category</h4>
-						<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
-					  </div>
-
-					<div class="modal-body">
-						<div class="row">
-							<div class="col-md-12">
-								<form method="post" action="#" class="needs-validation" id="add-product-category-form" novalidate>
-									{% csrf_token %}
-									<h4>Product Category</h4>
-									<div class="form-group row">
-										<div class="col-md-12"><label class="col-form-label">Name <span class="text-danger">*</span></label></div>
-										<div class="col-md-12">
-											<input class="form-control" type="text" id="product-category-name-input" placeholder="Name of Product Category" name="name">
-											<div class="invalid-feedback">
-												Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
-											</div>
-											<div class="valid-feedback">
-												Looks good!
-											</div>
-										</div>
-									</div>									
-									<div class="text-center py-3">
-										<button type="button" class="border-0 btn btn-primary btn-gradient-primary btn-rounded" id="category-submit-button">Add</button>&nbsp;&nbsp;
-										<button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">Cancel</button>
-									</div>
-								</form>
-							</div>
-						</div>
-
-					</div>
-
-				</div><!-- modal-content -->
-			</div><!-- modal-dialog -->
-		</div><!-- modal -->
-		<!-- Product Category Modal (End) -->
-
-		<!-- Product Sub Category Modal (Start) -->
-		<div class="modal fade" id="add_product_sub_category" tabindex="-1" role="dialog" aria-modal="true">
-			<div class="modal-dialog" role="document">
-				<div class="modal-content">
-
-					<div class="modal-header">
-						<h4 class="modal-title text-center">Add Product Sub Category</h4>
-						<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
-					  </div>
-
-					<div class="modal-body">
-						<div class="row">
-							<div class="col-md-12">
-								<form method="post" action="#" class="needs-validation" id="add-product-sub-category-form" novalidate>
-									{% csrf_token %}
-									<h4>Product Sub Category</h4>
-									<div class="form-row">
-										<div class="col-md-12 mb-3">
-											<label for="product-category-dropdown">Category <span class="text-danger">*</span></label>
-											<select class="form-control" id="sub-category-category-dropdown" name="category" required>
-												<option value="" hidden disabled selected>Select Category</option>
-												{% for category in categories %}
-												<option value="{{category.slug}}">{{category.name}}</option>
-												{% endfor %}
-											</select>
-											<div class="invalid-feedback">
-												Please provide a valid category.
-											</div>
-											<div class="valid-feedback">
-												Looks good!
-											</div>
-										</div>                            										                                                       
-									</div>
-									<div class="form-group row">
-										<div class="col-md-12"><label class="col-form-label">Name <span class="text-danger">*</span></label></div>
-										<div class="col-md-12">
-											<input class="form-control" type="text" id="product-sub-category-name-input" placeholder="Name of Product Sub Category" name="name">
-											<div class="invalid-feedback">
-												Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
-											</div>
-											<div class="valid-feedback">
-												Looks good!
-											</div>
-										</div>
-									</div>									
-									<div class="text-center py-3">
-										<button type="button" class="border-0 btn btn-primary btn-gradient-primary btn-rounded" id="sub-category-submit-button">Add</button>&nbsp;&nbsp;
-										<button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">Cancel</button>
-									</div>
-								</form>
-							</div>
-						</div>
-
-					</div>
-
-				</div><!-- modal-content -->
-			</div><!-- modal-dialog -->
-		</div><!-- modal -->
-		<!-- Product Sub Category Modal (End) -->
+		<!-- Brand Modal (End) -->		
 
 		<!-- Color Modal (Start) -->
 		<div class="modal fade" id="add_product_color" tabindex="-1" role="dialog" aria-modal="true">
@@ -1256,5 +1131,13 @@
 				});
 			}
 		</script>	
+
+		<script>
+			$('.btn-secondary').click(function () {
+				if ($(this).html() == "Cancel") {
+					$('.btn-close').click();
+				}
+			});
+		</script>
     </body>
 </html>

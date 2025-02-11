@@ -21,7 +21,7 @@
 										</label>
 									</th>
 									<th>Name</th>
-									<th>Course</th>
+									<th>Product</th>
 									<th>State</th>
 									<th>Phone</th>
 									<th>Email</th>
@@ -39,9 +39,9 @@
 										</label>
 									</td>
 									<td>										
-										<a href="#" class="enquiry-obj" data-bs-toggle="modal" data-bs-target="#enquiry-detail-modal" data-name="{{enquiry.name}}" data-course="{{enquiry.course.name}}" data-state="{{enquiry.state.name}}" data-phone="{{enquiry.phone}}" data-email="{{enquiry.email}}" data-message="{{enquiry.message}}">{{enquiry.name}}</a>
+										<a href="#" class="enquiry-obj" data-bs-toggle="modal" data-bs-target="#enquiry-detail-modal" data-name="{{enquiry.name}}" data-product="{{enquiry.product.name}}" data-state="{{enquiry.state.name}}" data-phone="{{enquiry.phone}}" data-email="{{enquiry.email}}" data-message="{{enquiry.message}}">{{enquiry.name}}</a>
 									</td>
-									<td>{{enquiry.course.name}}</td>
+									<td>{{enquiry.product.name}}</td>
 									<td>{{enquiry.state.name}}</td>
 									<td>{{enquiry.phone}}</td>
 									<td>{{enquiry.email}}</td>
@@ -50,7 +50,7 @@
 										<div class="dropdown dropdown-action">
 											<a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="material-icons">more_vert</i></a>
 											<div class="dropdown-menu dropdown-menu-right">												
-												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{enquiry.name}}" data-slug="{{enquiry.slug}}" >Remove This Course</a>
+												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{enquiry.name}}" data-slug="{{enquiry.slug}}" >Remove This Product</a>
 											</div>
 										</div>
 									</td>
@@ -84,11 +84,11 @@
 					<div class="col-md-12">
 						<form id="deletion-form" method="post">
 							{% csrf_token %}
-							<h4><span class="text-danger">Deleting</span> Course Enquiry. . .</h4>
+							<h4><span class="text-danger">Deleting</span> Product Enquiry. . .</h4>
 							<div class="form-group row">
 								<div class="col-md-12">
 									<label class="col-form-label">Are you sure?</label> <br>
-									<p><i>Course Enquiry by:</i> <span id="deleting-object"></span></p>
+									<p><i>Product Enquiry by:</i> <span id="deleting-object"></span></p>
 								</div>
 							</div>							
 														
@@ -127,8 +127,8 @@
 				<table class="table">
 					<tbody>
 						<tr>
-						<td class="border-0">Course</td>
-						<td class="border-0" id="course"></td>
+						<td class="border-0">Product</td>
+						<td class="border-0" id="product"></td>
 						</tr>
 						<tr>
 						<td class="border-0">State</td>
@@ -162,21 +162,21 @@
 	$(document).ready(() => {
 		$('.delete-btn').click( function () {
 			const name = $(this).data('name');
-			const courseEnquirySlug = $(this).data('slug');
+			const productEnquirySlug = $(this).data('slug');
 			const companySlug = `{{current_company.slug}}`
 
-			const actionUrl = `{% url 'superadmin:delete_course_enquiry' 'dummyCompanySlug' 'dummyCourseEnquirySlug' %}`
-			.replace('dummyCompanySlug', companySlug).replace('dummyCourseEnquirySlug', courseEnquirySlug);
+			const actionUrl = `{% url 'superadmin:delete_product_enquiry' 'dummyCompanySlug' 'dummyProductEnquirySlug' %}`
+			.replace('dummyCompanySlug', companySlug).replace('dummyProductEnquirySlug', productEnquirySlug);
 
 			$('#deleting-object').html(name);
 			$('#deletion-form').prop('action', actionUrl);
 		});
 
 		$('.enquiry-obj').click(function () {
-            $('#name, #course, #state, #phone, #email, #message').empty();
+            $('#name, #product, #state, #phone, #email, #message').empty();
 
 			const name = $(this).data('name')
-            const course = $(this).data('course')
+            const product = $(this).data('product')
             const state = $(this).data('state')
             const phone = $(this).data('phone')
 			const email = $(this).data('email')
@@ -186,8 +186,8 @@
                 $('#name').html(name);
             }
 			
-			if (course) {
-                $('#course').html(course);
+			if (product) {
+                $('#product').html(product);
             }
 
             if (state) {

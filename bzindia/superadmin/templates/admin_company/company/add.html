@@ -26,6 +26,16 @@
 	</div>
 	<!-- /Page Header -->
 	
+    <div class="settings-menu-links">
+        <ul class="nav nav-tabs menu-tabs">
+            {% for company_type in company_types %}
+            <li class="nav-item {% if current_company_type.name == company_type.name %}active{% endif %}">
+                <a class="nav-link" href="{% url 'superadmin:filtered_companies' company_type.slug %}">{{company_type.name}} Companies</a>
+            </li>
+            {% endfor %}							
+        </ul>
+    </div>
+
 	<!-- Content Starts -->
     <div class="row">
         {% if messages %}
@@ -109,9 +119,9 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-12 mb-3">
                                 <label for="description-input">Description <span class="text-danger">*</span></label>
-                                <textarea name="description" id="description-input" placeholder="description" required></textarea>
+                                <textarea class="froala-editor" name="description" id="description-input" placeholder="description" required></textarea>
                                 <div class="invalid-feedback">
                                     Please provide favicon image.
                                 </div>
@@ -412,6 +422,8 @@
                 }
             }
         })
+
+        intializeFroala();
 
     })
 </script>

@@ -64,8 +64,6 @@
 
 	<!-- Content Starts -->
     <div class="row">
-        {% include "base/message.html" %}
-
         <div class="col-lg-12">
             <form method="post" action="{% url 'superadmin:add_course_details' current_company.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-course-form" novalidate>
                 {% csrf_token %}
@@ -834,11 +832,18 @@
 
             if (tag.trim() && tagLink.trim()) {
                 $('#tag-div').append(
-                    `<a href="${tagLink}" class="tag" target="_blank">${tag}</a><input type="text" name="tag" value="${tag}" hidden><input type="text" name="tag_link" value="${tagLink}" hidden>`
+                    `<div class="col-md-2"><a href="${tagLink}" class="tag" target="_blank">${tag}</a><input type="text" name="tag" value="${tag}" hidden><input type="text" name="tag_link" value="${tagLink}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>`
                 );
             }
 
             $('#tag-input, #tag-link-input').val('');
+        });
+
+        // Remove bullet points
+        $(document).on('click', '#remove-tag-btn', function () {
+            const parentElement = $(this).parent();
+
+            parentElement.remove();
         });
 
         // Press enter for adding bullet points

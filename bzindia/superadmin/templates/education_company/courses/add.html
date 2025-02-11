@@ -1,8 +1,6 @@
 
-{% extends "admin_base/base.html" %}
+{% extends "admin_company/base/base.html" %}
 {% load static %}
-
-{% block title %}Add {{current_company.name}} Course{% endblock title %}
 
 {% block styles %}
 <style>
@@ -25,38 +23,10 @@
 </style>
 {% endblock styles %}
 
-{% block content %}
-			
-<!-- Page Content -->
-<div class="content container-fluid">
-	
-	<!-- Page Header -->
-	<div class="crms-title row bg-white mb-4">
-		<div class="col  p-0">
-			<h3 class="page-title">
-			<span class="page-title-icon bg-gradient-primary text-white me-2">
-				<i class="la la-columns"></i>
-			</span> Add {{current_company.name}} Course </h3>
-		</div>
-		<div class="col p-0 text-end">
-			<ul class="breadcrumb bg-white float-end m-0 ps-0 pe-0">
-				<li class="breadcrumb-item"><a href="index.html" {{current_company.name}}>Course</a></li>
-				<li class="breadcrumb-item active">Add {{current_company.name}} Course</li>
-			</ul>
-		</div>
-	</div>
-	<!-- /Page Header -->
+{% block company_content %}
 	
 	<!-- Content Starts -->
-    <div class="row">
-        {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                    <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-
+    <div class="row">        
         <div class="col-lg-12">
             <form method="post" action="{% url 'superadmin:add_course' current_company.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-course-form" novalidate>
                 {% csrf_token %}
@@ -153,21 +123,7 @@
                                     Looks good!
                                 </div>
                             </div>
-                        </div>                        
-
-                        <div class="form-group row">
-                            <div class="col-sm-12">
-                                <label class="col-form-label">Summary </label>
-                                <textarea class="form-control" rows="3" id="summary-input" name="summary" placeholder="Summary"></textarea>
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <div class="col-sm-12">
-                                <label class="col-form-label">Description </label>
-                                <textarea class="froala-editor" rows="3" id="description-input" name="description" placeholder="Description"></textarea>
-                            </div>
-                        </div>                        
+                        </div>                                                
                     </div>
                 </div>                
 
@@ -176,13 +132,13 @@
                 </div>
             </form>
                 
-		
+		</div>
 	<!-- /Content End -->
 	
-</div>
+    </div>
 <!-- /Page Content -->
 				
-{% endblock content %}
+{% endblock company_content %}
 
 {% block scripts %}
 <script>

@@ -1,43 +1,13 @@
 
-{% extends "admin_base/base.html" %}
+{% extends "admin_company/base/base.html" %}
 {% load static %}
 
-{% block title %}Add {{product_company.name}} Product{% endblock title %}
-
-{% block content %}
-			
-<!-- Page Content -->
-<div class="content container-fluid">
-	
-	<!-- Page Header -->
-	<div class="crms-title row bg-white mb-4">
-		<div class="col  p-0">
-			<h3 class="page-title">
-			<span class="page-title-icon bg-gradient-primary text-white me-2">
-				<i class="la la-columns"></i>
-			</span> Add {{product_company.name}} Product </h3>
-		</div>
-		<div class="col p-0 text-end">
-			<ul class="breadcrumb bg-white float-end m-0 ps-0 pe-0">
-				<li class="breadcrumb-item"><a href="index.html" {{product_company.name}}>Product</a></li>
-				<li class="breadcrumb-item active">Add {{product_company.name}} Product</li>
-			</ul>
-		</div>
-	</div>
-	<!-- /Page Header -->
-	
+{% block company_content %}
 	<!-- Content Starts -->
     <div class="row">
-        {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                    <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
 
         <div class="col-lg-12">
-            <form method="post" action="{% url 'superadmin:add_product' product_company.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-product-form" novalidate>
+            <form method="post" action="{% url 'superadmin:add_product' current_company.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-product-form" novalidate>
                 {% csrf_token %}
                 <div class="card">
                     <div class="card-header">
@@ -256,11 +226,11 @@
                 
 		
 	<!-- /Content End -->
-	
+        </div>
 </div>
 <!-- /Page Content -->
 				
-{% endblock content %}
+{% endblock company_content %}
 
 {% block scripts %}
 <script>

@@ -29,14 +29,23 @@
 						<ul class="nav nav-tabs menu-tabs">
                             {% if current_company.type.name == "Product" %}
 
-                                <li class="nav-item {% if products_page %}active{% endif %}">
+                                <li class="nav-item {% if product_page %}active{% endif %}">
                                     <a class="nav-link" href="{% url 'superadmin:products' current_company.slug %}">Products</a>
                                 </li>
-                                <li class="nav-item {% if categories_page %}active{% endif %}">
+                                <li class="nav-item {% if product_categories_page %}active{% endif %}">
                                     <a class="nav-link" href="{% url 'superadmin:categories' current_company.slug %}">Categories</a>
                                 </li>
-                                <li class="nav-item {% if selected_tab == "Sub Category" %}active{% endif %}">
-                                    <a class="nav-link" href="#">Sub Categories</a>
+                                <li class="nav-item {% if product_sub_categories_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:sub_categories' current_company.slug %}">Sub Categories</a>
+                                </li>
+                                <li class="nav-item {% if product_enquiry_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:product_enquiries' current_company.slug %}">Enquiries</a>
+                                </li>
+                                <li class="nav-item {% if product_faq_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:product_faqs' current_company.slug %}">FAQs</a>
+                                </li>
+                                <li class="nav-item {% if product_review_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:product_reviews' current_company.slug %}">Reviews</a>
                                 </li>
 
                             {% endif %}
@@ -57,6 +66,15 @@
                                 </li>
                                 <li class="nav-item {% if course_detail_page %}active{% endif %}">
                                     <a class="nav-link" href="{% url 'superadmin:course_details' current_company.slug %}">Courses Detail</a>
+                                </li>                                
+                                <li class="nav-item {% if course_faq_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:course_faqs' current_company.slug %}">FAQs</a>
+                                </li>
+                                <li class="nav-item {% if client_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:clients' current_company.slug %}">Corporate Partners</a>
+                                </li>
+                                <li class="nav-item {% if testimonial_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:student_testimonials' current_company.slug %}">Testimonials</a>
                                 </li>
 
                             {% endif %}
@@ -71,8 +89,17 @@
                                 <li class="nav-item {% if service_sub_category_page %}active{% endif %}">
                                     <a class="nav-link" href="{% url 'superadmin:service_sub_categories' current_company.slug %}">Sub Category</a>
                                 </li>
-                                <li class="nav-item {% if service_sub_category_page %}active{% endif %}">
-                                    <a class="nav-link" href="{% url 'superadmin:service_sub_categories' current_company.slug %}">Enquiries</a>
+                                <li class="nav-item {% if service_enquiry_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:service_enquiries' current_company.slug %}">Enquiries</a>
+                                </li>
+                                <li class="nav-item {% if service_faq_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:service_faqs' current_company.slug %}">FAQs</a>
+                                </li>
+                                <li class="nav-item {% if client_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:clients' current_company.slug %}">Clients</a>
+                                </li>
+                                <li class="nav-item {% if testimonial_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:testimonials' current_company.slug %}">Testimonials</a>
                                 </li>
 
                             {% endif %}
@@ -87,8 +114,24 @@
                                 <li class="nav-item {% if registration_sub_type_page %}active{% endif %}">
                                     <a class="nav-link" href="{% url 'superadmin:registration_sub_types' current_company.slug %}">Registration Sub Type</a>
                                 </li>
+                                <li class="nav-item {% if registration_enquiry_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:registration_enquiries' current_company.slug %}">Enquiries</a>
+                                </li>
+                                <li class="nav-item {% if registration_faq_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:registration_faqs' current_company.slug %}">FAQs</a>
+                                </li>
+                                <li class="nav-item {% if client_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:clients' current_company.slug %}">Clients</a>
+                                </li>
+                                <li class="nav-item {% if testimonial_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:testimonials' current_company.slug %}">Testimonials</a>
+                                </li>
 
                             {% endif %}
+
+                            <li class="nav-item {% if multipage %}active{% endif %}">
+                                <a class="nav-link" href="{% url 'superadmin:multipage' current_company.slug %}">Multi Page</a>
+                            </li>
 						</ul>
 					</div>
 					

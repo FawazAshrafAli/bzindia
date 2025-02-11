@@ -7,7 +7,7 @@
 	<div class="col-md-12">
 		<div class="card">
 			<div class="card-header">									
-				<h5 class="card-title">Enquiries</h5>
+				<h5 class="card-title">List of Course FAQs</h5>
 			</div>
 				<div class="card-body">
 					<div class="table-responsive">
@@ -20,17 +20,13 @@
 											<span class="checkmark"></span>
 										</label>
 									</th>
-									<th>Name</th>
-									<th>Course</th>
-									<th>State</th>
-									<th>Phone</th>
-									<th>Email</th>
-									<th>Message</th>
+									<th>Course Name</th>
+                                    <th>Question</th>
 									<th class="text-end">Actions</th>
 								</tr>
 							</thead>
 							<tbody>
-								{% for enquiry in enquiries %}
+								{% for faq in faqs %}
 								<tr>
 									<td class="checkBox">
 										<label class="container-checkbox">
@@ -38,19 +34,17 @@
 											<span class="checkmark"></span>
 										</label>
 									</td>
-									<td>										
-										<a href="#" class="enquiry-obj" data-bs-toggle="modal" data-bs-target="#enquiry-detail-modal" data-name="{{enquiry.name}}" data-course="{{enquiry.course.name}}" data-state="{{enquiry.state.name}}" data-phone="{{enquiry.phone}}" data-email="{{enquiry.email}}" data-message="{{enquiry.message}}">{{enquiry.name}}</a>
+									<td>	
+										<a href="#" class="faq-obj" data-bs-toggle="modal" data-bs-target="#faq-detail-modal" data-question="{{faq.question}}" data-answer="{{faq.answer}}" data-course="{{faq.course.name}}">{{faq.course.name}}</a>
 									</td>
-									<td>{{enquiry.course.name}}</td>
-									<td>{{enquiry.state.name}}</td>
-									<td>{{enquiry.phone}}</td>
-									<td>{{enquiry.email}}</td>
-									<td>{{enquiry.message|slice:'25'}}{% if enquiry.message|length > 25 %}...{% endif %}</td>
-									<td class="text-center">
+                                    <td>{% if faq.question and faq.questio|length > 100 %}{{faq.question|slice:':100'}}...{% else %}{{faq.question}}{% endif %}</td>
+									
+									<td class="text-end">
 										<div class="dropdown dropdown-action">
 											<a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="material-icons">more_vert</i></a>
-											<div class="dropdown-menu dropdown-menu-right">												
-												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{enquiry.name}}" data-slug="{{enquiry.slug}}" >Remove This Course</a>
+											<div class="dropdown-menu dropdown-menu-right">
+												<a class="dropdown-item" href="{% url 'superadmin:update_course_faq' current_company.slug faq.slug %}">Edit This FAQ</a>
+												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{faq.course.name}}" data-slug="{{faq.slug}}">Remove This FAQ</a>
 											</div>
 										</div>
 									</td>
@@ -76,19 +70,19 @@
 		<div class="modal-content">
 
 			<div class="modal-header">
+				{% comment %} <h4 class="modal-title text-center">Delete Course</h4> {% endcomment %}
 				<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
 			  </div>
 
 			<div class="modal-body">
 				<div class="row">
 					<div class="col-md-12">
-						<form id="deletion-form" method="post">
-							{% csrf_token %}
-							<h4><span class="text-danger">Deleting</span> Course Enquiry. . .</h4>
+						<form id="deletion-form" method="get">
+							<h4><span class="text-danger">Deleting</span> Course FAQ. . .</h4>
 							<div class="form-group row">
 								<div class="col-md-12">
 									<label class="col-form-label">Are you sure?</label> <br>
-									<p><i>Course Enquiry by:</i> <span id="deleting-object"></span></p>
+									<p><i>FAQ of course:</i> <span id="deleting-object"></span></p>
 								</div>
 							</div>							
 														
@@ -107,7 +101,7 @@
 </div><!-- modal -->
 
 <!-- Detail Modal -->
-<div class="modal right fade" id="enquiry-detail-modal" tabindex="-1" role="dialog" aria-modal="true">
+<div class="modal right fade" id="faq-detail-modal" tabindex="-1" role="dialog" aria-modal="true">
 	<div class="modal-dialog" role="document">
         <div class="modal-content">
 
@@ -119,35 +113,22 @@
             <div class="modal-body">
                 <div class="row" style="background: #eaeaea;">
                     <div class="col-md-12">
-                        <h4 style="margin: 8px 0;">Enquired by: <span id="name"></span></h4>
+                        <h4 style="margin: 8px 0;">FAQ of <span id="course-name"></span></h4>
                     </div>
                 </div>
-                <br>                				
-				
-				<table class="table">
-					<tbody>
-						<tr>
-						<td class="border-0">Course</td>
-						<td class="border-0" id="course"></td>
-						</tr>
-						<tr>
-						<td class="border-0">State</td>
-						<td class="border-0" id="state"></td>
-						</tr>
-						<tr>
-						<td class="border-0">Phone</td>
-						<td class="border-0" id="phone"></td>
-						</tr>
-						<tr>
-						<td class="border-0">Email</td>
-						<td class="border-0" id="email"></td>
-						</tr>
-						<tr>
-							<td class="border-0">Message</td>
-							<td class="border-0" id="message"></td>
-						</tr>
-					</tbody>
-				</table>					
+                <br>                
+                <div class="row">
+                    <div class="col-md-12">
+                        <h5 style="margin: 8px 0;">Question: </span></h5>
+                        <p id="question"></p>
+                    </div>                    
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <h5 style="margin: 8px 0;">Answer: </span></h5>
+                        <p id="answer"></p>
+                    </div>                    
+                </div>
                 <br>
             </div>
 
@@ -162,48 +143,33 @@
 	$(document).ready(() => {
 		$('.delete-btn').click( function () {
 			const name = $(this).data('name');
-			const courseEnquirySlug = $(this).data('slug');
+			const courseFaqSlug = $(this).data('slug');
 			const companySlug = `{{current_company.slug}}`
 
-			const actionUrl = `{% url 'superadmin:delete_course_enquiry' 'dummyCompanySlug' 'dummyCourseEnquirySlug' %}`
-			.replace('dummyCompanySlug', companySlug).replace('dummyCourseEnquirySlug', courseEnquirySlug);
+			const actionUrl = `{% url 'superadmin:delete_course_faq' 'dummyCompanySlug' 'dummyCourseFaqSlug' %}`
+			.replace('dummyCompanySlug', companySlug).replace('dummyCourseFaqSlug', courseFaqSlug);
 
 			$('#deleting-object').html(name);
 			$('#deletion-form').prop('action', actionUrl);
 		});
 
-		$('.enquiry-obj').click(function () {
-            $('#name, #course, #state, #phone, #email, #message').empty();
+        $('.faq-obj').click(function () {
+            $('#question, #answer').empty();
 
-			const name = $(this).data('name')
             const course = $(this).data('course')
-            const state = $(this).data('state')
-            const phone = $(this).data('phone')
-			const email = $(this).data('email')
-			const message = $(this).data('message')
+            const question = $(this).data('question')
+            const answer = $(this).data('answer')
 
-            if (name) {
-                $('#name').html(name);
-            }
-			
-			if (course) {
-                $('#course').html(course);
+            if (course) {
+                $('#course-name').html(course);
             }
 
-            if (state) {
-                $('#state').html(state);
+            if (question) {
+                $('#question').html(question);
             }
 
-            if (phone) {
-                $('#phone').html(phone);
-            }
-
-			if (email) {
-                $('#email').html(email);
-            }
-
-			if (message) {
-                $('#message').html(message);
+            if (answer) {
+                $('#answer').html(answer);
             }
         });
 	});

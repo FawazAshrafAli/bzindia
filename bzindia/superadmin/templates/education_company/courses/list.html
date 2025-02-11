@@ -38,8 +38,9 @@
 											<span class="checkmark"></span>
 										</label>
 									</td>
-									<td>										
-										<a href="#" data-bs-toggle="modal" data-bs-target="#course-details">{{course.name}}</a>
+									<td>
+										<a href="#" class="avatar"><img alt="" src="{% if course.image %}{{course.image.url}}{% else %}{% static 'assets/img/c-logo2.png' %}{% endif %}"></a>							
+										<a href="#" >{{course.name}}</a>
 									</td>
 									<td>{{course.program}}</td>
 									<td>{{course.specialization}}</td>
@@ -118,7 +119,7 @@
 
 			$('#deleting-object').html(name);
 			$('#deletion-form').prop('action', `/admin/remove_course/${slug}/${courseSlug}`);
-		});
+		});		
 	});
 </script>
 {% endblock scripts %}

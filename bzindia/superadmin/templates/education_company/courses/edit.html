@@ -1,40 +1,11 @@
 
-{% extends "admin_base/base.html" %}
+{% extends "admin_company/base/base.html" %}
 {% load static %}
 
-{% block title %}Update Course{% endblock title %}
-
-{% block content %}
-			
-<!-- Page Content -->
-<div class="content container-fluid">
-	
-	<!-- Page Header -->
-	<div class="crms-title row bg-white mb-4">
-		<div class="col  p-0">
-			<h3 class="page-title">
-			<span class="page-title-icon bg-gradient-primary text-white me-2">
-				<i class="la la-columns"></i>
-			</span> Update Course </h3>
-		</div>
-		<div class="col p-0 text-end">
-			<ul class="breadcrumb bg-white float-end m-0 ps-0 pe-0">
-				<li class="breadcrumb-item"><a href="index.html" {{current_company.name}}>Course</a></li>
-				<li class="breadcrumb-item active">Update Course</li>
-			</ul>
-		</div>
-	</div>
-	<!-- /Page Header -->
+{% block company_content %}
 	
 	<!-- Content Starts -->
-    <div class="row">
-        {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                    <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+    <div class="row">        
 
         <div class="col-lg-12">
             <form method="post" action="{% url 'superadmin:update_course' current_company.slug course.slug %}" class="needs-validation" enctype="multipart/form-data" id="edit-course-form" novalidate>
@@ -45,11 +16,24 @@
                     </div>
                     <div class="card-body">
                         <div class="form-row">
-                            <div class="col-md-12 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label for="name-input" >Course Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="name-input" placeholder="Course Name" name="name" value="{{course.name}}" required>
                                 <div class="invalid-feedback">
                                     Please enter a name for the course.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="name-input" >Image <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" id="image-input" name="image" required>
+                                {% if course.image %}
+                                <small><span id="current-image">Current Image: <a href="{{course.image.url}}" target="_blank">{{course.get_image_name}}</a></span></small>
+                                {% endif %}
+                                <div class="invalid-feedback">
+                                    Image is required.
                                 </div>
                                 <div class="valid-feedback">
                                     Looks good!
@@ -125,14 +109,7 @@
                                     Looks good!
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <div class="col-sm-12">
-                                <label class="col-form-label">Description </label>
-                                <textarea class="form-control" rows="3" id="description" name="description" placeholder="Description">{% if course.description %}{{course.description}}{% endif %}</textarea>
-                            </div>
-                        </div>
+                        </div>                        
                     </div>
                 </div>                
 
@@ -140,14 +117,14 @@
                     <button type="button" class="btn btn-primary" id="submit-button">Submit</button>
                 </div>
             </form>
-                
+        </div>       
 		
 	<!-- /Content End -->
 	
 </div>
 <!-- /Page Content -->
 				
-{% endblock content %}
+{% endblock company_content %}
 
 {% block scripts %}
 <script>

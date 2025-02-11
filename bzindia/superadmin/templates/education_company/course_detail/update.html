@@ -64,14 +64,12 @@
 
 	<!-- Content Starts -->
     <div class="row">
-        {% include "base/message.html" %}
-
         <div class="col-lg-12">
-            <form method="post" action="{% url 'superadmin:add_course_details' current_company.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-course-form" novalidate>
+            <form method="post" action="{% url 'superadmin:update_course_details' current_company.slug course_detail.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-course-form" novalidate>
                 {% csrf_token %}
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title mb-0" >Course Name</h4>
+                        <h4 class="card-title mb-0" >Update Course Name</h4>
                     </div>
                     <div class="card-body">
                         <div class="row">
@@ -80,7 +78,7 @@
                                 <select class="form-control" id="course-dropdown" name="course" required>
                                     <option value="" hidden disabled selected>Select Course</option>
                                     {% for course in courses %}
-                                    <option value="{{course.slug}}">{{course.name}}</option>
+                                    <option value="{{course.slug}}" {% if course_detail.course.slug == course.slug %}selected{% endif %}>{{course.name}}</option>
                                     {% endfor %}                                    
                                 </select>
                                 <div class="invalid-feedback">
@@ -96,14 +94,14 @@
                         <div class="form-group row">
                             <div class="col-sm-12">
                                 <label class="col-form-label">Summary </label>
-                                <textarea class="form-control" rows="3" id="summary-input" name="summary" placeholder="Summary"></textarea>
+                                <textarea class="form-control" rows="3" id="summary-input" name="summary" placeholder="Summary">{% if course_detail.summary %}{{course_detail.summary}}{% endif %}</textarea>
                             </div>
                         </div>
 
                         <div class="form-group row">
                             <div class="col-sm-12">
                                 <label class="col-form-label">Description </label>
-                                <textarea class="froala-editor" rows="3" id="description-input" name="description" placeholder="Description"></textarea>
+                                <textarea class="froala-editor" rows="3" id="description-input" name="description" placeholder="Description">{{course_detail.description|safe}}</textarea>
                             </div>
                         </div>
 
@@ -120,7 +118,11 @@
                                                     <button class="add-button" type="button" id="add-feature-btn">ADD</button>
                                                 </div>
                                                 <br>
-                                                <ol class="row" id="feature-div"></ol>
+                                                <ol class="row" id="feature-div">
+                                                    {% for feature_obj in course_detail.features.all %}
+                                                    <li class="col-md-6">{{feature_obj.feature}}<input type="text" name="feature" value="{{feature_obj.feature}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-feature-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${feature}'"><i class="fa fa-close" style="padding: 0;"></i></button></li>
+                                                    {% endfor %}
+                                                </ol>
 
                                             </div>
                                         </div>
@@ -128,16 +130,52 @@
                                   <div class="tasks__item crms-task-item active">
                                     <div class="accordion-header js-accordion-header">Vertical Tab</div> 
                                       <div class="accordion-body js-accordion-body">
-                                        <div class="accordion-body__contents" id="vertical-tab-main-div">
+                                        <div class="accordion-body__contents" id="vertical-tab-main-div">                                
                                             <div class="row">
                                                 <div class="col-md-12 mb-3">
                                                     <label for="main-title-input" >Main Title <span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" id="main-title-input" placeholder="Main Title" name="vertical_title" required>
+                                                    <input type="text" class="form-control" id="main-title-input" placeholder="Main Title" name="vertical_title" value="{{course_detail.vertical_title}}" required>
                                                 </div>            
                                             </div>
                                             <hr>
                                             <br>
                                             <div class="vertical-tab-div" id="vertical-tab-div">
+                                                {% if course_detail.vertical_tabs.all|length > 0 %}
+                                                {% for tab in course_detail.vertical_tabs.all %}
+                                                {% if forloop.counter > 1 %}<hr><br>{% endif %}
+                                                <div class="vertical-tab-inner-div">
+                                                    <div class="row">
+                                                        <div class="col-md-6 mb-3">
+                                                            <label>Heading of Tab{{forloop.counter}} <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" placeholder="Heading of Tab{{forloop.counter}}" name="vertical_heading" value="{{tab.heading}}" required>
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label  >Sub Heading of Tab{{forloop.counter}} <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" placeholder="Sub Heading of Tab{{forloop.counter}}" name="vertical_sub_heading" value="{{tab.sub_heading}}" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-12 mb-3">
+                                                            <label >Summary of Tab{{forloop.counter}} <span class="text-danger">*</span></label>
+                                                            <textarea type="text" class="form-control" placeholder="Summary of Tab{{forloop.counter}}" name="vertical_summary" required>{% if tab.summary %}{{tab.summary}}{% endif %}</textarea>
+                                                        </div>            
+                                                    </div>
+                                                    <div style="display: flex; flex-direction: row;">
+                                                        <input type="text" class="form-control tab-bullet-input" placeholder="Bullet Points of Tab{{forloop.counter}}" required>
+                                                        <button class="add-button" type="button">ADD</button>
+                                                    </div>
+                                                    <br>
+                                                    <ol class="row tab-bullet-div">
+                                                        {% if tab.bullets.all|length > 1 %}
+                                                        {% for bullet_obj in tab.bullets.all %}
+                                                        <li class="col-md-6">{{bullet_obj.bullet}}<input type="text" name="vertical_bullet" value="{{bullet_obj.bullet}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-vertical-bullet-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${bulletPoint}'"><i class="fa fa-close" style="padding: 0;"></i></button></li>
+                                                        {% endfor %}
+                                                        {% endif %}
+                                                    </ol>
+                                                    <input class="vertical-bullet-count" type="number" name="vertical_bullet_count" value="{{tab.bullets.all|length}}" hidden>
+                                                </div>
+                                                {% endfor %}
+                                                {% else %}                                                
                                                 <div class="vertical-tab-inner-div">
                                                     <div class="row">
                                                         <div class="col-md-6 mb-3">
@@ -163,6 +201,7 @@
                                                     <ol class="row tab-bullet-div"></ol>
                                                     <input class="vertical-bullet-count" type="number" name="vertical_bullet_count" hidden>
                                                 </div>
+                                                {% endif %}
                                             </div>
                                             <div class="d-flex justify-content-between align-items-center" id="vertical-tab-btn-div">
                                                 <button class="add-button" id="add-vertical-tab-btn" type="button" style="width: fit-content;">Add Another Tab</button>
@@ -178,12 +217,44 @@
                                             <div class="row">
                                                 <div class="col-md-12 mb-3">
                                                     <label for="main-title-input" >Main Title <span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" id="main-title-input" placeholder="Main Title" name="horizontal_title" required>
+                                                    <input type="text" class="form-control" id="main-title-input" placeholder="Main Title" name="horizontal_title" value="{{course_detail.horizontal_title}}" required>
                                                 </div>            
                                             </div>
                                             <hr>
                                             <br>
                                             <div class="horizontal-tab-div" id="horizontal-tab-div">
+                                                {% if course_detail.horizontal_tabs.all|length > 0 %}
+                                                {% for tab in course_detail.horizontal_tabs.all %}
+                                                {% if forloop.counter > 1 %}<hr><br>{% endif %}
+                                                <div class="horizontal-tab-inner-div">
+                                                    <div class="row">
+                                                        <div class="col-md-12 mb-3">
+                                                            <label>Heading of Tab{{forloop.counter}} <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" placeholder="Heading of Tab{{forloop.counter}}" name="horizontal_heading" value="{{tab.heading}}" required>
+                                                        </div>    
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-12 mb-3">
+                                                            <label >Summary of Tab{{forloop.counter}} <span class="text-danger">*</span></label>
+                                                            <textarea type="text" class="form-control" placeholder="Summary of Tab{{forloop.counter}}" name="horizontal_summary" required>{% if tab.summary %}{{tab.summary}}{% endif %}</textarea>
+                                                        </div>            
+                                                    </div>
+                                                    <div style="display: flex; flex-direction: row;">
+                                                        <input type="text" class="form-control tab-bullet-input" placeholder="Bullet Points of Tab{{forloop.counter}}" required>
+                                                        <button class="add-button" type="button">ADD</button>
+                                                    </div>
+                                                    <br>
+                                                    <ol class="row tab-bullet-div">
+                                                        {% if tab.bullets.all|length > 0 %}
+                                                        {% for bullet_obj in tab.bullets.all %}
+                                                        <li class="col-md-6">{{bullet_obj.bullet}}<input type="text" name="horizontal_bullet" value="{{bullet_obj.bullet}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-horizontal-bullet-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${bulletPoint}'"><i class="fa fa-close" style="padding: 0;"></i></button></li>
+                                                        {% endfor %}
+                                                        {% endif %}
+                                                    </ol>
+                                                    <input class="horizontal-bullet-count" type="number" name="horizontal_bullet_count" value="{{tab.bullets.all|length}}" hidden>
+                                                </div>
+                                                {% endfor %}
+                                                {% else %}
                                                 <div class="horizontal-tab-inner-div">
                                                     <div class="row">
                                                         <div class="col-md-12 mb-3">
@@ -205,6 +276,7 @@
                                                     <ol class="row tab-bullet-div"></ol>
                                                     <input class="horizontal-bullet-count" type="number" name="horizontal_bullet_count" hidden>
                                                 </div>
+                                                {% endif %}
                                             </div>
                                             <div class="d-flex justify-content-between align-items-center" id="horizontal-tab-btn-div">
                                                 <button class="add-button" id="add-horizontal-tab-btn" type="button" style="width: fit-content;">Add Another Tab</button>
@@ -220,20 +292,36 @@
                                                 <div class="row">
                                                     <div class="col-md-12 mb-3">
                                                         <label>Table Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Table" name="table_title" required>
+                                                        <input type="text" class="form-control" placeholder="Title of Table" name="table_title" value="{{course_detail.table_title}}" required>
                                                     </div>    
                                                 </div>
                                                 <table class="table">
                                                     <thead>
                                                         <tr id="table-header">
+                                                            {% if course_detail.tables.all|length > 0 %}
+                                                            {% for table in course_detail.tables.all %}
+                                                            <th><input type="text" class="form-control" placeholder="Heading of Column{{forloop.counter}}" name="table_heading" title="Heading of Column{{forloop.counter}}" value="{{table.heading}}"></th>
+                                                            {% endfor %}
+                                                            {% else %}
                                                             <th><input type="text" class="form-control" placeholder="Heading of Column1" name="table_heading" title="Heading of Column1"></th>
+                                                            {% endif %}
                                                             <th><button class="add-button" id="add-column-btn" type="button" style="width: fit-content;">Add Column</button><br><button class="remove-button" id="remove-column-btn" type="button" style="width: fit-content;">Remove Column</button></th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="table-body">
+                                                        {% if course_detail.tables.all|length > 0 %}
+                                                        {% for row in course_detail.get_data %}
+                                                        <tr id="row-{{forloop.counter}}">
+                                                            {% for item in row %}
+                                                            <td><input type="text" class="form-control" placeholder="Data of Column{{forloop.counter}}" name="table_data" value="{{item}}"></td>
+                                                            {% endfor %}							
+                                                        </tr>
+                                                        {% endfor %}
+                                                        {% else %}
                                                         <tr id="row-1">
                                                             <td><input type="text" class="form-control" placeholder="Data of Column1" name="table_data"></td>
                                                         </tr>
+                                                        {% endif %}
                                                         <tr><td><button class="add-button" id="add-row-btn" type="button" style="width: fit-content;">Add Row</button>&nbsp;<button class="remove-button" id="remove-row-btn" type="button" style="width: fit-content;">Remove Row</button></td></tr>
                                                     </tbody>
                                                 </table>
@@ -247,7 +335,7 @@
                                                 <div class="row">
                                                     <div class="col-md-12 mb-3">
                                                         <label>Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Bullet Points" name="bullet_title" required>
+                                                        <input type="text" class="form-control" placeholder="Title of Bullet Points" name="bullet_title" value="{{course_detail.bullet_title}}" required>
                                                     </div>    
                                                 </div>
                                                 <div class="row">
@@ -257,7 +345,13 @@
                                                             <button class="add-button" type="button" id="add-bullet-btn">ADD</button>
                                                         </div>
                                                         <br>
-                                                        <ol class="row" id="bullet-div"></ol>
+                                                        <ol class="row" id="bullet-div">
+                                                            {% if course_detail.bullet_points.all|length > 0 %}
+                                                            {% for bullet_obj in course_detail.bullet_points.all %}
+                                                            <li class="col-md-6">{{bullet_obj.bullet_point}}<input type="text" name="bullet" value="{{bullet_obj.bullet_point}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-bullet-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${bulletPoint}'"><i class="fa fa-close" style="padding: 0;"></i></button></li>
+                                                            {% endfor %}
+                                                            {% endif %}
+                                                        </ol>
                                                     </div>
                                                 </div>
                                             </div>
@@ -270,7 +364,7 @@
                                                 <div class="row">
                                                     <div class="col-md-12 mb-3">
                                                         <label>Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Tags" name="tag_title" required>
+                                                        <input type="text" class="form-control" placeholder="Title of Tags" name="tag_title" value="{{course_detail.tag_title}}" required>
                                                     </div>    
                                                 </div>
                                                 <div class="row">
@@ -281,7 +375,13 @@
                                                             <button class="add-button" type="button" id="add-tag-btn">ADD</button>
                                                         </div>
                                                         <br>
-                                                        <div class="row" id="tag-div"></div>
+                                                        <div class="row" id="tag-div">
+                                                            {% if course_detail.tags.all|length > 0 %}
+                                                            {% for tag_obj in course_detail.tags.all %}
+                                                            <div class="col-md-2"><a href="{{tag_obj.link}}" class="tag" target="_blank">{{tag_obj.tag}}</a><input type="text" name="tag" value="{{tag_obj.tag}}" hidden><input type="text" name="tag_link" value="{{tag_obj.link}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>
+                                                            {% endfor %}
+                                                            {% endif %}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -294,12 +394,31 @@
                                                 <div class="row">
                                                     <div class="col-md-12 mb-3">
                                                         <label for="main-title-input" >Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" id="timeline-title-input" placeholder="Title of Timeline" name="timeline_title" required>
+                                                        <input type="text" class="form-control" id="timeline-title-input" placeholder="Title of Timeline" name="timeline_title" value="{{course_detail.timeline_title}}" required>
                                                     </div>            
                                                 </div>
                                                 <hr>
                                                 <br>
                                                 <div class="timeline-div" id="timeline-div">
+                                                    {% if course_detail.timelines.all|length > 1 %}
+                                                    {% for timeline in course_detail.timelines.all %}
+                                                    {% if forloop.counter > 1 %}<hr><br>{% endif %}
+                                                    <div class="timeline-inner-div">
+                                                        <div class="row">
+                                                            <div class="col-md-12 mb-3">
+                                                                <label>Timeline {{forloop.counter}} <span class="text-danger">*</span></label>
+                                                                <input type="text" class="form-control" placeholder="Heading of Timeline {{forloop.counter}}" name="timeline_heading" value="{{timeline.heading}}" required>
+                                                            </div>    
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-12 mb-3">
+                                                                <label >Summary of Timeline {{forloop.counter}} <span class="text-danger">*</span></label>
+                                                                <textarea type="text" class="form-control" placeholder="Summary of Timeline {{forloop.counter}}" name="timeline_summary" required>{% if timeline.summary %}{{timeline.summary}}{% endif %}</textarea>
+                                                            </div>            
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                    {% else %}
                                                     <div class="timeline-inner-div">
                                                         <div class="row">
                                                             <div class="col-md-12 mb-3">
@@ -314,6 +433,7 @@
                                                             </div>            
                                                         </div>
                                                     </div>
+                                                    {% endif %}
                                                 </div>
                                                 <div class="d-flex justify-content-between align-items-center" id="timeline-btn-div">
                                                     <button class="add-button" id="add-timeline-btn" type="button" style="width: fit-content;">Add Another Timeline</button>
@@ -834,11 +954,18 @@
 
             if (tag.trim() && tagLink.trim()) {
                 $('#tag-div').append(
-                    `<a href="${tagLink}" class="tag" target="_blank">${tag}</a><input type="text" name="tag" value="${tag}" hidden><input type="text" name="tag_link" value="${tagLink}" hidden>`
+                    `<div class="col-md-2"><a href="${tagLink}" class="tag" target="_blank">${tag}</a><input type="text" name="tag" value="${tag}" hidden><input type="text" name="tag_link" value="${tagLink}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>`
                 );
             }
 
             $('#tag-input, #tag-link-input').val('');
+        });
+
+        // Remove bullet points
+        $(document).on('click', '#remove-tag-btn', function () {
+            const parentElement = $(this).parent();
+
+            parentElement.remove();
         });
 
         // Press enter for adding bullet points
@@ -903,6 +1030,7 @@
                 $('#remove-timeline-btn').hide();
             }
         });
+        
     });
 </script>
 {% endblock scripts %}

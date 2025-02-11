@@ -1,76 +1,9 @@
-{% extends "admin_base/base.html" %}
+{% extends "admin_company/base/base.html" %}
 {% load static %}
 
-{% block title %}{{product_company.name}} Sub Categories{% endblock title %}
-
-{% block content %}
-			
-<!-- Page Content -->
-<div class="content container-fluid">
-
-	<div class="crms-title row bg-white">
-		<div class="col">
-			<h3 class="page-title m-0">
-			<span class="page-title-icon bg-gradient-primary text-white me-2">
-				<i class="feather-database"></i>
-			</span> {{product_company.name}} Sub Categories </h3>
-		</div>
-		<div class="col text-end">
-			<ul class="breadcrumb bg-white float-end m-0 ps-0 pe-0">
-				<li class="breadcrumb-item"><a href="index.html">Dashboard</a></li>
-				<li class="breadcrumb-item active">{{product_company.name}} Sub Categories</li>
-			</ul>
-		</div>
-	</div>
-	
-	<!-- Page Header -->
-	<div class="page-header pt-3 mb-0 ">
-		<div class="row">
-			<div class="col">
-				<div class="dropdown">
-					<a class="dropdown-toggle recently-viewed" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"> Recently Viewed</a>
-					<div class="dropdown-menu">
-						<a class="dropdown-item" href="#">Recently Viewed</a>
-						<a class="dropdown-item" href="#">Items I'm following</a>
-						<a class="dropdown-item" href="#">All {{product_company.name}} Sub Categories</a>
-						<a class="dropdown-item" href="#">{{product_company.name}} Sub Categories added in the last 24 hours</a>
-						<a class="dropdown-item" href="#">{{product_company.name}} Sub Categories added in the last 7 days</a>
-						<a class="dropdown-item" href="#">{{product_company.name}} Sub Categories with no notes in the last month</a>
-						<a class="dropdown-item" href="#">{{product_company.name}} Sub Categories with no notes in the last 7 days</a>
-					</div>
-				</div>
-			</div>
-			<div class="col text-end">
-				<ul class="list-inline-item ps-0">
-					<li class="nav-item dropdown list-inline-item add-lists">
-						<a class="nav-link dropdown-toggle" id="profileDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-							<div class="nav-profile-text">
-								<i class="fa fa-th" aria-hidden="true"></i>
-							</div>
-						</a>
-						<div class="dropdown-menu navbar-dropdown" aria-labelledby="profileDropdown">
-							<a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#add-new-list">Add New List View</a>
-						</div>
-					</li>
-					<li class="list-inline-item">
-						<a href="#" class="add btn btn-gradient-primary font-weight-bold text-white todo-list-add-btn btn-rounded add-sub-category-toggle-btn" id="add-sub_category" data-bs-toggle="modal" data-bs-target="#add_product_sub_category" data-company-slug="{{product_company.slug}}">New {{product_company}} Sub Category</a>
-					</li>
-				</ul>
-			</div>
-		</div>
-	</div>
-	<!-- /Page Header -->
-
-
+{% block company_content %}
 	<!-- Content Starts -->
 	<div class="row">
-		{% if messages %}
-			<ul class="messages">
-				{% for message in messages %}
-					<li {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
-				{% endfor %}
-			</ul>
-		{% endif %}
 		<div class="col-md-12">
 			<div class="card mb-0">
 				<div class="card-body">
@@ -120,10 +53,7 @@
 	</div>
 	<!-- /Content End -->
 	
-</div>
-<!-- /Page Content -->
-				
-{% endblock content %}
+{% endblock company_content %}
 
 {% block modal %}
 <!-- Modal -->
@@ -161,6 +91,66 @@
 		</div><!-- modal-content -->
 	</div><!-- modal-dialog -->
 </div><!-- modal -->
+
+<!-- Product Sub Category Modal (Start) -->
+<div class="modal fade" id="add_product_sub_category" tabindex="-1" role="dialog" aria-modal="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+
+			<div class="modal-header">
+				<h4 class="modal-title text-center">Add Product Sub Category</h4>
+				<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
+			  </div>
+
+			<div class="modal-body">
+				<div class="row">
+					<div class="col-md-12">
+						<form method="post" action="#" class="needs-validation" id="add-product-sub-category-form" novalidate>
+							{% csrf_token %}
+							<h4>Product Sub Category</h4>
+							<div class="form-row">
+								<div class="col-md-12 mb-3">
+									<label for="product-category-dropdown">Category <span class="text-danger">*</span></label>
+									<select class="form-control" id="sub-category-category-dropdown" name="category" required>
+										<option value="" hidden disabled selected>Select Category</option>
+										{% for category in categories %}
+										<option value="{{category.slug}}">{{category.name}}</option>
+										{% endfor %}
+									</select>
+									<div class="invalid-feedback">
+										Please provide a valid category.
+									</div>
+									<div class="valid-feedback">
+										Looks good!
+									</div>
+								</div>                            										                                                       
+							</div>
+							<div class="form-group row">
+								<div class="col-md-12"><label class="col-form-label">Name <span class="text-danger">*</span></label></div>
+								<div class="col-md-12">
+									<input class="form-control" type="text" id="product-sub-category-name-input" placeholder="Name of Product Sub Category" name="name">
+									<div class="invalid-feedback">
+										Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
+									</div>
+									<div class="valid-feedback">
+										Looks good!
+									</div>
+								</div>
+							</div>									
+							<div class="text-center py-3">
+								<button type="button" class="border-0 btn btn-primary btn-gradient-primary btn-rounded" id="sub-category-submit-button">Add</button>&nbsp;&nbsp;
+								<button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">Cancel</button>
+							</div>
+						</form>
+					</div>
+				</div>
+
+			</div>
+
+		</div><!-- modal-content -->
+	</div><!-- modal-dialog -->
+</div><!-- modal -->
+<!-- Product Sub Category Modal (End) -->
 
 <!-- Product Sub Category Modal (Start) -->
 <div class="modal fade" id="update_category" tabindex="-1" role="dialog" aria-modal="true">

@@ -1,5 +1,5 @@
 from django.shortcuts import redirect, get_object_or_404
-from django.views.generic import TemplateView, View, CreateView, ListView, UpdateView, DetailView
+from django.views.generic import TemplateView, View, CreateView, ListView, UpdateView, DetailView, DeleteView
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.contrib import messages
@@ -10,28 +10,36 @@ from django.contrib.auth import authenticate, logout
 from django.db import IntegrityError
 from datetime import timedelta
 from django.db import transaction
+from django.contrib.auth.models import User
 import logging
+from .tasks import send_company_created_email
 
 from custom_pages.models import (
     AboutUs, ContactUs, FAQ, PrivacyPolicy, TermsAndConditions,
     ShippingAndDeliveryPolicy, CancellationAndRefundPolicy
     )
-from company.models import Company, CompanyType
+from company.models import Company, CompanyType, Client, Testimonial, MultiPage
 from locations.models import UniqueState, UniqueDistrict, UniquePlace
-from django.contrib.auth.models import User
-
-from .tasks import send_company_created_email
-
-from product.models import Product, Category as ProductCategory, SubCategory as ProductSubCategory, Color, Size, Brand
+from product.models import (
+    Product, Category as ProductCategory, SubCategory as ProductSubCategory, Color, Size, Brand,
+    Faq as ProductFaq, Review as ProductReview, Enquiry as ProductEnquiry
+    )
 from educational.models import (
     Program, Course, Specialization, Enquiry as CourseEnquiry, CourseDetail, Feature as CourseFeature,
     VerticalTab as CourseVerticalTab, VerticalBullet as CourseVerticalBullet, HorizontalTab as CourseHorizontalTab,
     HorizontalBullet as CourseHorizontalBullet, TableData as CourseTableData, Table as CourseTable,
-    BulletPoints as CourseBulletPoint, Tag as CourseTag, Timeline as CourseTimeline
+    BulletPoints as CourseBulletPoint, Tag as CourseTag, Timeline as CourseTimeline, Faq as CourseFaq,
+    Testimonial as StudentTestimonial
     )
 from directory.models import PostOffice, PoliceStation, Bank, Court, TouristAttraction
-from service.models import Service, Category as ServiceCategory, SubCategory as ServiceSubCategory, Enquiry as ServiceEnquiry
-from registration.models import RegistrationType, RegistrationSubType, RegistrationDetail
+from service.models import (
+    Service, Category as ServiceCategory, SubCategory as ServiceSubCategory, Enquiry as ServiceEnquiry,
+    Faq as ServiceFaq
+    )
+from registration.models import (
+    RegistrationType, RegistrationSubType, RegistrationDetail, Faq as RegistrationFaq,
+    Enquiry as RegistrationEnquiry
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -72,20 +80,33 @@ class AdminBaseView(LoginRequiredMixin, View):
 class HomeView(AdminBaseView, TemplateView):
     template_name = 'admin/home.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["home_page"] = True
+        return context
+
 
 # Company
 
 class BaseCompanyView(AdminBaseView):
     model = Company
+    slug_url_kwarg = 'slug'
+
+    def get_current_company(self):
+        try:
+            return get_object_or_404(Company, slug = self.kwargs.get(self.slug_url_kwarg), type__name = "Product")
+        except Http404:
+            return None
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         try:
-            context['company_type_page'] = True            
+            # context['company_type_page'] = True
+            context["current_company"] = self.get_current_company()
+            context["company_page"] = True
         except Exception as e:
             logger.exception(f"Error in fetching context data of admin base company view: {e}")
         return context
-    
 
 class CompanyView(BaseCompanyView, ListView):
     model = CompanyType
@@ -127,21 +148,6 @@ class CompanyListView(CompanyView, ListView):
             logger.exception(f"Error in fetching queryset in company list view: {e}")
 
         return self.queryset
-    
-
-# class FitleredCompanyListView(CompanyListView, ListView):
-    # def get_queryset(self):
-    #     try:
-    #         return Company.objects.filter(type__slug = self.kwargs.get("slug"))        
-    #     except Exception as e:
-    #         logger.exception(f"Error in fetching queryset in filtered company list view: {e}")
-
-    #     return self.queryset
-    
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     context["company_type"] = get_object_or_404(CompanyType, slug = self.kwargs.get("slug"))
-    #     return context
     
 
 class CompanyDetailView(BaseCompanyView, DetailView):
@@ -423,12 +429,155 @@ class DeleteCompanyTypeView(BaseCompanyView, View):
             return redirect(self.redirect_url)
 
 
+class BaseMultiPageView(BaseCompanyView, View):
+    model = MultiPage
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    slug_url_kwarg = 'slug'
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:multipage', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_success_url function of AddMultiPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        return self.get_success_url()
+
+    def get_current_company(self):
+        try:
+            self.company = get_object_or_404(Company, slug = self.kwargs.get(self.slug_url_kwarg))
+            return self.company
+        except Http404:
+            messages.error(self.request, "Invalid company")
+            return redirect(self.redirect_url)
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["current_company"] = self.get_current_company()
+        context["multipage"] = True
+        return context
+    
+    def get_object(self):
+        try:
+            return get_object_or_404(MultiPage, company = self.get_current_company())
+        except Http404:
+            return None
+
+
+class MultiPageDetailView(BaseMultiPageView, DetailView):
+    template_name = "multipage/detail.html"    
+    context_object_name = 'page'    
+
+
+class AddMultiPageView(BaseMultiPageView, CreateView):
+    fields = ["company", "text"]
+    template_name = "multipage/add.html"    
+    
+    def get_redirect_url(self):
+        try:
+            return reverse_lazy('superadmin:add_multipage', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_redirect_url function of AddMultiPageView of superadmin: {e}")
+            return self.redirect_url
+
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_current_company()
+            text = request.POST.get('text')
+
+            text = text.strip() if text else None
+
+            if not text:
+                messages.error(request, "Text is required")
+                return redirect(self.get_redirect_url())
+
+            similar_page = MultiPage.objects.filter(company = company).first()
+            
+            if similar_page:
+                messages.warning(request, "This company already have a existing multipage")
+                return redirect(self.get_success_url())
+            
+            MultiPage.objects.create(company = company, text = text)
+            messages.success(request, "Success! Created Multi Page")
+            return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddMultipageView: {e}")
+            return redirect(self.get_redirect_url())
+        
+
+class UpdateMultiPageView(BaseMultiPageView, UpdateView):
+    fields = ["text"]
+    template_name = "multipage/update.html"
+    context_object_name = "page"
+    
+    def get_redirect_url(self):
+        try:
+            return reverse_lazy('superadmin:update_multipage', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_redirect_url function of UpdateMultiPageView of superadmin: {e}")
+            return self.redirect_url    
+
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_current_company()            
+
+            text = request.POST.get('text')
+
+            text = text.strip() if text else None
+
+            if not text:
+                messages.error(request, "Text is required")
+                return redirect(self.get_redirect_url())
+
+            self.object = self.get_object()
+
+            if not self.object:
+                messages.error(request, "Invalid multipage object")
+                return redirect(self.get_redirect_url())
+
+            similar_page = MultiPage.objects.filter(company = company, text = text).first()
+            
+            if similar_page:
+                messages.warning(request, "No changes detected")
+                return redirect(self.get_success_url())
+            
+            self.object.text = text
+            self.object.save()
+
+            messages.success(request, "Success! Updated Multi Page")
+            return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateMultiPageView: {e}")
+            return redirect(self.get_redirect_url())
+
+
+class DeleteMultiPageView(BaseMultiPageView, View):
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            
+            if not self.object:
+                messages.error(request, "Invalid multi page object")
+                return redirect(self.get_redirect_url())
+            
+            self.object.delete()
+            messages.success(request, "Success! Deleted Multi Page")
+            return redirect(self.get_success_url())
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteMultiPageView of superadmin: {e}")
+            return redirect(self.get_redirect_url())
+
+
 # Product Company
-class BaseProductCompanyView(AdminBaseView, View):
+class BaseProductCompanyView(BaseCompanyView, View):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        try:            
+        try: 
+            context["company_type"] = False
             context["product_company_page"] = True
             context["current_company"] = get_object_or_404(Company, slug = self.kwargs.get('slug'))
         except Http404:
@@ -437,7 +586,43 @@ class BaseProductCompanyView(AdminBaseView, View):
             logger.exception(f"Error in fetching context data of base product company view of super admin: {e}")
         return context
 
-class ListProductView(BaseProductCompanyView, ListView):
+class BaseProductView(BaseProductCompanyView, View):
+    model = Product
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    slug_url_kwarg = 'slug'
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:products', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_success_url function of BaseProductView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        return self.get_success_url()
+    
+    def get_current_company(self):
+        try:
+            return get_object_or_404(Company, slug = self.kwargs.get(self.slug_url_kwarg), type__name = "Product")
+        except Http404:
+            return None
+    
+    def get_object(self):
+        try:
+            company_slug = self.kwargs.get(self.slug_url_kwarg)
+            product_slug = self.kwargs.get('product_slug')
+
+            return get_object_or_404(self.model, company__slug = company_slug, slug = product_slug)
+        except Http404:
+            return None
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["company_page"] = True
+        context["product_page"] = True        
+        return context
+
+class ListProductView(BaseProductView, ListView):
     model = Product
     queryset = model.objects.none()
     context_object_name = "products"
@@ -448,18 +633,10 @@ class ListProductView(BaseProductCompanyView, ListView):
             return self.model.objects.filter(company__slug = self.kwargs.get('slug'))
         except Exception as e:
             logger.exception(f"Error in fetching the queryset of list product view of superadmin side: {e}")
-            return self.queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        try:            
-            context["products_page"] = True
-        except Exception as e:
-            logger.exception(f"Error in fetching context data of list product view of super admin: {e}")
-        return context
+            return self.queryset    
     
 
-class AddProductView(BaseProductCompanyView, CreateView):
+class AddProductView(BaseProductView, CreateView):
     model = Product
     fields = "__all__"
     success_url = redirect_url = reverse_lazy("superadmin:add_product")
@@ -474,16 +651,18 @@ class AddProductView(BaseProductCompanyView, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         try:
+            context["add_product_page"] = True
+
             context["sizes"] = Size.objects.all()
             context["colors"] = Color.objects.all()
             context["units"] = sorted(["mm", "cm", "m"])
-            product_company = context["product_company"]
+            current_company = self.get_current_company()
 
-            context["categories"] = ProductCategory.objects.filter(company = product_company).values("slug", "name").order_by("name")
-            context["sub_categories"] = ProductSubCategory.objects.filter(company = product_company).values("slug", "name").order_by("name")
-            context["colors"] = Color.objects.filter(company = product_company).values("slug", "name", "hexa").order_by("name")
-            context["sizes"] = Size.objects.filter(company = product_company).values("slug", "name").order_by("name")
-            context["brands"] = Brand.objects.filter(company = product_company).values("slug", "name").order_by("name")
+            context["categories"] = ProductCategory.objects.filter(company = current_company).values("slug", "name").order_by("name")
+            context["sub_categories"] = ProductSubCategory.objects.filter(company = current_company).values("slug", "name").order_by("name")
+            context["colors"] = Color.objects.filter(company = current_company).values("slug", "name", "hexa").order_by("name")
+            context["sizes"] = Size.objects.filter(company = current_company).values("slug", "name").order_by("name")
+            context["brands"] = Brand.objects.filter(company = current_company).values("slug", "name").order_by("name")            
 
         except Exception as e:
             logger.warning(f"Error in loading context data of add product view: {e}")
@@ -628,6 +807,21 @@ class AddProductView(BaseProductCompanyView, CreateView):
         return redirect(self.get_redirect_url())
     
 
+class DeleteProductView(BaseProductView, View):
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            if not self.object:
+                messages.error(request, "Invalid product")
+                return redirect(self.get_redirect_url())
+            
+            self.object.delete()
+            messages.success(request, "Success! Product Deleted")
+            return redirect(self.get_success_url())
+        except Exception as e:
+            messages.error(f"Error in post function of DeleteProductView of superadmin: {e}")
+            return redirect(self.get_redirect_url())
+
 class ListBrandView(BaseProductCompanyView, ListView):
     model = Brand
     queryset = model.objects.none()
@@ -703,7 +897,7 @@ class ListProductCategoryView(BaseProductCompanyView, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         try:            
-            context["categories_page"] = True        
+            context["product_categories_page"] = True        
         except Exception as e:
             logger.exception(f"Error in fetching context data of list category view of superadmin: {e}")
         return context
@@ -761,9 +955,9 @@ class ListProductSubCategoryView(BaseProductCompanyView, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         try:            
-            context["sub_categories_page"] = True
-            product_company = context["product_company"]
-            context["categories"] = ProductCategory.objects.filter(company = product_company)
+            context["product_sub_categories_page"] = True
+            current_company = self.get_current_company()
+            context["categories"] = ProductCategory.objects.filter(company = current_company)
         except Exception as e:
             logger.exception(f"Error in fetching context data of list sub category view of superadmin: {e}")
         return context
@@ -886,6 +1080,569 @@ class AddProductColorView(BaseProductCompanyView, CreateView):
         return redirect(self.get_redirect_url())
     
 
+# Product FAQ
+class ProductFaqBaseView(BaseProductCompanyView):
+    model = ProductFaq
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    slug_url_kwarg = 'slug'
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:product_faqs', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of BaseProductFaqView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        return self.get_success_url()
+    
+    def get_current_company(self):
+        try:
+            company_slug = self.kwargs.get(self.slug_url_kwarg)            
+            self.company = get_object_or_404(Company, slug = company_slug, type__name = "Product")
+            return self.company
+        except Http404:
+            return None
+        
+    def get_product(self, product_slug):
+        try:            
+            return get_object_or_404(Product, slug = product_slug)
+        except Http404:
+            return None
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        context["company_page"] = True
+        context["product_faq_page"] = True
+
+        return context
+
+
+class AddProductFaqView(ProductFaqBaseView, CreateView):    
+    fields = ["company", "product", "question", "answer"]
+    template_name = "product_company/faqs/add.html"    
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_product_faq', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of AddProductFaqView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        return self.get_success_url()        
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        company_slug = self.kwargs.get('slug')
+
+        context["add_product_faq_page"] = True
+        context["categories"] = ProductCategory.objects.filter(company__slug = company_slug).order_by("name")
+
+        return context
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            product_slug = self.request.POST.get('product')
+            question = request.POST.get("question")
+            answer = request.POST.get("answer")
+
+            product_slug = product_slug.strip() if product_slug else None
+            question = question.strip() if question else None
+            answer = answer.strip() if answer else None
+
+            required_fields = {
+                "Product": product_slug,
+                "Question": question,
+                "Answer": answer
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    print(f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            company = self.get_current_company()
+            product = self.get_product(product_slug)
+
+            if not company or not product:
+                invalid_msg = ""
+                
+                if not company:
+                    invalid_msg = "Invalid Product Company"
+                else:
+                    invalid_msg = "Invalid Product"
+
+                messages.error(request, invalid_msg)
+                return redirect(self.get_redirect_url())
+
+            ProductFaq.objects.update_or_create(company = company, product = product, question = question, defaults={"answer": answer})
+
+            messages.success(request, "Success! Added FAQ")
+            return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in get function of AddProductFaqView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+    
+
+class ListProductFaqView(ProductFaqBaseView, ListView):
+    model = ProductFaq
+    template_name = "product_company/faqs/list.html"
+    queryset = model.objects.none()
+    context_object_name = "faqs"
+
+    def get_queryset(self):
+        try:
+            company_slug = self.kwargs.get(self.slug_url_kwarg)
+            company = get_object_or_404(Company, slug = company_slug, type__name = "Product")
+            return self.model.objects.filter(company = company)
+            
+        except Http404:
+            messages.error(self.request, "Invalid product company")
+            return redirect(self.redirect_url)
+
+
+class UpdateProductFaqView(ProductFaqBaseView, UpdateView):
+    model = ProductFaq
+    fields = ["product", "question", "answer"]
+    template_name = "product_company/faqs/update.html"
+    context_object_name = "faq"
+
+    def get_product(self, product_slug):
+        try:
+            return get_object_or_404(Product, slug = product_slug)
+        except Http404:
+            return None
+        
+    def get_object(self):
+        company_slug = self.kwargs.get('slug') 
+        product_faq_slug = self.kwargs.get('product_faq_slug') 
+
+        self.object = get_object_or_404(ProductFaq, company__slug = company_slug, slug = product_faq_slug)
+
+        return self.object
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        company_slug = self.kwargs.get('slug')
+
+        context["update_product_faq_page"] = True
+
+        context["categories"] = ProductCategory.objects.filter(company__slug = company_slug).order_by("name")
+        context["sub_categories"] = ProductSubCategory.objects.filter(company__slug = company_slug, category = self.object.product.category).order_by("name")
+        context["products"] = Product.objects.filter(company__slug = company_slug, category = self.object.product.category, sub_category = self.object.product.sub_category).order_by("name")
+
+        return context
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+
+            product_slug = self.request.POST.get('product')
+            question = request.POST.get("question")
+            answer = request.POST.get("answer")
+
+            question = question.strip() if question else None
+            answer = answer.strip() if answer else None
+
+            required_fields = {
+                "Product": product_slug,
+                "Question": question,
+                "Answer": answer
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    print(f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            product = self.get_product(product_slug)
+
+            if not product:
+                messages.error(request, "Invalid Product")
+                return redirect(self.get_redirect_url())
+
+            similar_faq = self.model.objects.filter(company = self.object.company, product = product, question = question, answer = answer).first()
+
+            if similar_faq:
+                if similar_faq.slug == self.object.slug:
+                    messages.warning(request, "No changes detected")
+                else:
+                    messages.warning(request, "Similar product FAQ already exists")
+                return redirect(self.get_redirect_url())
+
+            self.object.product = product
+            self.object.question = question
+            self.object.answer = answer
+            self.object.save()
+
+            messages.success(request, f"Success! Updated FAQ")
+            return redirect(self.get_success_url())
+        
+        except Http404:
+            messages.error(request, "Invalid product FAQ object")
+
+        except Exception as e:
+            logger.exception(f"Error in get function of UpdateProductFaqView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class DeleteProductFaqView(ProductFaqBaseView, View):
+    model = ProductFaq
+        
+    def get_object(self):
+        faq_slug = self.kwargs.get('product_faq_slug')
+        company_slug = self.kwargs.get('slug')
+
+        return get_object_or_404(self.model, slug = faq_slug, company__slug = company_slug)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            product_name = str(self.object.product.name)[:25]
+            if len(str(self.object.product.name)) > 25:
+                product_name += "..."
+            self.object.delete()
+
+            messages.success(request, f"Success! Removed product FAQ object of: {product_name}")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Product FAQ")
+
+        except Exception as e:
+            logger.exception(f"Error in get function of DeleteProductFaqView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+# Product Review
+class BaseProductReviewView(BaseProductCompanyView):
+    model = ProductReview
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    slug_url_kwarg = 'slug'
+
+    def get_current_company(self):
+        try:
+            self.company = get_object_or_404(Company, slug = self.kwargs.get('slug'))
+            return self.company
+        except Http404:
+            return None
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["product_review_page"] = context["company_page"] = True
+        context["current_company"] = self.get_current_company()
+        context["company_type_page"] = False
+        return context
+    
+    def get_success_url(self):
+        try:
+            if self.slug_url_kwarg:
+                return reverse_lazy("superadmin:product_reviews", kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_success_url function of BaseProductReviewView of superadmin app: {e}")
+        
+        return self.success_url
+    
+    def get_redirect_url(self):
+        return self.get_success_url()
+    
+    def get_object(self):
+        company_slug = self.kwargs.get(self.slug_url_kwarg)
+        product_review_slug = self.kwargs.get('product_review_slug')
+
+        return get_object_or_404(self.model, company__slug = company_slug, slug = product_review_slug)
+    
+    def get_product(self, product_slug):
+        try:
+            company = self.get_current_company()
+            return get_object_or_404(Product, company = company, slug = product_slug)
+        except Http404:
+            return None
+    
+
+class AddProductReviewView(BaseProductReviewView, CreateView):    
+    template_name = "product_company/reviews/add.html"
+    fields = ["company", "product", "user", "review_by", "text", "rating", "order"]
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy("superadmin:add_product_reviews", kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in get_success_url function of AddProductReviewView of superadmin app: {e}")
+        
+        return self.success_url
+    
+    def get_redirect_url(self):
+        return self.get_success_url()    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        context["add_product_review_page"] = True
+        context["ratings"] = list(range(1,6))
+
+        context["categories"] = ProductCategory.objects.filter(company__slug = self.kwargs.get(self.slug_url_kwarg))
+        
+        return context
+
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_current_company()
+
+            product_slug = request.POST.get("product")
+            review_by = request.POST.get("reviewed_by")
+            text = request.POST.get("testimonial")
+            rating = request.POST.get("rating", 5)
+            order = request.POST.get("order", 0)
+
+            product_slug = product_slug.strip() if product_slug else None
+            review_by = review_by.strip() if review_by else None
+            text = text.strip() if text else None
+            rating = rating.strip() if rating else None
+            order = order.strip() if order else None
+
+            required_fields = {
+                "Product": product_slug,
+                "Review By": review_by,
+                "Review Text": text,
+                "Rating": rating,
+                "Order": order 
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+                
+
+            product = self.get_product(product_slug)
+
+            if not product:
+                messages.error(request, "Invalid Product")
+                return redirect(self.get_redirect_url())                          
+                                   
+            
+            self.model.objects.create(
+                company = company, user = request.user, product = product, review_by = review_by,
+                text = text, rating = rating, order = order
+            )
+
+            messages.success(request, "Success! Review Added")
+            return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddProductReviewView of superadmin app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+            return redirect(self.get_redirect_url())
+
+
+class ProductReviewListView(BaseProductReviewView, ListView):
+    template_name = "product_company/reviews/list.html"
+    context_object_name = "reviews"
+    queryset = ProductReview.objects.none()
+    
+    def get_queryset(self):
+        company_slug = self.kwargs.get('slug')
+        if company_slug:
+            return self.model.objects.filter(company__slug = company_slug).order_by("order")
+        
+        return self.queryset
+    
+
+class UpdateProductReviewView(BaseProductReviewView, UpdateView):    
+    fields = ["review_by", "product", "text", "rating", "order"]
+    template_name = "product_company/reviews/update.html"
+    slug_url_kwarg = 'slug'
+        
+    def get_redirect_url(self):
+        try:
+            return reverse_lazy("superadmin:update_product_review", kwargs = {"slug": self.kwargs.get('slug'), "product_review_slug": self.kwargs.get('product_review_slug')})
+        except Exception as e:
+            logger.exception(f"Error in get_success_url function of AddProductReviewView of superadmin app: {e}")
+        
+        return self.success_url
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        context["update_review_page"] = True
+        context["ratings"] = list(range(1,6))
+
+        context["categories"] = ProductCategory.objects.filter(company = self.get_current_company()).order_by('name')
+        context["sub_categories"] = ProductSubCategory.objects.filter(
+            company = self.get_current_company(), category = self.object.product.category
+            ).order_by('name')
+        context["products"] = Product.objects.filter(
+            company = self.get_current_company(), category = self.object.product.category, sub_category = self.object.product.sub_category
+            ).order_by('name')
+        
+        return context    
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+
+            review_by = request.POST.get("review_by")
+            product_slug = request.POST.get("product")
+            text = request.POST.get("text")
+            rating = request.POST.get("rating", 5)
+            order = request.POST.get("order", 0)
+
+            review_by = review_by.strip() if review_by else None
+            product_slug = product_slug.strip() if product_slug else None
+            text = text.strip() if text else None
+            rating = rating.strip() if rating else None
+            order = order.strip() if order else None
+
+            required_fields = {
+                "Reviewer Name": review_by,
+                "Product": product_slug,
+                "Review Text": text,
+                "Rating": rating,
+                "Order": order 
+            }
+
+            for key, value in required_fields.items():                
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            product = self.get_product(product_slug)
+
+            if not product:
+                messages.error(request, "Invalid Product")
+                return redirect(self.get_redirect_url())                
+            
+            similar_client = self.model.objects.filter(
+                company = self.object.company, review_by = review_by, product = product
+                ).first()
+
+            if similar_client:
+                dublicate_error_msg = ""
+
+                if similar_client.slug == self.object.slug:
+                    if not (order or text or rating):
+                        dublicate_error_msg = "No changes detected"
+                else:
+                    dublicate_error_msg = "Similar review already exists"
+
+                if dublicate_error_msg:
+                    messages.warning(request, dublicate_error_msg)
+                    return redirect(self.get_redirect_url())
+            
+            self.object.review_by = review_by
+            self.object.product = product
+            self.object.text = text
+            self.object.rating = rating
+            self.object.order = order            
+
+            self.object.save()
+
+            messages.success(request, "Success! Review Updated")
+            return redirect(self.get_success_url())
+        
+        except Http404:
+            messages.error(request, "Invalid Review")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateProductReviewView of superadmin app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+    
+
+class DeleteProductReviewView(BaseProductReviewView, DeleteView):
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            self.object.delete()
+            messages.success(request, "Success! Review Deleted")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Review")
+
+        except Exception as e:
+            logger.exception(f"Error in delete function of DeleteProductReviewView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+    
+
+class BaseProductEnquiryView(BaseProductCompanyView, View):
+    model = ProductEnquiry
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    slug_url_kwarg = 'slug'
+
+    def get_current_company(self):
+        try:
+            return get_object_or_404(Company, slug = self.kwargs.get(self.slug_url_kwarg))
+        except Http404:
+            messages.error(self.request, "Invalid Company")
+            return self.redirect_url
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        try:
+            context["current_company"] = self.get_current_company()
+            context["product_enquiry_page"] = True
+
+        except Exception as e:
+            logger.exception(f"Error in getting context data of BaseProductEnquiryView: {e}")
+
+        return context
+
+
+class ListProductEnquiryView(BaseProductEnquiryView, ListView):
+    queryset = ProductEnquiry.objects.none()
+    context_object_name = "enquiries"
+    template_name = "product_company/enquiries/list.html"
+
+    def get_queryset(self):
+        try:
+            return self.model.objects.filter(company__slug = self.kwargs.get(self.slug_url_kwarg))
+        except Exception as e:
+            logger.exception(f"Error in fetching queryset of ListProductEnquiryView of superadmin: {e}")
+            return self.queryset
+
+
+class DeleteProductEnquiryView(BaseProductEnquiryView, View):
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:product_enquiries', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_success_url function of DeleteProductEnquiryView of superadmin app: {e}")
+            return self.success_url
+
+    def get_redirect_url(self):
+        return self.get_success_url()
+            
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(ProductEnquiry, company__slug = self.kwargs.get(self.slug_url_kwarg), slug = self.kwargs.get('enquiry_slug'))
+            self.object.delete()
+
+            messages.success(request, "Success! Delete Product Enquiry")
+            return redirect(self.get_success_url())
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid Product Enquiry")
+            return redirect(self.get_redirect_url())
+
+
 # Education Company
 class BaseEducationCompanyView(AdminBaseView, View):
     model = Course
@@ -903,7 +1660,7 @@ class BaseEducationCompanyView(AdminBaseView, View):
     
 
 class AddCourseView(BaseEducationCompanyView, CreateView): 
-    fields = ["company", "name", "program", "specialization", "mode", "duration", "price", "duration", "state", "district", "place"]   
+    fields = ["company", "image", "name", "program", "specialization", "mode", "duration", "price", "duration"]   
     template_name = "education_company/courses/add.html"
     success_url = redirect_url = reverse_lazy("superadmin:home")
     
@@ -928,7 +1685,7 @@ class AddCourseView(BaseEducationCompanyView, CreateView):
             return get_object_or_404(Company, slug = self.kwargs.get('slug'))
         except Http404:
             messages.error(self.request, "Invalid company")
-            return self.get_redirect_url()
+            return redirect(self.get_redirect_url())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)   
@@ -936,7 +1693,6 @@ class AddCourseView(BaseEducationCompanyView, CreateView):
         try:
             context["course_page"] = True
             context["add_course_page"] = True
-            context["states"] = UniqueState.objects.all()
 
             current_company = self.get_current_company()
 
@@ -951,13 +1707,13 @@ class AddCourseView(BaseEducationCompanyView, CreateView):
         try:
             company = self.get_current_company()
 
+            image = request.FILES.get('image')
             name = request.POST.get("name")
             program_slug = request.POST.get("program")
             specialization_slug = request.POST.get("specialization")
             mode = request.POST.get("mode")
             duration = request.POST.get("duration")
             price = request.POST.get("price")
-            description = request.POST.get("description")
 
             try:
                 program = get_object_or_404(Program, slug = program_slug)
@@ -972,9 +1728,9 @@ class AddCourseView(BaseEducationCompanyView, CreateView):
                 return redirect(self.get_redirect_url())
 
             course, created = self.model.objects.get_or_create(
-                company = company,
+                company = company, image = image,
                 name=name, program=program, specialization=specialization,
-                mode=mode, duration=duration, price=price, description=description
+                mode=mode, duration=duration, price=price
                 )
             
             if created:
@@ -991,7 +1747,7 @@ class AddCourseView(BaseEducationCompanyView, CreateView):
     
 
 class UpdateCourseView(BaseEducationCompanyView, UpdateView): 
-    fields = ["name", "program", "specialization", "mode", "duration", "price", "duration"]   
+    fields = ["image", "name", "program", "specialization", "mode", "duration", "price", "duration"]   
     template_name = "education_company/courses/edit.html"
     success_url = redirect_url = reverse_lazy("superadmin:home")    
     
@@ -1016,7 +1772,7 @@ class UpdateCourseView(BaseEducationCompanyView, UpdateView):
             return get_object_or_404(Company, slug = self.kwargs.get('slug'))
         except Http404:
             messages.error(self.request, "Invalid company")
-            return self.get_redirect_url()
+            return redirect(self.get_redirect_url())
 
     def get_object(self):
         try:
@@ -1046,6 +1802,8 @@ class UpdateCourseView(BaseEducationCompanyView, UpdateView):
     
     def post(self, request, *args, **kwargs):        
         try:
+            image = request.FILES.get("image")
+
             name = request.POST.get("name")
             program_slug = request.POST.get("program")
             specialization_slug = request.POST.get("specialization")
@@ -1097,6 +1855,8 @@ class UpdateCourseView(BaseEducationCompanyView, UpdateView):
             course.duration = duration
             course.price = price
             course.description = description
+            if image:
+                course.image = image
             course.save()
             
             messages.success(request, "Success! Course updated.")
@@ -1104,7 +1864,7 @@ class UpdateCourseView(BaseEducationCompanyView, UpdateView):
             
         except Exception as e:
             logger.exception(f"Error in UpdateCourseView of superadmin app: {e}")
-            messages.error(request, "An expected error occured")
+            messages.error(request, "An expected error occurred")
 
         return redirect(self.get_redirect_url())
     
@@ -1139,9 +1899,9 @@ class RemoveCourseView(BaseEducationCompanyView, View):
 
         except Exception as e:
             logger.exception(f"Error in RemoveCourseView of superadmin app: {e}")
-            messages.error(request, "Failed! An unexpected error occured")
+            messages.error(request, "Failed! An unexpected error occurred")
 
-        return self.get_redirect_url()
+        return redirect(self.get_redirect_url())
 
 
 class CourseListView(BaseEducationCompanyView, ListView):
@@ -1207,7 +1967,7 @@ class AddCourseProgramView(BaseEducationCompanyView, CreateView):
             return get_object_or_404(Company, slug = self.kwargs.get('slug'))
         except Http404:
             messages.error(self.request, "Invalid company")
-            return self.get_redirect_url()    
+            return redirect(self.get_redirect_url())    
 
     def post(self, request, *args, **kwargs):
         try:
@@ -1278,7 +2038,7 @@ class UpdateCourseProgramView(BaseEducationCompanyView, UpdateView):
         
         except Exception as e:
             logger.error(f"Error in UpdateCourseProgramView of superadmin app: {e}")
-            messages.error(request, "An unexpected error occured")
+            messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
     
@@ -1313,9 +2073,9 @@ class RemoveCourseProgramView(BaseEducationCompanyView, View):
 
         except Exception as e:
             logger.exception(f"Error in RemoveCourseProgramView of superadmin app: {e}")
-            messages.error(request, "Failed! An unexpected error occured")
+            messages.error(request, "Failed! An unexpected error occurred")
 
-        return self.get_redirect_url()
+        return redirect(self.get_redirect_url())
     
 
 class CourseSpecializationListView(BaseEducationCompanyView, ListView):
@@ -1473,7 +2233,7 @@ class UpdateCourseSpecializationView(BaseEducationCompanyView, UpdateView):
         
         except Exception as e:
             logger.error(f"Error in UpdateCourseSpecializationView in superadmin app: {e}")
-            messages.error(request, "An unexpected error occured")
+            messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
     
@@ -1508,41 +2268,1256 @@ class RemoveCourseSpecializationView(BaseEducationCompanyView, View):
 
         except Exception as e:
             logger.exception(f"Error in RemoveCourseSpecializationView of superadmin app: {e}")
-            messages.error(request, "Failed! An unexpected error occured")
+            messages.error(request, "Failed! An unexpected error occurred")
 
-        return self.get_redirect_url()
+        return redirect(self.get_redirect_url())
+    
+# Course Detail
+class AddCourseDetailView(BaseEducationCompanyView, CreateView):
+    model = CourseDetail
+    fields = "__all__"
+    template_name = "education_company/course_detail/add.html"
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+
+    def get_current_company(self):
+        try:
+            company_slug = self.kwargs.get('slug')            
+            return get_object_or_404(Company, slug = company_slug)
+        except Http404:
+            messages.error(self.request, "Failed! Invalid Company")
+            return redirect(self.redirect_url)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            context["course_detail_page"] = True
+            
+            current_company = self.get_current_company()
+            
+            context["current_company"] = current_company
+
+            context["courses"] = Course.objects.filter(company = current_company)
+        except Exception as e:
+            logger.exception(f"Error in getting context data of AddCompanyDetailView of superadmin: {e}")
+        
+        return context
+    
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_course_details', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of AddCompanyDetailView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of AddCompanyDetailView of superadmin: {e}")
+            return self.redirect_url
+        
+    def get_course(self, course_slug):
+        try:
+            return get_object_or_404(Course, slug = course_slug)
+        except Http404:
+            messages.error(self.request, "Invalid Course")
+            return redirect(self.get_redirect_url())
+        
+    def handle_features(self, request, company, course):
+        try:
+
+            features_list = request.POST.getlist("feature")
+
+            features_list = list({feature.strip() for feature in features_list})
+            if features_list:
+                with transaction.atomic():
+
+                    CourseFeature.objects.filter(company = company, course = course).delete()
+
+                    features = [CourseFeature(company=company, course=course, feature=feature) for feature in features_list]
+                    CourseFeature.objects.bulk_create(features)
+
+                    feature_objs = CourseFeature.objects.filter(company = company, course = course)
+
+                    return feature_objs
+        
+        except Exception as e:
+            logger.exception(f"Error in handle_features function of AddCourseDetailView: {e}")
+        
+        return []
+
+    def handle_vertical_tabs(self, request, company, course):
+        try:
+            vertical_tab_objects = []
+
+            vertical_heading_list = [heading.strip() for heading in request.POST.getlist("vertical_heading")]
+            vertical_sub_heading_list = [sub_heading.strip() for sub_heading in request.POST.getlist("vertical_sub_heading")]
+            vertical_summary_list = [summary.strip() for summary in request.POST.getlist("vertical_summary")]
+            vertical_bullet_list = [bullet.strip() for bullet in request.POST.getlist("vertical_bullet")]
+            vertical_bullet_count_list = [int(count) if count != '' else 0 for count in request.POST.getlist("vertical_bullet_count")]
+
+            if not (len(vertical_heading_list) == len(vertical_sub_heading_list) == len(vertical_summary_list) == len(vertical_bullet_count_list)):
+                raise ValueError("Mismatch in the number of vertical fields.")            
+            
+            initial = 0
+
+
+            with transaction.atomic():
+                CourseVerticalTab.objects.filter(company = company, course = course).delete()
+                CourseVerticalBullet.objects.filter(company = company, course = course).delete()
+
+                for i in range(len(vertical_bullet_count_list)):
+                    heading = vertical_heading_list[i]
+                    sub_heading = vertical_sub_heading_list[i]
+
+                    if heading:
+                        vertical_tab_obj = CourseVerticalTab.objects.create(
+                            company = company,
+                            course = course,
+                            heading = heading,
+                            sub_heading = sub_heading,
+                            summary = vertical_summary_list[i]
+                        )
+
+                        final = initial + vertical_bullet_count_list[i]
+                        vertical_bullets = vertical_bullet_list[initial:final]
+                        initial = final
+
+                        if vertical_bullet_count_list[i] != 0:
+
+                            creating_vertical_bullets = [CourseVerticalBullet(
+                                company = company, course = course, heading = heading,
+                                sub_heading = sub_heading, bullet = bullet
+                            ) for bullet in vertical_bullets if bullet]
+
+                            if creating_vertical_bullets:
+                                CourseVerticalBullet.objects.bulk_create(creating_vertical_bullets)  
+
+                            created_vertical_bullets = CourseVerticalBullet.objects.filter(company = company, course = course, heading = heading, sub_heading = sub_heading)
+
+                            vertical_tab_obj.bullets.set(created_vertical_bullets)
+
+                        vertical_tab_objects.append(vertical_tab_obj)
+
+            return vertical_tab_objects
+
+        except (IntegrityError, IndexError, ValueError) as e:
+            logger.exception(f"Error in handle_vertical_tabs function of AddCourseDetailView: {e}")
+
+        return []
+    
+    def handle_horizontal_tabs(self, request, company, course):
+        try:
+            horizontal_tab_objects = []
+
+            horizontal_heading_list = [heading.strip() for heading in request.POST.getlist("horizontal_heading")]
+            horizontal_summary_list = [summary.strip() for summary in request.POST.getlist("horizontal_summary")]
+            horizontal_bullet_list = [bullet.strip() for bullet in request.POST.getlist("horizontal_bullet")]
+            horizontal_bullet_count_list = [int(count) if count != '' else 0 for count in request.POST.getlist("horizontal_bullet_count")] 
+
+            if not (len(horizontal_heading_list) == len(horizontal_summary_list) == len(horizontal_bullet_count_list)):
+                raise ValueError("Mismatch in the number of horizontal fields.")                        
+            
+            initial = 0
+
+
+            with transaction.atomic():
+                CourseHorizontalTab.objects.filter(company = company, course = course).delete()
+                CourseHorizontalBullet.objects.filter(company = company, course = course).delete()
+
+                for i in range(len(horizontal_bullet_count_list)):
+                    heading = horizontal_heading_list[i]
+
+                    if heading:
+                        horizontal_tab_obj = CourseHorizontalTab.objects.create(
+                            company = company,
+                            course = course,
+                            heading = heading,
+                            summary = horizontal_summary_list[i]
+                        )
+
+                        final = initial + horizontal_bullet_count_list[i]
+                        horizontal_bullets = horizontal_bullet_list[initial:final]
+                        initial = final
+                        
+                        if horizontal_bullet_count_list[i] != 0:
+                        
+                            creating_horizontal_bullets = [CourseHorizontalBullet(
+                                company = company, course = course, heading = heading,
+                                bullet = bullet
+                            ) for bullet in horizontal_bullets if bullet]
+
+                            if creating_horizontal_bullets:
+                                CourseHorizontalBullet.objects.bulk_create(creating_horizontal_bullets)
+
+                            created_horizontal_bullets = CourseHorizontalBullet.objects.filter(company = company, course = course, heading = heading)
+
+                            horizontal_tab_obj.bullets.set(created_horizontal_bullets)
+
+                        horizontal_tab_objects.append(horizontal_tab_obj)
+
+            return horizontal_tab_objects
+
+        except (IntegrityError, IndexError, ValueError) as e:
+            logger.exception(f"Error in handle_horizontal_tabs function of AddCourseDetailView: {e}")
+
+        return []
+    
+    def handle_tables(self, request, company, course):
+        try:
+            course_tables = []
+
+            heading_list = [heading.strip() for heading in request.POST.getlist("table_heading")]
+            data_list = [data.strip() for data in request.POST.getlist("table_data")]
+
+            heading_length = len(heading_list)
+            data_length = len(data_list)
+
+
+            with transaction.atomic():
+                CourseTableData.objects.filter(company = company, course = course).delete()
+                CourseTable.objects.filter(company = company, course = course).delete()
+
+                for index, heading in enumerate(heading_list):
+                    course_table = CourseTable.objects.create(
+                        company = company, course = course, heading = heading
+                    )
+
+                    data_positions  = list(range(index, data_length, heading_length))
+                    data_list_of_heading = [data_list[i] for i in data_positions ]
+
+                    table_data_objs  = [CourseTableData(
+                            company = company, course = course,
+                            heading = heading, data = data
+                            ) for data in data_list_of_heading]
+
+                    CourseTableData.objects.bulk_create(table_data_objs )
+
+                    course_table_data_objs = CourseTableData.objects.filter(company = company, course = course, heading = heading)
+
+                    course_table.datas.set(course_table_data_objs)
+
+                    course_tables.append(course_table)
+
+            return course_tables
+        
+        except Exception as e:
+            logger.exception(f"Error in handle_tables function of AddCourseDetailView: {e}")
+
+        return []
+    
+    def handle_bullet_points(self, request, company, course):
+        try:
+            bullet_point_list = [bullet_point.strip() for bullet_point in request.POST.getlist("bullet")]
+
+            with transaction.atomic():
+                CourseBulletPoint.objects.filter(company = company, course = course).delete()
+
+                if bullet_point_list:
+                    bullet_point_objects = [CourseBulletPoint(
+                        company = company, course = course,
+                        bullet_point = bullet_point
+                    ) for bullet_point in bullet_point_list if bullet_point]
+
+                    CourseBulletPoint.objects.bulk_create(bullet_point_objects)
+
+                    bullet_points = CourseBulletPoint.objects.filter(company = company, course = course)                
+
+                    return bullet_points
+
+        except Exception as e:
+            logger.exception(f"Error in handle_bullet_points function of AddCourseDetailView: {e}")
+
+        return []
+
+    def handle_tags(self, request, company, course):
+        try:
+            tag_list = [tag.strip() for tag in request.POST.getlist("tag")]
+            tag_link_list = [tag_link.strip() for tag_link in request.POST.getlist("tag_link")]
+
+            if len(tag_link_list) != len(tag_list):
+                raise ValueError("The number of tags does not match the number of links.")
+
+            with transaction.atomic():
+                CourseTag.objects.filter(company = company, course = course).delete()
+
+                if tag_list and tag_link_list:                
+                    creating_tags = [CourseTag(
+                        company = company, course = course,
+                        tag = tag, link = link
+                        ) for tag, link in zip(tag_list, tag_link_list) if tag and link]
+
+                    CourseTag.objects.bulk_create(creating_tags)
+
+                    course_tags = CourseTag.objects.filter(company = company, course = course)                
+
+                    return course_tags
+
+        except Exception as e:
+            logger.exception(f"Error in handle_tags function of AddCourseDetailView: {e}")
+
+        return []
+
+    def handle_timelines(self, request, company, course):
+        try:
+            heading_list = [heading.strip() for heading in request.POST.getlist("timeline_heading")]
+            summary_list = [summary.strip() for summary in request.POST.getlist("timeline_summary")]                        
+
+            if len(heading_list) != len(summary_list):
+                raise ValueError("The number of headings does not match the number of summaries.")
+
+            with transaction.atomic():
+                CourseTimeline.objects.filter(company = company, course = course).delete()
+                
+                if heading_list and summary_list:
+                    creating_timelines = [CourseTimeline(
+                        company = company, course = course,
+                        heading = heading, summary = summary
+                        ) for heading, summary in zip(heading_list, summary_list)]
+
+                    CourseTimeline.objects.bulk_create(creating_timelines)
+
+                    course_timelines = CourseTimeline.objects.filter(company = company, course = course)                
+                                            
+                    return course_timelines
+        except Exception as e:
+            logger.exception(f"Error in handle_timelines function of AddCourseDetailView: {e}")
+
+        return []
+
+    def post(self, request, *args, **kwargs):
+        try:
+            course_slug = request.POST.get('course')
+
+            summary = request.POST.get("summary")
+            description = request.POST.get("description")
+            vertical_title = request.POST.get("vertical_title")
+            horizontal_title = request.POST.get("horizontal_title")
+            table_title = request.POST.get("table_title")
+            bullet_title = request.POST.get("bullet_title")
+            tag_title = request.POST.get("tag_title")
+            timeline_title = request.POST.get("timeline_title")
+
+            summary = summary.strip() if summary else None
+            description = description.strip() if description else None
+            vertical_title = vertical_title.strip() if vertical_title else None
+            horizontal_title = horizontal_title.strip() if horizontal_title else None
+            table_title = table_title.strip() if table_title else None
+            bullet_title = bullet_title.strip() if bullet_title else None
+            tag_title = tag_title.strip() if tag_title else None
+            timeline_title = timeline_title.strip() if timeline_title else None
+
+            # Fetch current company
+            company = self.get_current_company()
+
+            if not company or company.type.name != "Education" :
+                messages.error(request, "Invalid company")
+                return redirect(self.redirect_url)
+            
+            required_fields = {
+                "Course": course_slug,
+                "summary": summary,
+                "description": description
+                }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            course = self.get_course(course_slug)
+
+            with transaction.atomic():
+            
+                course_detail = self.model.objects.create(
+                    company = company, course = course, summary = summary, description = description,
+                    vertical_title = vertical_title, horizontal_title = horizontal_title,
+                    table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
+                    timeline_title = timeline_title
+                )
+
+                relationship_handlers = {
+                    "features": self.handle_features,
+                    "vertical_tabs": self.handle_vertical_tabs,
+                    "horizontal_tabs": self.handle_horizontal_tabs,
+                    "tables": self.handle_tables,
+                    "bullet_points": self.handle_bullet_points,
+                    "tags": self.handle_tags,
+                    "timelines": self.handle_timelines,
+                }
+
+                for field, handler in relationship_handlers.items():
+                    objects = handler(request, company, course)
+                    getattr(course_detail, field).set(objects)
+
+                messages.success(request, "Success! Created course detail page")
+                return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddCompanyDetailView of superadmin: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
     
 
-class ListCourseEnquiryView(BaseEducationCompanyView, ListView):
-    model = CourseEnquiry
+class CourseDetailsListView(BaseEducationCompanyView, ListView):
+    model = CourseDetail
+    template_name = "education_company/course_detail/list.html"
     queryset = model.objects.none()
-    context_object_name = "enquiries"
-    template_name = "education_company/enquiries/list.html"
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    context_object_name = "course_details"
+
+    def get_current_company(self):
+        try:
+            company_slug = self.kwargs.get('slug')            
+            return get_object_or_404(Company, slug = company_slug)
+        except Http404:
+            messages.error(self.request, "Failed! Invalid Company")
+            return redirect(self.redirect_url)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            context["course_detail_page"] = True
+            
+            current_company = self.get_current_company()
+            
+            context["current_company"] = current_company
+
+        except Exception as e:
+            logger.exception(f"Error in getting context data of AddCompanyDetailView of superadmin: {e}")
+        
+        return context
+    
+    def get_queryset(self):
+        try:
+            current_company = self.get_current_company()
+            return self.model.objects.filter(company = current_company)
+        except Exception as e:
+            logger.exception(f"Error in getting queryset of CourseDetailsListView of superadmin: {e}")
+            return self.queryset
+        
+
+class CourseDetailView(BaseEducationCompanyView, DetailView):
+    model = CourseDetail
+    template_name = "education_company/course_detail/detail.html"
+    redirect_url = reverse_lazy('superadmin:home')
+    context_object_name = "course_detail"
+
+    def get_redirect_url(self):
+        try:
+            return reverse_lazy('superadmin:course_details', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in get_redirect_url function of CourseDetailView: {e}")
+            return self.redirect_url
+
+    def get_current_company(self):
+        try:
+            company_slug = self.kwargs.get('slug')            
+            return get_object_or_404(Company, slug = company_slug)
+        except Http404:
+            messages.error(self.request, "Failed! Invalid Company")
+            return redirect(self.redirect_url)
+        
+    def get_current_course(self):
+        try:
+            course_slug = self.kwargs.get('course_slug')
+            return get_object_or_404(Course, slug = course_slug)
+        except Http404:
+            messages.error(self.request, "Failed! Invalid Course")
+            return redirect(self.redirect_url)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            context["course_detail_page"] = True
+            
+            current_company = self.get_current_company()
+            
+            context["current_company"] = current_company
+
+        except Exception as e:
+            logger.exception(f"Error in getting context data of AddCompanyDetailView of superadmin: {e}")
+        
+        return context
+    
+    def get_object(self):
+        try:
+            current_company = self.get_current_company()
+            current_course = self.get_current_course()
+            return get_object_or_404(self.model, company = current_company, course = current_course)
+        
+        except Http404:
+            messages.error(self.request, "Invalid course for this company")
+
+        except Exception as e:
+            logger.exception(f"Error in get_object function of CourseDetailView of superadmin: {e}")
+
+        return redirect(self.get_redirect_url())
+    
+
+class UpdateCourseDetailView(BaseEducationCompanyView, UpdateView):
+    model = CourseDetail
+    fields = "__all__"
+    template_name = "education_company/course_detail/update.html"
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    context_object_name = "course_detail"
+    
+    def get_current_company(self):
+        try:
+            company_slug = self.kwargs.get('slug')            
+            return get_object_or_404(Company, slug = company_slug)
+        except Http404:
+            messages.error(self.request, "Failed! Invalid Company")
+            return redirect(self.redirect_url)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            context["course_detail_page"] = True
+            
+            current_company = self.get_current_company()
+            
+            context["current_company"] = current_company            
+
+            context["courses"] = Course.objects.filter(company = current_company)
+        except Exception as e:
+            logger.exception(f"Error in getting context data of UpdateCourseDetailView of superadmin: {e}")
+        
+        return context
+    
+    def get_object(self):
+        try:
+            company_slug = self.kwargs.get('slug')
+            course_detail_slug = self.kwargs.get('course_detail_slug')
+            
+            return get_object_or_404(CourseDetail, company__slug = company_slug, slug = course_detail_slug)
+        
+        except Http404:
+            messages.error(self.request, "Invalid course detail object")
+            return redirect(self.get_redirect_url())
+    
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:update_course_details', kwargs = {"slug": self.kwargs.get('slug'), "course_detail_slug": self.kwargs.get('course_detail_slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of UpdateCourseDetailView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of UpdateCourseDetailView of superadmin: {e}")
+            return self.redirect_url
+        
+    def get_course(self, course_slug):
+        try:
+            return get_object_or_404(Course, slug = course_slug)
+        except Http404:
+            messages.error(self.request, "Invalid Course")
+            return redirect(self.get_redirect_url())
+    
+    def handle_features(self, request, company, course):
+        try:
+
+            features_list = request.POST.getlist("feature")
+
+            features_list = list({feature.strip() for feature in features_list})
+            if features_list:
+                with transaction.atomic():
+
+                    CourseFeature.objects.filter(company = company, course = course).delete()
+
+                    features = [CourseFeature(company=company, course=course, feature=feature) for feature in features_list]
+                    CourseFeature.objects.bulk_create(features)
+
+                    feature_objs = CourseFeature.objects.filter(company = company, course = course)
+
+                    return feature_objs
+        
+        except Exception as e:
+            logger.exception(f"Error in handle_features function of UpdateCourseDetailView: {e}")
+        
+        return []
+
+    def handle_vertical_tabs(self, request, company, course):
+        try:
+            vertical_tab_objects = []
+
+            vertical_heading_list = [heading.strip() for heading in request.POST.getlist("vertical_heading")]
+            vertical_sub_heading_list = [sub_heading.strip() for sub_heading in request.POST.getlist("vertical_sub_heading")]
+            vertical_summary_list = [summary.strip() for summary in request.POST.getlist("vertical_summary")]
+            vertical_bullet_list = [bullet.strip() for bullet in request.POST.getlist("vertical_bullet")]
+            vertical_bullet_count_list = [int(count) if count != '' else 0 for count in request.POST.getlist("vertical_bullet_count")]
+
+            if not (len(vertical_heading_list) == len(vertical_sub_heading_list) == len(vertical_summary_list) == len(vertical_bullet_count_list)):
+                raise ValueError("Mismatch in the number of vertical fields.")
+
+            initial = 0
+
+            with transaction.atomic():
+                CourseVerticalTab.objects.filter(company = company, course = course).delete()
+                CourseVerticalBullet.objects.filter(company = company, course = course).delete()
+
+                for i in range(len(vertical_bullet_count_list)):
+                    heading = vertical_heading_list[i]
+                    sub_heading = vertical_sub_heading_list[i]
+
+                    if heading:
+                        vertical_tab_obj = CourseVerticalTab.objects.create(
+                            company = company,
+                            course = course,
+                            heading = heading,
+                            sub_heading = sub_heading,
+                            summary = vertical_summary_list[i]
+                        )                    
+
+                        final = initial + vertical_bullet_count_list[i]
+                        vertical_bullets = vertical_bullet_list[initial:final]
+                        initial = final
+
+                        if vertical_bullet_count_list[i] != 0:
+
+                            creating_vertical_bullets = [CourseVerticalBullet(
+                                company = company, course = course, heading = heading,
+                                sub_heading = sub_heading, bullet = bullet
+                            ) for bullet in vertical_bullets if bullet]
+
+                            if creating_vertical_bullets:
+                                CourseVerticalBullet.objects.bulk_create(creating_vertical_bullets)  
+
+                            created_vertical_bullets = CourseVerticalBullet.objects.filter(company = company, course = course, heading = heading, sub_heading = sub_heading)
+
+                            vertical_tab_obj.bullets.set(created_vertical_bullets)
+
+                        vertical_tab_objects.append(vertical_tab_obj)
+
+            return vertical_tab_objects
+
+        except (IntegrityError, IndexError, ValueError) as e:
+            logger.exception(f"Error in handle_vertical_tabs function of UpdateCourseDetailView: {e}")
+
+        return []
+    
+    def handle_horizontal_tabs(self, request, company, course):
+        try:
+            horizontal_tab_objects = []
+
+            horizontal_heading_list = [heading.strip() for heading in request.POST.getlist("horizontal_heading")]
+            horizontal_summary_list = [summary.strip() for summary in request.POST.getlist("horizontal_summary")]
+            horizontal_bullet_list = [bullet.strip() for bullet in request.POST.getlist("horizontal_bullet")]
+            horizontal_bullet_count_list = [int(count) if count != '' else 0 for count in request.POST.getlist("horizontal_bullet_count")] 
+
+            if not (len(horizontal_heading_list) == len(horizontal_summary_list)):
+                raise ValueError("Mismatch in the number of horizontal fields.")
+
+            initial = 0
+
+            with transaction.atomic():
+                CourseHorizontalTab.objects.filter(company = company, course = course).delete()
+                CourseHorizontalBullet.objects.filter(company = company, course = course).delete()
+
+                for i in range(len(horizontal_bullet_count_list)):
+                    heading = horizontal_heading_list[i]
+
+                    if heading:
+                        horizontal_tab_obj = CourseHorizontalTab.objects.create(
+                            company = company,
+                            course = course,
+                            heading = heading,
+                            summary = horizontal_summary_list[i]
+                        )
+
+                        final = initial + horizontal_bullet_count_list[i]
+                        horizontal_bullets = horizontal_bullet_list[initial:final]
+                        initial = final
+                        
+                        if horizontal_bullet_count_list[i] != 0:
+
+                            creating_horizontal_bullets = [CourseHorizontalBullet(
+                                company = company, course = course, heading = heading,
+                                bullet = bullet
+                            ) for bullet in horizontal_bullets if bullet]
+
+                            if creating_horizontal_bullets:
+                                CourseHorizontalBullet.objects.bulk_create(creating_horizontal_bullets)
+
+                            created_horizontal_bullets = CourseHorizontalBullet.objects.filter(company = company, course = course, heading = heading)
+
+                            horizontal_tab_obj.bullets.set(created_horizontal_bullets)
+
+                        horizontal_tab_objects.append(horizontal_tab_obj)                                        
+
+            return horizontal_tab_objects
+
+        except Exception as e:
+            logger.exception(f"Error in handle_horizontal_tabs function of UpdateCourseDetailView: {e}")
+
+        return []
+    
+    def handle_tables(self, request, company, course):
+        try:
+            course_tables = []
+
+            heading_list = [heading.strip() for heading in request.POST.getlist("table_heading")]
+            data_list = [data.strip() for data in request.POST.getlist("table_data")]
+
+            heading_length = len(heading_list)
+            data_length = len(data_list)
+
+            with transaction.atomic():
+                CourseTableData.objects.filter(company = company, course = course).delete()
+                CourseTable.objects.filter(company = company, course = course).delete()
+
+                for index, heading in enumerate(heading_list):
+                    course_table = CourseTable.objects.create(
+                        company = company, course = course, heading = heading
+                    )
+
+                    data_positions  = list(range(index, data_length, heading_length))
+                    data_list_of_heading = [data_list[i] for i in data_positions ]
+
+                    table_data_objs  = [CourseTableData(
+                            company = company, course = course,
+                            heading = heading, data = data
+                            ) for data in data_list_of_heading]
+
+                    CourseTableData.objects.bulk_create(table_data_objs )
+
+                    course_table_data_objs = CourseTableData.objects.filter(company = company, course = course, heading = heading)
+
+                    course_table.datas.set(course_table_data_objs)
+
+                    course_tables.append(course_table)
+
+            return course_tables
+        
+        except Exception as e:
+            logger.exception(f"Error in handle_tables function of UpdateCourseDetailView: {e}")
+
+        return []
+    
+    def handle_bullet_points(self, request, company, course):
+        try:
+            bullet_point_list = [bullet_point.strip() for bullet_point in request.POST.getlist("bullet")]
+
+            with transaction.atomic():
+                CourseBulletPoint.objects.filter(company = company, course = course).delete()
+
+                if bullet_point_list:
+                    bullet_point_objects = [CourseBulletPoint(
+                        company = company, course = course,
+                        bullet_point = bullet_point
+                    ) for bullet_point in bullet_point_list if bullet_point]
+
+                    CourseBulletPoint.objects.bulk_create(bullet_point_objects)
+
+                    bullet_points = CourseBulletPoint.objects.filter(company = company, course = course)                
+
+                    return bullet_points
+
+        except Exception as e:
+            logger.exception(f"Error in handle_bullet_points function of UpdateCourseDetailView: {e}")
+
+        return []
+
+    def handle_tags(self, request, company, course):
+        try:
+            tag_list = [tag.strip() for tag in request.POST.getlist("tag")]
+            tag_link_list = [tag_link.strip() for tag_link in request.POST.getlist("tag_link")]                        
+
+            if len(tag_link_list) != len(tag_list):
+                raise ValueError("The number of tags does not match the number of links.")
+
+            with transaction.atomic():
+                CourseTag.objects.filter(company = company, course = course).delete()
+
+                if tag_list and tag_link_list:                
+                    creating_tags = [CourseTag(
+                        company = company, course = course,
+                        tag = tag, link = link
+                        ) for tag, link in zip(tag_list, tag_link_list) if tag and link]
+
+                    CourseTag.objects.bulk_create(creating_tags)
+
+                    course_tags = CourseTag.objects.filter(company = company, course = course)                
+
+                    return course_tags
+
+        except Exception as e:
+            logger.exception(f"Error in handle_tags function of UpdateCourseDetailView: {e}")
+
+        return []
+
+    def handle_timelines(self, request, company, course):
+        try:
+            heading_list = [heading.strip() for heading in request.POST.getlist("timeline_heading")]
+            summary_list = [summary.strip() for summary in request.POST.getlist("timeline_summary")]                        
+
+            if len(heading_list) != len(summary_list):
+                raise ValueError("The number of headings does not match the number of summaries.")
+
+            with transaction.atomic():
+                CourseTimeline.objects.filter(company = company, course = course).delete()
+                
+                if heading_list and summary_list:
+                    creating_timelines = [CourseTimeline(
+                        company = company, course = course,
+                        heading = heading, summary = summary
+                        ) for heading, summary in zip(heading_list, summary_list)]
+
+                    CourseTimeline.objects.bulk_create(creating_timelines)
+
+                    course_timelines = CourseTimeline.objects.filter(company = company, course = course)
+
+                    return course_timelines
+        except Exception as e:
+            logger.exception(f"Error in handle_timelines function of UpdateCourseDetailView: {e}")
+
+        return []
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            course_slug = request.POST.get('course')
+
+            summary = request.POST.get("summary")
+            description = request.POST.get("description")
+            vertical_title = request.POST.get("vertical_title")
+            horizontal_title = request.POST.get("horizontal_title")
+            table_title = request.POST.get("table_title")
+            bullet_title = request.POST.get("bullet_title")
+            tag_title = request.POST.get("tag_title")
+            timeline_title = request.POST.get("timeline_title")   
+
+            summary = summary.strip() if summary else None
+            description = description.strip() if description else None
+            vertical_title = vertical_title.strip() if vertical_title else None
+            horizontal_title = horizontal_title.strip() if horizontal_title else None
+            table_title = table_title.strip() if table_title else None
+            bullet_title = bullet_title.strip() if bullet_title else None
+            tag_title = tag_title.strip() if tag_title else None
+            timeline_title = timeline_title.strip() if timeline_title else None
+
+            # Fetch current company
+            company = self.get_current_company()
+
+            if not company or company.type.name != "Education" :
+                messages.error(request, "Invalid company")
+                return redirect(self.redirect_url)
+            
+            required_fields = {
+                "Course": course_slug,
+                "summary": summary,
+                "description": description
+                }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            course = self.get_course(course_slug)
+
+            with transaction.atomic():
+
+                course_detail = self.get_object()
+
+                course_detail.course = course
+                course_detail.summary = summary
+                course_detail.description = description
+                course_detail.vertical_title = vertical_title
+                course_detail.horizontal_title = horizontal_title
+                course_detail.table_title = table_title
+                course_detail.bullet_title = bullet_title
+                course_detail.tag_title = tag_title
+                course_detail.timeline_title = timeline_title                              
+
+                relationship_handlers = {
+                    "features": self.handle_features,
+                    "vertical_tabs": self.handle_vertical_tabs,
+                    "horizontal_tabs": self.handle_horizontal_tabs,
+                    "tables": self.handle_tables,
+                    "bullet_points": self.handle_bullet_points,
+                    "tags": self.handle_tags,
+                    "timelines": self.handle_timelines,
+                }
+
+                for field, handler in relationship_handlers.items():
+                    objects = handler(request, company, course)
+                    getattr(course_detail, field).set(objects)
+
+                course_detail.save()
+
+                messages.success(request, "Success! Updated course detail page")
+                return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateCompanyDetailView of superadmin: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+    
+
+class DeleteCourseDetailView(BaseEducationCompanyView, View):
+    model = CourseDetail
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:course_details', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of DeleteCourseDetailView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of DeleteCourseDetailView of superadmin: {e}")
+            return self.redirect_url
+        
+    def get_object(self):
+        course_slug = self.kwargs.get('course_detail_slug')
+        company_slug = self.kwargs.get('slug')
+
+        return get_object_or_404(self.model, slug = course_slug, company__slug = company_slug)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            course_detail = self.get_object()
+            course_name = course_detail.course.name
+            course_detail.delete()
+
+            messages.success(request, f"Success! Removed course detail page of: {course_name}")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Course Detail")
+
+        except Exception as e:
+            logger.exception(f"Error in get function of DeleteCourseDetailView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+class AddCourseFaqView(BaseEducationCompanyView, CreateView):
+    model = CourseFaq
+    fields = ["company", "course", "question", "answer"]
+    template_name = "education_company/course_faqs/add.html"
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_course_faq', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of AddCourseFaqView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of AddCourseFaqView of superadmin: {e}")
+            return self.redirect_url
+        
+    def get_current_company(self):
+        try:
+            company_slug = self.kwargs.get('slug')            
+            return get_object_or_404(Company, slug = company_slug)
+        except Http404:
+            messages.error(self.request, "Failed! Invalid Company")
+            return redirect(self.redirect_url)
+
+    def get_course(self, course_slug):
+        try:
+            
+            return get_object_or_404(Course, slug = course_slug)
+        except Http404:
+            messages.error(self.request, "Invalid Course")
+            return redirect(self.get_redirect_url())
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        company_slug = self.kwargs.get('slug')
+
+        context["course_faq_page"] = context["add_course_faq_page"] = True
+        context["programs"] = Program.objects.filter(company__slug = company_slug).order_by("name")
+
+        return context
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            course_slug = self.request.POST.get('course')
+            question = request.POST.get("question")
+            answer = request.POST.get("answer")
+
+            question = question.strip() if question else None
+            answer = answer.strip() if answer else None
+
+            required_fields = {
+                "Course": course_slug,
+                "Question": question,
+                "Answer": answer
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    print(f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            company = self.get_current_company()
+            course = self.get_course(course_slug)
+
+            CourseFaq.objects.update_or_create(company = company, course = course, question = question, defaults={"answer": answer})
+
+            messages.success(request, f"Success! Created FAQ object for course: {course.name}")
+            return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in get function of AddCourseFaqView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class UpdateCourseFaqView(BaseEducationCompanyView, UpdateView):
+    model = CourseFaq
+    fields = ["course", "question", "answer"]
+    template_name = "education_company/course_faqs/update.html"
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    context_object_name = "faq"
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:update_course_faq', kwargs = {"slug": self.kwargs.get('slug'), "course_faq_slug": self.kwargs.get('course_faq_slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of UpdateCourseFaqView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of UpdateCourseFaqView of superadmin: {e}")
+            return self.redirect_url
+
+    def get_course(self, course_slug):
+        try:
+            
+            return get_object_or_404(Course, slug = course_slug)
+        except Http404:
+            messages.error(self.request, "Invalid Course")
+            return redirect(self.get_redirect_url())
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        company_slug = self.kwargs.get('slug')
+
+        context["course_faq_page"] = context["update_course_faq_page"] = True
+        context["programs"] = Program.objects.filter(company__slug = company_slug).order_by("name")
+
+        return context
+    
+    def get_object(self):
+        company_slug = self.kwargs.get('slug') 
+        course_faq_slug = self.kwargs.get('course_faq_slug') 
+
+        return get_object_or_404(CourseFaq, company__slug = company_slug, slug = course_faq_slug)
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            faq = self.get_object()
+
+            course_slug = self.request.POST.get('course')
+            question = request.POST.get("question")
+            answer = request.POST.get("answer")
+
+            question = question.strip() if question else None
+            answer = answer.strip() if answer else None
+
+            required_fields = {
+                "Course": course_slug,
+                "Question": question,
+                "Answer": answer
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    print(f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            course = self.get_course(course_slug)
+
+            similar_faq = self.model.objects.filter(company = faq.company, course = course, question = question, answer = answer).first()
+
+            if similar_faq:
+                if similar_faq.slug == faq.slug:
+                    messages.warning(request, "No changes detected")
+                else:
+                    messages.warning(request, "Similar course FAQ already exists")
+                return redirect(self.get_redirect_url())
+
+            faq.course = course
+            faq.question = question
+            faq.answer = answer
+            faq.save()
+
+            messages.success(request, f"Success! Updated FAQ")
+            return redirect(self.get_success_url())
+        
+        except Http404:
+            messages.error(request, "Invalid course FAQ object")
+
+        except Exception as e:
+            logger.exception(f"Error in get function of UpdateCourseFaqView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class DeleteCourseFaqView(BaseEducationCompanyView, View):
+    model = CourseFaq
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:course_faqs', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of DeleteCourseFaqView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of DeleteCourseFaqView of superadmin: {e}")
+            return self.redirect_url
+        
+    def get_object(self):
+        faq_slug = self.kwargs.get('course_faq_slug')
+        company_slug = self.kwargs.get('slug')
+
+        return get_object_or_404(self.model, slug = faq_slug, company__slug = company_slug)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            faq = self.get_object()
+            course_name = faq.course.name
+            faq.delete()
+
+            messages.success(request, f"Success! Removed course FAQ object of: {course_name}")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Course FAQ")
+
+        except Exception as e:
+            logger.exception(f"Error in get function of DeleteCourseFaqView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class ListCourseFaqView(BaseEducationCompanyView, ListView):
+    model = CourseFaq
+    template_name = "education_company/course_faqs/list.html"
+    queryset = model.objects.none()
+    context_object_name = "faqs"
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["course_faq_page"] = True
+
+        return context
 
     def get_queryset(self):
         try:
-            return self.model.objects.filter(company__slug = self.kwargs.get('slug'))
-        except Exception as e:
-            logger.exception(f"Error in fetching queryset of ListCourseEnquiryView of superadmin: {e}")
-            return self.queryset
+            company_slug = self.kwargs.get('slug')
+            company = get_object_or_404(Company, slug = company_slug, type__name = "Education")
+            return self.model.objects.filter(company = company)
+            
+        except Http404:
+            messages.error(self.request, "Invalid educational company")
+            return redirect(self.redirect_url)           
+
+
+class BaseCourseEnquiryView(BaseEducationCompanyView, View):
+    model = CourseEnquiry
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    slug_url_kwarg = 'slug'
+
+    def get_current_company(self):
+        try:
+            return get_object_or_404(Company, slug = self.kwargs.get(self.slug_url_kwarg))
+        except Http404:
+            messages.error(self.request, "Invalid Company")
+            return self.redirect_url
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         try:
-            context["current_company"] = get_object_or_404(Company, slug = self.kwargs.get('slug'))
+            context["current_company"] = self.get_current_company()
             context["education_enquiry_page"] = True
 
-        except Http404:
-            messages.error(self.request, "Invalid Company")
         except Exception as e:
-            logger.exception(f"Error in getting context data of ListCourseEnquiryView: {e}")
+            logger.exception(f"Error in getting context data of BaseCourseEnquiryView: {e}")
 
         return context
 
+class ListCourseEnquiryView(BaseCourseEnquiryView, ListView):
+    queryset = CourseEnquiry.objects.none()
+    context_object_name = "enquiries"
+    template_name = "education_company/enquiries/list.html"
+
+    def get_queryset(self):
+        try:
+            return self.model.objects.filter(company__slug = self.kwargs.get(self.slug_url_kwarg))
+        except Exception as e:
+            logger.exception(f"Error in fetching queryset of ListCourseEnquiryView of superadmin: {e}")
+            return self.queryset
+
+
+class DeleteCourseEnquiryView(BaseCourseEnquiryView, View):
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:course_enquiries', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_success_url function of DeleteCourseEnquiryView of superadmin app: {e}")
+            return self.success_url
+
+    def get_redirect_url(self):
+        return self.get_success_url()
+            
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(CourseEnquiry, company__slug = self.kwargs.get(self.slug_url_kwarg), slug = self.kwargs.get('enquiry_slug'))
+            self.object.delete()
+
+            messages.success(request, "Success! Delete Course Enquiry")
+            return redirect(self.get_success_url())
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid Course Enquiry")
+            return redirect(self.get_redirect_url())
+        
 
 # Service Company
 class BaseServiceCompanyView(AdminBaseView, View):
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+
+    def get_current_company(self):
+        try:
+            return get_object_or_404(Company, slug = self.kwargs.get('slug'))
+        except Http404:
+            messages.error(self.request, "Invalid company")
+            return redirect(self.redirect_url)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1606,7 +3581,7 @@ class AddServiceView(BaseServiceCompanyView, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         try:
-            context["categories"] = ServiceCategory.objects.all()
+            context["categories"] = ServiceCategory.objects.filter(company = self.get_current_company()).order_by("name")
             context["service_page"] = True
         except Exception as e:
             logger.exception(f"Error in getting context data of add service view: {e}")
@@ -1786,7 +3761,7 @@ class UpdateServiceView(BaseServiceCompanyView, UpdateView):
 
         except Exception as e:
             logger.exception(f"Error in UpdateServiceView of superadmin: {e}")
-            messages.error(request, "An unexpected error occured")
+            messages.error(request, "An unexpected error occurred")
             return redirect(self.get_redirect_url())
         
 
@@ -1820,9 +3795,9 @@ class RemoveServiceView(BaseServiceCompanyView, View):
 
         except Exception as e:
             logger.exception(f"Error in RemoveServiceView of superadmin app: {e}")
-            messages.error(request, "Failed! An unexpected error occured")
+            messages.error(request, "Failed! An unexpected error occurred")
 
-        return self.get_redirect_url()
+        return redirect(self.get_redirect_url())
 
 
 class ListServiceCategoryView(BaseServiceCompanyView, ListView):
@@ -1950,7 +3925,7 @@ class UpdateServiceCategoryView(BaseServiceCompanyView, UpdateView):
         
         except Exception as e:
             logger.exception(f"Error in updating service category by superadmin: {e}")
-            messages.error(request, "An unexpected error occured")
+            messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
     
@@ -1985,9 +3960,9 @@ class RemoveServiceCategoryView(BaseServiceCompanyView, View):
 
         except Exception as e:
             logger.exception(f"Error in RemoveServiceCategoryView of superadmin app: {e}")
-            messages.error(request, "Failed! An unexpected error occured")
+            messages.error(request, "Failed! An unexpected error occurred")
 
-        return self.get_redirect_url()
+        return redirect(self.get_redirect_url())
     
 
 class ListServiceSubCategoryView(BaseServiceCompanyView, ListView):
@@ -2009,7 +3984,7 @@ class ListServiceSubCategoryView(BaseServiceCompanyView, ListView):
         try:
             context["current_company"] = get_object_or_404(Company, slug = self.kwargs.get('slug'))
             context["service_sub_category_page"] = True
-            context["categories"] = ServiceCategory.objects.all().order_by('name')
+            context["categories"] = ServiceCategory.objects.filter(company = self.get_current_company).order_by('name')
 
         except Http404:
             messages.error(self.request, "Invalid Company")
@@ -2086,7 +4061,7 @@ class AddServiceSubCategoryView(BaseServiceCompanyView, CreateView):
                 messages.warning(request, "Service sub category already exists.")
 
         except Http404:
-            messages.error(request, "Invalid service sub category")                                    
+            messages.error(request, "Invalid service category")                                    
         
         except Exception as e:
             logger.error(f"Error in creating service sub category by superadmin: {e}")
@@ -2165,7 +4140,7 @@ class UpdateServiceSubCategoryView(BaseServiceCompanyView, UpdateView):
         
         except Exception as e:
             logger.error(f"Error in updating service sub category by superadmin: {e}")
-            messages.error(request, "An unexpected error occured")
+            messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
     
@@ -2200,14 +4175,324 @@ class RemoveServiceSubCategoryView(BaseServiceCompanyView, View):
 
         except Exception as e:
             logger.exception(f"Error in RemoveServiceSubCategoryView of superadmin app: {e}")
-            messages.error(request, "Failed! An unexpected error occured")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+    
+# Service FAQ
+class ServiceFaqBaseView(BaseServiceCompanyView):
+    model = ServiceFaq
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    slug_url_kwarg = 'slug'
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:service_faqs', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of BaseServiceFaqView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        return self.get_success_url()
+    
+    def get_current_company(self):
+        try:
+            company_slug = self.kwargs.get(self.slug_url_kwarg)            
+            self.company = get_object_or_404(Company, slug = company_slug, type__name = "Service")
+            return self.company
+        except Http404:
+            return None
+        
+    def get_service(self, service_slug):
+        try:            
+            return get_object_or_404(Service, slug = service_slug)
+        except Http404:
+            return None
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        context["service_faq_page"] = True
+
+        return context
+
+
+class AddServiceFaqView(ServiceFaqBaseView, CreateView):    
+    fields = ["company", "service", "question", "answer"]
+    template_name = "service_company/faqs/add.html"    
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_service_faq', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of AddServiceFaqView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        return self.get_success_url()        
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        company_slug = self.kwargs.get('slug')
+
+        context["add_service_faq_page"] = True
+        context["categories"] = ServiceCategory.objects.filter(company__slug = company_slug).order_by("name")
+
+        return context
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            service_slug = self.request.POST.get('service')
+            question = request.POST.get("question")
+            answer = request.POST.get("answer")
+
+            service_slug = service_slug.strip() if service_slug else None
+            question = question.strip() if question else None
+            answer = answer.strip() if answer else None
+
+            required_fields = {
+                "Service": service_slug,
+                "Question": question,
+                "Answer": answer
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    print(f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            company = self.get_current_company()
+            service = self.get_service(service_slug)
+
+            if not company or not service:
+                invalid_msg = ""
+                
+                if not company:
+                    invalid_msg = "Invalid Service Company"
+                else:
+                    invalid_msg = "Invalid Service"
+
+                messages.error(request, invalid_msg)
+                return redirect(self.get_redirect_url())
+
+            ServiceFaq.objects.update_or_create(company = company, service = service, question = question, defaults={"answer": answer})
+
+            messages.success(request, f"Success! Created FAQ object for service: {service.name}")
+            return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in get function of AddServiceFaqView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
     
 
+class ListServiceFaqView(ServiceFaqBaseView, ListView):
+    model = ServiceFaq
+    template_name = "service_company/faqs/list.html"
+    queryset = model.objects.none()
+    context_object_name = "faqs"
+
+    def get_queryset(self):
+        try:
+            company_slug = self.kwargs.get(self.slug_url_kwarg)
+            company = get_object_or_404(Company, slug = company_slug, type__name = "Service")
+            return self.model.objects.filter(company = company)
+            
+        except Http404:
+            messages.error(self.request, "Invalid service company")
+            return redirect(self.redirect_url)
+
+
+class UpdateServiceFaqView(ServiceFaqBaseView, UpdateView):
+    model = ServiceFaq
+    fields = ["service", "question", "answer"]
+    template_name = "service_company/faqs/update.html"
+    context_object_name = "faq"
+
+    def get_service(self, service_slug):
+        try:
+            return get_object_or_404(Service, slug = service_slug)
+        except Http404:
+            return None
+        
+    def get_object(self):
+        company_slug = self.kwargs.get('slug') 
+        service_faq_slug = self.kwargs.get('service_faq_slug') 
+
+        self.object = get_object_or_404(ServiceFaq, company__slug = company_slug, slug = service_faq_slug)
+
+        return self.object
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        company_slug = self.kwargs.get('slug')
+
+        context["update_service_faq_page"] = True
+
+        context["categories"] = ServiceCategory.objects.filter(company__slug = company_slug).order_by("name")
+        context["sub_categories"] = ServiceSubCategory.objects.filter(company__slug = company_slug, category = self.object.service.category).order_by("name")
+        context["services"] = Service.objects.filter(company__slug = company_slug, category = self.object.service.category, sub_category = self.object.service.sub_category).order_by("name")
+
+        return context
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+
+            service_slug = self.request.POST.get('service')
+            question = request.POST.get("question")
+            answer = request.POST.get("answer")
+
+            question = question.strip() if question else None
+            answer = answer.strip() if answer else None
+
+            required_fields = {
+                "Service": service_slug,
+                "Question": question,
+                "Answer": answer
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    print(f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            service = self.get_service(service_slug)
+
+            if not service:
+                messages.error(request, "Invalid Service")
+                return redirect(self.get_redirect_url())
+
+            similar_faq = self.model.objects.filter(company = self.object.company, service = service, question = question, answer = answer).first()
+
+            if similar_faq:
+                if similar_faq.slug == self.object.slug:
+                    messages.warning(request, "No changes detected")
+                else:
+                    messages.warning(request, "Similar service FAQ already exists")
+                return redirect(self.get_redirect_url())
+
+            self.object.service = service
+            self.object.question = question
+            self.object.answer = answer
+            self.object.save()
+
+            messages.success(request, f"Success! Updated FAQ")
+            return redirect(self.get_success_url())
+        
+        except Http404:
+            messages.error(request, "Invalid service FAQ object")
+
+        except Exception as e:
+            logger.exception(f"Error in get function of UpdateServiceFaqView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class DeleteServiceFaqView(ServiceFaqBaseView, View):
+    model = ServiceFaq
+        
+    def get_object(self):
+        faq_slug = self.kwargs.get('service_faq_slug')
+        company_slug = self.kwargs.get('slug')
+
+        return get_object_or_404(self.model, slug = faq_slug, company__slug = company_slug)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            service_name = self.object.service.name
+            self.object.delete()
+
+            messages.success(request, f"Success! Removed service FAQ object of: {service_name}")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Service FAQ")
+
+        except Exception as e:
+            logger.exception(f"Error in get function of DeleteServiceFaqView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class BaseServiceEnquiryView(BaseServiceCompanyView, View):
+    model = ServiceEnquiry
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    slug_url_kwarg = 'slug'
+
+    def get_current_company(self):
+        try:
+            return get_object_or_404(Company, slug = self.kwargs.get(self.slug_url_kwarg))
+        except Http404:
+            messages.error(self.request, "Invalid Company")
+            return self.redirect_url
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        try:
+            context["current_company"] = self.get_current_company()
+            context["service_enquiry_page"] = True
+
+        except Exception as e:
+            logger.exception(f"Error in getting context data of BaseServiceEnquiryView: {e}")
+
+        return context
+
+class ListServiceEnquiryView(BaseServiceEnquiryView, ListView):
+    queryset = ServiceEnquiry.objects.none()
+    context_object_name = "enquiries"
+    template_name = "service_company/enquiries/list.html"
+
+    def get_queryset(self):
+        try:
+            return self.model.objects.filter(company__slug = self.kwargs.get(self.slug_url_kwarg))
+        except Exception as e:
+            logger.exception(f"Error in fetching queryset of ListServiceEnquiryView of superadmin: {e}")
+            return self.queryset
+
+
+class DeleteServiceEnquiryView(BaseServiceEnquiryView, View):
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:service_enquiries', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_success_url function of DeleteServiceEnquiryView of superadmin app: {e}")
+            return self.success_url
+
+    def get_redirect_url(self):
+        return self.get_success_url()
+            
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(ServiceEnquiry, company__slug = self.kwargs.get(self.slug_url_kwarg), slug = self.kwargs.get('enquiry_slug'))
+            self.object.delete()
+
+            messages.success(request, "Success! Delete Service Enquiry")
+            return redirect(self.get_success_url())
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid Service Enquiry")
+            return redirect(self.get_redirect_url())
+
+
 # Registration Company
 class BaseRegistrationCompanyView(AdminBaseView, View):
     success_url = redirect_url = reverse_lazy('superadmin:home')
+
+    def get_current_company(self):
+        try:
+            return get_object_or_404(Company, slug = self.kwargs.get('slug'))
+        except Http404:
+            messages.error(self.request, "Invalid Company")
+            return redirect(self.redirect_url)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2271,7 +4556,7 @@ class AddRegistrationView(BaseRegistrationCompanyView, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         try:
-            context["types"] = RegistrationType.objects.all()
+            context["types"] = RegistrationType.objects.filter(company = self.get_current_company()).order_by("name")
             context["registration_page"] = True
             context["add_registration_page"] = True
         except Exception as e:
@@ -2327,7 +4612,7 @@ class AddRegistrationView(BaseRegistrationCompanyView, CreateView):
 
         except Exception as e:
             logger.exception(f"Error in adding registration in AddRegistrationView of superadmin app: {e}")
-            messages.error(request, "An unexpected error occured")
+            messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
     
@@ -2424,7 +4709,7 @@ class UpdateRegistrationView(BaseRegistrationCompanyView, UpdateView):
 
         except Exception as e:
             logger.exception(f"Error in updating registration in EditRegistrationView of superadmin app: {e}")
-            messages.error(request, "An unexpected error occured")
+            messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
     
@@ -2459,9 +4744,9 @@ class RemoveRegistrationView(BaseRegistrationCompanyView, View):
 
         except Exception as e:
             logger.exception(f"Error in RemoveRegistrationView of superadmin app: {e}")
-            messages.error(request, "Failed! An unexpected error occured")
+            messages.error(request, "Failed! An unexpected error occurred")
 
-        return self.get_redirect_url()
+        return redirect(self.get_redirect_url())
     
 
 class ListRegistrationTypeView(BaseRegistrationCompanyView, ListView):
@@ -2578,7 +4863,7 @@ class UpdateRegistrationTypeView(BaseRegistrationCompanyView, UpdateView):
         
         except Exception as e:
             logger.error(f"Error in updating registration type: {e}")
-            messages.error(request, "An unexpected error occured")
+            messages.error(request, "An unexpected error occurred")
             return redirect(self.get_redirect_url())
         
 
@@ -2612,9 +4897,9 @@ class RemoveRegistrationTypeView(BaseRegistrationCompanyView, View):
 
         except Exception as e:
             logger.exception(f"Error in RemoveRegistrationTypeView of superadmin app: {e}")
-            messages.error(request, "Failed! An unexpected error occured")
+            messages.error(request, "Failed! An unexpected error occurred")
 
-        return self.get_redirect_url()
+        return redirect(self.get_redirect_url())
 
 
 class ListRegistrationSubTypeView(BaseRegistrationCompanyView, ListView):
@@ -2636,7 +4921,7 @@ class ListRegistrationSubTypeView(BaseRegistrationCompanyView, ListView):
         try:
             context["current_company"] = get_object_or_404(Company, slug = self.kwargs.get('slug'))
             context["registration_sub_type_page"] = True
-            context["types"] = RegistrationType.objects.all().order_by('name')
+            context["types"] = RegistrationType.objects.filter(company = self.get_current_company()).order_by('name')
 
         except Http404:
             messages.error(self.request, "Invalid Company")
@@ -2818,10 +5103,308 @@ class RemoveRegistrationSubTypeView(BaseRegistrationCompanyView, View):
 
         except Exception as e:
             logger.exception(f"Error in RemoveRegistrationSubTypeView of superadmin app: {e}")
-            messages.error(request, "Failed! An unexpected error occured")
+            messages.error(request, "Failed! An unexpected error occurred")
 
-        return self.get_redirect_url()
+        return redirect(self.get_redirect_url())
+
+
+# Registration FAQ
+class RegistrationFaqBaseView(BaseRegistrationCompanyView):
+    model = RegistrationFaq
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    slug_url_kwarg = 'slug'
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:registration_faqs', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of BaseRegistrationFaqView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        return self.get_success_url()
     
+    def get_current_company(self):
+        try:
+            company_slug = self.kwargs.get(self.slug_url_kwarg)            
+            self.company = get_object_or_404(Company, slug = company_slug, type__name = "Registration")
+            return self.company
+        except Http404:
+            return None
+        
+    def get_registration_sub_type(self, registration_SUb_type_slug):
+        try:            
+            return get_object_or_404(RegistrationSubType, slug = registration_SUb_type_slug)
+        except Http404:
+            return None
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        context["registration_faq_page"] = True
+
+        return context
+
+
+class AddRegistrationFaqView(RegistrationFaqBaseView, CreateView):    
+    fields = ["company", "registration_sub_type", "question", "answer"]
+    template_name = "registration_company/faqs/add.html"    
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_registration_faq', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of AddRegistrationFaqView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        return self.get_success_url()        
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        company_slug = self.kwargs.get('slug')
+
+        context["add_registration_faq_page"] = True
+        context["types"] = RegistrationType.objects.filter(company__slug = company_slug).order_by("name")
+
+        return context
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            registration_sub_type_slug = self.request.POST.get('sub_type')
+            question = request.POST.get("question")
+            answer = request.POST.get("answer")
+
+            registration_sub_type_slug = registration_sub_type_slug.strip() if registration_sub_type_slug else None
+            question = question.strip() if question else None
+            answer = answer.strip() if answer else None
+
+            required_fields = {
+                "Registration Sub Type": registration_sub_type_slug,
+                "Question": question,
+                "Answer": answer
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    print(f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            company = self.get_current_company()
+            registration_sub_type = self.get_registration_sub_type(registration_sub_type_slug)
+
+            if not company or not registration_sub_type:
+                invalid_msg = ""
+                
+                if not company:
+                    invalid_msg = "Invalid Registration Company"
+                else:
+                    invalid_msg = "Invalid Registration Sub Type"
+
+                messages.error(request, invalid_msg)
+                return redirect(self.get_redirect_url())
+
+            RegistrationFaq.objects.update_or_create(company = company, registration_sub_type = registration_sub_type, question = question, defaults={"answer": answer})
+
+            messages.success(request, f"Success! Created FAQ object for registration sub type: {registration_sub_type.name}")
+            return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in get function of AddRegistrationFaqView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+    
+
+class ListRegistrationFaqView(RegistrationFaqBaseView, ListView):
+    model = RegistrationFaq
+    template_name = "registration_company/faqs/list.html"
+    queryset = model.objects.none()
+    context_object_name = "faqs"
+
+    def get_queryset(self):
+        try:
+            company_slug = self.kwargs.get(self.slug_url_kwarg)
+            company = get_object_or_404(Company, slug = company_slug, type__name = "Registration")
+            return self.model.objects.filter(company = company)
+            
+        except Http404:
+            messages.error(self.request, "Invalid registration company")
+            return redirect(self.redirect_url)
+
+
+class UpdateRegistrationFaqView(RegistrationFaqBaseView, UpdateView):
+    model = RegistrationFaq
+    fields = ["registration_sub_type", "question", "answer"]
+    template_name = "registration_company/faqs/update.html"
+    context_object_name = "faq"    
+        
+    def get_object(self):
+        company_slug = self.kwargs.get('slug') 
+        registration_faq_slug = self.kwargs.get('registration_faq_slug') 
+
+        self.object = get_object_or_404(RegistrationFaq, company__slug = company_slug, slug = registration_faq_slug)
+
+        return self.object
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        company_slug = self.kwargs.get('slug')
+
+        context["update_registration_faq_page"] = True
+
+        context["types"] = RegistrationType.objects.filter(company__slug = company_slug).order_by("name")
+        context["sub_types"] = RegistrationSubType.objects.filter(company__slug = company_slug, type = self.object.registration_sub_type.type).order_by("name")
+
+        return context
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+
+            registration_sub_type_slug = self.request.POST.get('sub_type')
+            question = request.POST.get("question")
+            answer = request.POST.get("answer")
+
+            question = question.strip() if question else None
+            answer = answer.strip() if answer else None
+
+            required_fields = {
+                "Registration Sub Type": registration_sub_type_slug,
+                "Question": question,
+                "Answer": answer
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    print(f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            registration_sub_type = self.get_registration_sub_type(registration_sub_type_slug)
+
+            if not registration_sub_type:
+                messages.error(request, "Invalid Registration Sub Type")
+                return redirect(self.get_redirect_url())
+
+            similar_faq = self.model.objects.filter(company = self.object.company, registration_sub_type = registration_sub_type, question = question, answer = answer).first()
+
+            if similar_faq:
+                if similar_faq.slug == self.object.slug:
+                    messages.warning(request, "No changes detected")
+                else:
+                    messages.warning(request, "Similar registration FAQ already exists")
+                return redirect(self.get_redirect_url())
+
+            self.object.registration_sub_type = registration_sub_type
+            self.object.question = question
+            self.object.answer = answer
+            self.object.save()
+
+            messages.success(request, f"Success! Updated FAQ")
+            return redirect(self.get_success_url())
+        
+        except Http404:
+            messages.error(request, "Invalid registration FAQ object")
+
+        except Exception as e:
+            logger.exception(f"Error in get function of UpdateRegistrationFaqView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class DeleteRegistrationFaqView(RegistrationFaqBaseView, View):
+    model = RegistrationFaq
+        
+    def get_object(self):
+        faq_slug = self.kwargs.get('registration_faq_slug')
+        company_slug = self.kwargs.get('slug')
+
+        return get_object_or_404(self.model, slug = faq_slug, company__slug = company_slug)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            registration_sub_type_name = self.object.registration_sub_type.name
+            self.object.delete()
+
+            messages.success(request, f"Success! Removed registration FAQ object of: {registration_sub_type_name}")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Registration FAQ")
+
+        except Exception as e:
+            logger.exception(f"Error in get function of DeleteRegistrationFaqView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class BaseRegistrationEnquiryView(BaseRegistrationCompanyView, View):
+    model = RegistrationEnquiry
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    slug_url_kwarg = 'slug'
+
+    def get_current_company(self):
+        try:
+            return get_object_or_404(Company, slug = self.kwargs.get(self.slug_url_kwarg))
+        except Http404:
+            messages.error(self.request, "Invalid Company")
+            return self.redirect_url
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        try:
+            context["current_company"] = self.get_current_company()
+            context["registration_enquiry_page"] = True
+
+        except Exception as e:
+            logger.exception(f"Error in getting context data of BaseRegistrationEnquiryView: {e}")
+
+        return context
+
+
+class ListRegistrationEnquiryView(BaseRegistrationEnquiryView, ListView):
+    queryset = RegistrationEnquiry.objects.none()
+    context_object_name = "enquiries"
+    template_name = "registration_company/enquiries/list.html"
+
+    def get_queryset(self):
+        try:
+            return self.model.objects.filter(company__slug = self.kwargs.get(self.slug_url_kwarg))
+        except Exception as e:
+            logger.exception(f"Error in fetching queryset of ListRegistrationEnquiryView of superadmin: {e}")
+            return self.queryset
+
+
+class DeleteRegistrationEnquiryView(BaseRegistrationEnquiryView, View):
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:registration_enquiries', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_success_url function of DeleteRegistrationEnquiryView of superadmin app: {e}")
+            return self.success_url
+
+    def get_redirect_url(self):
+        return self.get_success_url()
+            
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(RegistrationEnquiry, company__slug = self.kwargs.get(self.slug_url_kwarg), slug = self.kwargs.get('enquiry_slug'))
+            self.object.delete()
+
+            messages.success(request, "Success! Delete Registration Enquiry")
+            return redirect(self.get_success_url())
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid Registration Enquiry")
+            return redirect(self.get_redirect_url())
+
 
 # Directory
 class BaseDirectoryView(AdminBaseView, ListView):
@@ -3030,7 +5613,7 @@ class UpdateUserDetailView(SettingsView, UpdateView):
 
         except Exception as e:
             logger.exception(f"Error in UpdateUserDetailView in superadmin app: {e}")
-            messages.error(request, "An unexpected error occured")
+            messages.error(request, "An unexpected error occurred")
             return redirect(self.redirect_url)
         
 
@@ -3087,7 +5670,7 @@ class AddAboutUsPageView(AddCustomPageView, CreateView):
 
         except Exception as e:
             logger.exception(f"Error in AddAboutUsPageView of superadmin: {e}")
-            messages.error(request, "An unexpected error occured.")
+            messages.error(request, "An unexpected error occurred.")
 
         return redirect(self.redirect_url)
     
@@ -3191,7 +5774,7 @@ class AddContactUsPageView(AddCustomPageView, CreateView):
 
         except Exception as e:
             logger.exception(f"Error in AddContactUsPageView of superadmin: {e}")
-            messages.error(request, "An unexpected error occured.")
+            messages.error(request, "An unexpected error occurred.")
 
         return redirect(self.redirect_url)
     
@@ -3240,7 +5823,7 @@ class AddFaqPageView(AddCustomPageView, CreateView):
 
         except Exception as e:
             logger.exception(f"Error in AddFaqPageView of superadmin: {e}")
-            messages.error(request, "An unexpected error occured.")
+            messages.error(request, "An unexpected error occurred.")
 
         return redirect(self.redirect_url)
     
@@ -3296,7 +5879,7 @@ class AddPrivacyPolicyPageView(AddCustomPageView, CreateView):
 
         except Exception as e:
             logger.exception(f"Error in AddPrivacyPolicyPageView of superadmin: {e}")
-            messages.error(request, "An unexpected error occured.")
+            messages.error(request, "An unexpected error occurred.")
 
         return redirect(self.redirect_url)
     
@@ -3354,7 +5937,7 @@ class AddTermsAndConditionsPageView(AddCustomPageView, CreateView):
 
         except Exception as e:
             logger.exception(f"Error in AddTermsAndConditionsPageView of superadmin: {e}")
-            messages.error(request, "An unexpected error occured.")
+            messages.error(request, "An unexpected error occurred.")
 
         return redirect(self.redirect_url)
     
@@ -3499,7 +6082,7 @@ class AddShippingAndDeliveryPolicyPageView(AddCustomPageView, CreateView):
 
         except Exception as e:
             logger.exception(f"Error in AddShippingAndDeliveryPolicyPageView of superadmin: {e}")
-            messages.error(request, "An unexpected error occured.")
+            messages.error(request, "An unexpected error occurred.")
 
         return redirect(self.redirect_url)
     
@@ -3555,7 +6138,7 @@ class AddCancellationAndRefundPolicyPageView(AddCustomPageView, CreateView):
 
         except Exception as e:
             logger.exception(f"Error in AddCancellationAndRefundPolicyPageView of superadmin: {e}")
-            messages.error(request, "An unexpected error occured.")
+            messages.error(request, "An unexpected error occurred.")
 
         return redirect(self.redirect_url)
 
@@ -3575,589 +6158,734 @@ class ListCancellationAndRefundPolicyView(BaseCustomPageView, ListView):
         return context
 
 
-# Company Detail
-class AddCourseDetailView(BaseCompanyView, CreateView):
-    model = CourseDetail
-    fields = "__all__"
-    template_name = "education_company/course_detail/add.html"
+# Clients
+class BaseClientView(BaseCompanyView):
+    model = Client
     success_url = redirect_url = reverse_lazy('superadmin:home')
 
     def get_current_company(self):
         try:
-            company_slug = self.kwargs.get('slug')            
-            return get_object_or_404(Company, slug = company_slug)
+            return get_object_or_404(Company, slug = self.kwargs.get(self.slug_url_kwarg), type__name = "Product")
         except Http404:
-            messages.error(self.request, "Failed! Invalid Company")
-            return redirect(self.redirect_url)
+            return None
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        try:
-            context["course_detail_page"] = True
-            
-            current_company = self.get_current_company()
-            
-            context["current_company"] = current_company
-
-            context["courses"] = Course.objects.filter(company = current_company)
-        except Exception as e:
-            logger.exception(f"Error in getting context data of AddCompanyDetailView of superadmin: {e}")
-        
+        context["client_page"] = context["company_page"] = True
+        context["current_company"] = self.get_current_company()
+        context["company_type_page"] = False
         return context
     
     def get_success_url(self):
         try:
-            return reverse_lazy('superadmin:add_course_details', kwargs = {"slug": self.kwargs.get('slug')})
+            if self.slug_url_kwarg:
+                return reverse_lazy("superadmin:clients", kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
         except Exception as e:
-            logger.exception(f"Error in fetching success url of AddCompanyDetailView of superadmin: {e}")
-            return self.success_url
+            logger.exception(f"Error in get_success_url function of BaseClientView of superadmin app: {e}")
         
+        return self.success_url
+    
     def get_redirect_url(self):
-        try:
-            return self.get_success_url()
-        except Exception as e:
-            logger.exception(f"Error in fetching redirect url of AddCompanyDetailView of superadmin: {e}")
-            return self.redirect_url
-        
-    def get_course(self, course_slug):
-        try:
-            return get_object_or_404(Course, slug = course_slug)
-        except Http404:
-            messages.error(self.request, "Invalid Course")
-            return redirect(self.get_redirect_url())
-        
-    def handle_features(self, request, company, course):
-        try:
-
-            features_list = request.POST.getlist("feature")
-
-            features_list = list({feature.strip() for feature in features_list})
-            if features_list:
-                with transaction.atomic():
-
-                    CourseFeature.objects.filter(company = company, course = course).delete()
-
-                    features = [CourseFeature(company=company, course=course, feature=feature) for feature in features_list]
-                    CourseFeature.objects.bulk_create(features)
-
-                    feature_objs = CourseFeature.objects.filter(company = company, course = course)
-
-                    return feature_objs
-        
-        except Exception as e:
-            logger.exception(f"Error in handle_features function of AddCourseDetailView: {e}")
-        
-        return []
-
-    def handle_vertical_tab(self, request, company, course):
-        try:
-            vertical_tab_objects = []
-
-            vertical_heading_list = request.POST.getlist("vertical_heading")
-            vertical_sub_heading_list = request.POST.getlist("vertical_sub_heading")
-            vertical_summary_list = request.POST.getlist("vertical_summary")
-            vertical_bullet_list = request.POST.getlist("vertical_bullet")
-            vertical_bullet_count_list = request.POST.getlist("vertical_bullet_count")            
-
-            if not (len(vertical_heading_list) == len(vertical_sub_heading_list) == len(vertical_summary_list) == len(vertical_bullet_count_list)):
-                raise ValueError("Mismatch in the number of vertical fields.")
-
-            vertical_bullet_count_list = [int(count) for count in vertical_bullet_count_list]
-
-            vertical_heading_list = [heading.strip() for heading in vertical_heading_list]
-            vertical_sub_heading_list = [sub_heading.strip() for sub_heading in vertical_sub_heading_list]
-            vertical_summary_list = [summary.strip() for summary in vertical_summary_list]
-            vertical_bullet_list = [bullet.strip() for bullet in vertical_bullet_list]
-            
-            initial = 0
-
-            CourseVerticalTab.objects.filter(company = company, course = course).delete()
-            CourseVerticalBullet.objects.filter(company = company, course = course).delete()
-
-            with transaction.atomic():
-                for i in range(len(vertical_bullet_count_list)):
-                    vertical_tab_obj = CourseVerticalTab.objects.create(
-                        company = company,
-                        course = course,
-                        heading = vertical_heading_list[i],
-                        sub_heading = vertical_sub_heading_list[i],
-                        summary = vertical_summary_list[i]
-                    )
-
-                    final = initial + vertical_bullet_count_list[i]
-                    vertical_bullets = vertical_bullet_list[initial:final]
-                    initial = final
-
-                    if vertical_bullet_count_list[i] == 0:
-                        continue
-                    
-                    creating_vertical_bullets = [CourseVerticalBullet(
-                        company = company, course = course, heading = vertical_heading_list[i],
-                        bullet = bullet
-                    ) for bullet in vertical_bullets]
-
-                    CourseVerticalBullet.objects.bulk_create(creating_vertical_bullets)  
-
-                    created_vertical_bullets = CourseVerticalBullet.objects.filter(company = company, course = course)
-
-                    vertical_tab_obj.bullets.set(created_vertical_bullets)
-
-                    vertical_tab_objects.append(vertical_tab_obj)                        
-
-            return vertical_tab_objects
-
-        except (IntegrityError, IndexError, ValueError) as e:
-            logger.exception(f"Error in handle_vertical_tab function of AddCourseDetailView: {e}")
-
-        return None
+        return self.get_success_url()
     
-    def handle_horizontal_tab(self, request, company, course):
-        try:
-            horizontal_tab_objects = []
+    def get_object(self):
+        company_slug = self.kwargs.get(self.slug_url_kwarg)
+        client_slug = self.kwargs.get('client_slug')
 
-            horizontal_heading_list = request.POST.getlist("horizontal_heading")
-            horizontal_summary_list = request.POST.getlist("horizontal_summary")
-            horizontal_bullet_list = request.POST.getlist("horizontal_bullet")
-            horizontal_bullet_count_list = request.POST.getlist("horizontal_bullet_count")            
-
-            if not (len(horizontal_heading_list) == len(horizontal_summary_list) == len(horizontal_bullet_count_list)):
-                raise ValueError("Mismatch in the number of horizontal fields.")
-
-            horizontal_bullet_count_list = [int(count) for count in horizontal_bullet_count_list]
-
-            horizontal_heading_list = [heading.strip() for heading in horizontal_heading_list]
-            horizontal_summary_list = [summary.strip() for summary in horizontal_summary_list]
-            horizontal_bullet_list = [bullet.strip() for bullet in horizontal_bullet_list]
-            
-            initial = 0
-
-            CourseHorizontalTab.objects.filter(company = company, course = course).delete()
-            CourseHorizontalBullet.objects.filter(company = company, course = course).delete()
-
-            with transaction.atomic():
-                for i in range(len(horizontal_bullet_count_list)):
-                    horizontal_tab_obj = CourseHorizontalTab.objects.create(
-                        company = company,
-                        course = course,
-                        heading = horizontal_heading_list[i],
-                        summary = horizontal_summary_list[i]
-                    )
-
-                    final = initial + horizontal_bullet_count_list[i]
-                    horizontal_bullets = horizontal_bullet_list[initial:final]
-                    initial = final
-                    
-                    if horizontal_bullet_count_list[i] == 0:
-                        continue
-                    
-                    creating_horizontal_bullets = [CourseHorizontalBullet(
-                        company = company, course = course, heading = horizontal_heading_list[i],
-                        bullet = bullet
-                    ) for bullet in horizontal_bullets]
-
-                    CourseHorizontalBullet.objects.bulk_create(creating_horizontal_bullets)
-
-                    created_horizontal_bullets = CourseHorizontalBullet.objects.filter(company = company, course = course)
-
-                    horizontal_tab_obj.bullets.set(created_horizontal_bullets)
-
-                    horizontal_tab_objects.append(horizontal_tab_obj)                                        
-
-            return horizontal_tab_objects
-
-        except (IntegrityError, IndexError, ValueError) as e:
-            logger.exception(f"Error in handle_horizontal_tab function of AddCourseDetailView: {e}")
-
-        return None
+        return get_object_or_404(self.model, company__slug = company_slug, slug = client_slug)
     
-    def handle_table(self, request, company, course):
+
+class AddClientView(BaseClientView, CreateView):    
+    template_name = "clients/add.html"
+    fields = ["company", "name", "image", "order"]
+
+    def get_success_url(self):
         try:
-            course_tables = []
-
-            heading_list = [heading.strip() for heading in request.POST.getlist("table_heading")]
-            data_list = [data.strip() for data in request.POST.getlist("table_data")]
-
-            heading_length = len(heading_list)
-            data_length = len(data_list)
-
-            CourseTableData.objects.filter(company = company, course = course).delete()
-            CourseTable.objects.filter(company = company, course = course).delete()
-
-            with transaction.atomic():
-                for index, heading in enumerate(heading_list):
-                    course_table = CourseTable.objects.create(
-                        company = company, course = course, heading = heading
-                    )
-
-                    data_positions  = list(range(index, data_length, heading_length))
-                    data_list_of_heading = [data_list[i] for i in data_positions ]
-
-                    table_data_objs  = [CourseTableData(
-                            company = company, course = course,
-                            heading = heading, data = data
-                            ) for data in data_list_of_heading]
-
-                    CourseTableData.objects.bulk_create(table_data_objs )
-
-
-                    course_table_data_objs = CourseTableData.objects.filter(company = company, course = course, heading = heading)
-
-                    course_table.datas.set(course_table_data_objs)
-
-                    course_tables.append(course_table)
-
-            return course_tables
+            return reverse_lazy("superadmin:add_client", kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in get_success_url function of AddClientView of superadmin app: {e}")
         
-        except Exception as e:
-            logger.exception(f"Error in handle_table function of AddCourseDetailView: {e}")
-
-        return None
+        return self.success_url
     
-    def handle_bullet_points(self, request, company, course):
-        try:
-            bullet_point_list = [bullet_point.strip() for bullet_point in request.POST.getlist("bullet")]
+    def get_redirect_url(self):
+        return self.get_success_url()    
 
-            CourseBulletPoint.objects.filter(company = company, course = course).delete()
-
-            if bullet_point_list:
-                bullet_point_objects = [CourseBulletPoint(
-                    company = company, course = course,
-                    bullet_point = bullet_point
-                ) for bullet_point in bullet_point_list]
-
-                CourseBulletPoint.objects.bulk_create(bullet_point_objects)
-
-                bullet_points = CourseBulletPoint.objects.filter(company = company, course = course)                
-
-                return bullet_points
-
-        except Exception as e:
-            logger.exception(f"Error in handle_bullet_points function of AddCourseDetailView: {e}")
-
-        return []
-
-    def handle_tags(self, request, company, course):
-        try:
-            tag_list = [tag.strip() for tag in request.POST.getlist("tag")]
-            tag_link_list = [tag_link.strip() for tag_link in request.POST.getlist("tag_link")]
-
-            print("Received tags: ", tag_list)
-            print("Received links: ", tag_link_list)
-
-            if len(tag_link_list) != len(tag_list):
-                raise ValueError("The number of tags does not match the number of links.")
-
-            CourseTag.objects.filter(company = company, course = course).delete()
-            if tag_list and tag_link_list:                
-                creating_tags = [CourseTag(
-                    company = company, course = course,
-                    tag = tag, link = link
-                    ) for tag, link in zip(tag_list, tag_link_list)]
-
-                CourseTag.objects.bulk_create(creating_tags)
-
-                course_tags = CourseTag.objects.filter(company = company, course = course)                
-
-                return course_tags
-
-        except Exception as e:
-            logger.exception(f"Error in handle_tags function of AddCourseDetailView: {e}")
-
-        return []
-
-    def handle_timelines(self, request, company, course):
-        try:
-            heading_list = [heading.strip() for heading in request.POST.getlist("timeline_heading")]
-            summary_list = [summary.strip() for summary in request.POST.getlist("timeline_summary")]
-
-            print("Received headings: ", heading_list)
-            print("Received summaries: ", summary_list)
-
-            if len(heading_list) != len(summary_list):
-                raise ValueError("The number of headings does not match the number of summaries.")
-
-            if heading_list and summary_list:
-                creating_timelines = [CourseTimeline(
-                    company = company, course = course,
-                    heading = heading, summary = summary
-                    ) for heading, summary in zip(heading_list, summary_list)]
-
-                CourseTimeline.objects.bulk_create(creating_timelines)
-
-                course_timelines = CourseTimeline.objects.filter(company = company, course = course)
-
-                for index, timeline in enumerate(course_timelines):
-                    print({
-                        "No": index + 1,
-                        "Timeline Name": timeline.heading,
-                        "Timeline": timeline.summary
-                    })
-                    print()
-
-                return course_timelines
-        except Exception as e:
-            logger.exception(f"Error in handle_timelines function of AddCourseDetailView: {e}")
-
-        return []
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["add_client_page"] = True        
+        return context
 
     def post(self, request, *args, **kwargs):
         try:
-            course_slug = request.POST.get('course')
-
-            summary = request.POST.get("summary")
-            description = request.POST.get("description")
-            vertical_title = request.POST.get("vertical_title")
-            horizontal_title = request.POST.get("horizontal_title")
-            table_title = request.POST.get("table_title")
-            bullet_title = request.POST.get("bullet_title")
-            tag_title = request.POST.get("tag_title")
-            timeline_title = request.POST.get("timeline_title")            
-
-            # Fetch current company
             company = self.get_current_company()
 
-            if not company or company.type.name != "Education" :
-                messages.error(request, "Invalid company")
-                return redirect(self.redirect_url)
+            name = request.POST.get("name")
+            image = request.FILES.get("image")
+            order = request.POST.get("order", 0)
+
+            name = name.strip() if name else None
+
+            if not name or not image:
+                message = "Failed! Name is required"
+                if name:
+                    message = "Failed! Image is required"
+                
+                messages.error(request, message)
+                return redirect(self.get_redirect_url())
             
+            if self.model.objects.filter(company = company, name = name).exists():
+                messages.warning(request, "Similar client already exists")
+                return redirect(self.get_redirect_url())
+            
+            self.model.objects.create(company = company, name = name, image = image, order = order)
+            messages.success(request, "Success! Client Created")
+            return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddClientView of superadmin app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+            return redirect(self.get_redirect_url())
+        
+
+class ClientListView(BaseClientView, ListView):
+    template_name = "clients/list.html"
+    context_object_name = "clients"
+    queryset = Client.objects.none()
+    
+    def get_queryset(self):
+        company_slug = self.kwargs.get('slug')
+        if company_slug:
+            return self.model.objects.filter(company__slug = company_slug).order_by("order")
+        
+        return self.queryset
+
+
+class UpdateClientView(BaseClientView, UpdateView):    
+    fields = ["name", "image", "order"]
+    slug_url_kwarg = 'slug'        
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+
+            name = request.POST.get("name")
+            image = request.FILES.get("image")
+            order = request.POST.get("order", 0)
+
+            name = name.strip() if name else None
+
+            if not name:
+                messages.error(request, "Failed! Name is required")
+                return redirect(self.get_redirect_url())
+
+            if not image and not self.object.image:
+                messages.error(request, "Failed! Image is required")
+                return redirect(self.get_redirect_url())     
+            
+            similar_client = self.model.objects.filter(company = self.object.company, name = name).first()
+
+            if similar_client:
+                dublicate_error_msg = ""
+
+                if similar_client.slug == self.object.slug:
+                    if not image and not order:
+                        dublicate_error_msg = "No changes detected"
+                else:
+                    dublicate_error_msg = "Similar client already exists"
+
+                if dublicate_error_msg:
+                    messages.warning(request, dublicate_error_msg)
+                    return redirect(self.get_redirect_url())
+            
+            self.object.name = name
+            self.object.order = order
+
+            if image:
+                self.object.image = image
+
+            self.object.save()
+
+            messages.success(request, "Success! Client Updated")
+            return redirect(self.get_success_url())
+        
+        except Http404:
+            messages.error(request, "Invalid Client")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateClientView of superadmin app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+        
+
+class DeleteClientView(BaseClientView, DeleteView):
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            self.object.delete()
+            messages.success(request, "Success! Client Deleted")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid client")
+
+        except Exception as e:
+            logger.exception(f"Error in delete function of DeleteClientView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+    
+
+# Student Testimonials
+class BaseStudentTestimonialView(BaseEducationCompanyView):
+    model = StudentTestimonial
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    slug_url_kwarg = 'slug'
+
+    def get_current_company(self):
+        try:
+            self.company = get_object_or_404(Company, slug = self.kwargs.get('slug'))
+            return self.company
+        except Http404:
+            messages.error(self.request, "Invalid company")
+            return redirect(self.redirect_url)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["testimonial_page"] = context["company_page"] = True
+        context["current_company"] = self.get_current_company()
+        context["company_type_page"] = False
+        return context
+    
+    def get_success_url(self):
+        try:
+            if self.slug_url_kwarg:
+                return reverse_lazy("superadmin:student_testimonials", kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_success_url function of BaseStudentTestimonialView of superadmin app: {e}")
+        
+        return self.success_url
+    
+    def get_redirect_url(self):
+        return self.get_success_url()
+    
+    def get_object(self):
+        company_slug = self.kwargs.get(self.slug_url_kwarg)
+        testimonial_slug = self.kwargs.get('testimonial_slug')
+
+        return get_object_or_404(self.model, company__slug = company_slug, slug = testimonial_slug)
+    
+    def get_course(self, course_slug):
+        try:
+            company = self.get_current_company()
+            return get_object_or_404(Course, company = company, slug = course_slug)
+        except Http404:
+            return None
+        
+    def get_place(self, place_slug):
+        try:
+            return get_object_or_404(UniquePlace, slug = place_slug)
+        except Http404:
+            return None
+    
+
+class AddStudentTestimonialView(BaseStudentTestimonialView, CreateView):    
+    template_name = "admin_student_testimonials/add.html"
+    fields = ["company", "name", "image", "course", "place", "text", "rating", "order"]
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy("superadmin:add_student_testimonial", kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in get_success_url function of AddStudentTestimonialView of superadmin app: {e}")
+        
+        return self.success_url
+    
+    def get_redirect_url(self):
+        return self.get_success_url()    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        context["add_testimonial_page"] = True
+        context["ratings"] = list(range(1,6))
+
+        context["programs"] = Program.objects.filter(company__slug = self.kwargs.get(self.slug_url_kwarg))
+        context["states"] = UniqueState.objects.all().order_by('name')
+        
+        return context
+
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_current_company()
+
+            name = request.POST.get("name")
+            image = request.FILES.get("image")
+            course_slug = request.POST.get("course")
+            place_slug = request.POST.get("place")
+            text = request.POST.get("testimonial")
+            rating = request.POST.get("rating", 5)
+            order = request.POST.get("order", 0)
+
+            name = name.strip() if name else None
+            course_slug = course_slug.strip() if course_slug else None
+            place_slug = place_slug.strip() if place_slug else None
+            text = text.strip() if text else None
+            rating = rating.strip() if rating else None
+            order = order.strip() if order else None
+
             required_fields = {
+                "Name": name,
+                "Image": image,
                 "Course": course_slug,
-                "summary": summary,
-                "description": description
-                }
+                "Place": place_slug,
+                "Testimonal Text": text,
+                "Rating": rating,
+                "Order": order 
+            }
 
             for key, value in required_fields.items():
                 if not value:
                     messages.error(request, f"Failed! {key} is required")
                     return redirect(self.get_redirect_url())
+                
 
             course = self.get_course(course_slug)
+            place = self.get_place(place_slug)
 
-            with transaction.atomic():
+            if not course or not place:
+                invalid_msg = ""
+                if not course:
+                    invalid_msg = "Invalid Course"
+                else:
+                    invalid_msg = "Invalid Place"
+
+                messages.error(request, invalid_msg)
+                return redirect(self.get_redirect_url())
+                        
+            if self.model.objects.filter(
+                company = company, name = name, course = course, place = place
+                ).exists():
+
+                messages.warning(request, "Similar testimonial already exists")
+                return redirect(self.get_redirect_url())
             
-                course_detail = self.model.objects.create(
-                    company = company, course = course, summary = summary, description = description,
-                    vertical_title = vertical_title, horizontal_title = horizontal_title,
-                    table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
-                    timeline_title = timeline_title
-                )
+            self.model.objects.create(
+                company = company, name = name, image = image, course = course, place = place,
+                text = text, rating = rating, order = order
+            )
 
-                # For Features
-                feature_objs = self.handle_features(request, company, course)
-                if feature_objs:
-                    course_detail.features.set(feature_objs)
-                
-                # For Vertical Tab            
-                vertical_tab_objects =  self.handle_vertical_tab(request, company, course)
-                if vertical_tab_objects:
-                    course_detail.vertical_tabs.set(vertical_tab_objects)
-
-                # For Horizontal Tab            
-                horizontal_tab_objects =  self.handle_horizontal_tab(request, company, course)
-                if horizontal_tab_objects:
-                    course_detail.horizontal_tabs.set(horizontal_tab_objects)
-
-                # For Table
-                table_objects = self.handle_table(request, company, course)
-                if table_objects:
-                    course_detail.tables.set(table_objects)    
-
-                # For Bullet Points
-                bullet_points = self.handle_bullet_points(request, company, course)
-                if bullet_points:
-                    course_detail.bullet_points.set(bullet_points)
-
-                # For Tags
-                tags = self.handle_tags(request, company, course)
-                if tags:
-                    course_detail.tags.set(tags)
-
-                # For Timeline
-                timelines = self.handle_timelines(request, company, course)
-                if timelines:
-                    course_detail.timelines.set(timelines)
-
-                messages.success(request, "Success! Created course detail page")
-                return redirect(self.get_success_url())
+            messages.success(request, "Success! Testimonial Created")
+            return redirect(self.get_success_url())
 
         except Exception as e:
-            logger.exception(f"Error in post function of AddCompanyDetailView of superadmin: {e}")
-            messages.error(request, "An unexpected error occured")
+            logger.exception(f"Error in post function of AddStudentTestimonialView of superadmin app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+            return redirect(self.get_redirect_url())
 
-        return redirect(self.get_redirect_url())
-    
 
-class CourseDetailsListView(BaseEducationCompanyView, ListView):
-    model = CourseDetail
-    template_name = "education_company/course_detail/list.html"
-    queryset = model.objects.none()
-    success_url = redirect_url = reverse_lazy('superadmin:home')
-    context_object_name = "course_details"
-
-    def get_current_company(self):
-        try:
-            company_slug = self.kwargs.get('slug')            
-            return get_object_or_404(Company, slug = company_slug)
-        except Http404:
-            messages.error(self.request, "Failed! Invalid Company")
-            return redirect(self.redirect_url)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        try:
-            context["course_detail_page"] = True
-            
-            current_company = self.get_current_company()
-            
-            context["current_company"] = current_company
-
-        except Exception as e:
-            logger.exception(f"Error in getting context data of AddCompanyDetailView of superadmin: {e}")
-        
-        return context
+class StudentTestimonialListView(BaseStudentTestimonialView, ListView):
+    template_name = "admin_student_testimonials/list.html"
+    context_object_name = "testimonials"
+    queryset = StudentTestimonial.objects.none()
     
     def get_queryset(self):
-        try:
-            current_company = self.get_current_company()
-            return self.model.objects.filter(company = current_company)
-        except Exception as e:
-            logger.exception(f"Error in getting queryset of CourseDetailsListView of superadmin: {e}")
-            return self.queryset
+        company_slug = self.kwargs.get('slug')
+        if company_slug:
+            return self.model.objects.filter(company__slug = company_slug).order_by("order")
         
+        return self.queryset
+    
 
-class CourseDetailView(BaseEducationCompanyView, DetailView):
-    model = CourseDetail
-    template_name = "education_company/course_detail/detail.html"
-    redirect_url = reverse_lazy('superadmin:home')
-    context_object_name = "course_detail"
-
-    def get_redirect_url(self):
-        try:
-            return reverse_lazy('superadmin:course_details', kwargs = {"slug": self.kwargs.get('slug')})
-        except Exception as e:
-            logger.exception(f"Error in get_redirect_url function of CourseDetailView: {e}")
-            return self.redirect_url
-
-    def get_current_company(self):
-        try:
-            company_slug = self.kwargs.get('slug')            
-            return get_object_or_404(Company, slug = company_slug)
-        except Http404:
-            messages.error(self.request, "Failed! Invalid Company")
-            return redirect(self.redirect_url)
+class UpdateStudentTestimonialView(BaseStudentTestimonialView, UpdateView):    
+    fields = ["name", "image", "course", "place", "text", "rating", "order"]
+    template_name = "admin_student_testimonials/update.html"
+    slug_url_kwarg = 'slug'
         
-    def get_current_course(self):
-        try:
-            course_slug = self.kwargs.get('course_slug')
-            return get_object_or_404(Course, slug = course_slug)
-        except Http404:
-            messages.error(self.request, "Failed! Invalid Course")
-            return redirect(self.redirect_url)
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        try:
-            context["course_detail_page"] = True
-            
-            current_company = self.get_current_company()
-            
-            context["current_company"] = current_company
-
-        except Exception as e:
-            logger.exception(f"Error in getting context data of AddCompanyDetailView of superadmin: {e}")
         
-        return context
-    
-    def get_object(self):
+        context["update_testimonial_page"] = True
+        context["ratings"] = list(range(1,6))
+
+        context["programs"] = Program.objects.filter(company = self.company).order_by("name")
+        context["courses"] = Course.objects.filter(program = self.object.course.program).order_by("name")
+        context["states"] = UniqueState.objects.all().order_by('name')
+        context["districts"] = UniqueDistrict.objects.filter(state = self.object.place.state).order_by('name')
+        context["places"] = UniquePlace.objects.filter(district = self.object.place.district).order_by('name')
+        
+        return context    
+
+    def post(self, request, *args, **kwargs):
         try:
-            current_company = self.get_current_company()
-            current_course = self.get_current_course()
-            return get_object_or_404(self.model, company = current_company, course = current_course)
+            self.object = self.get_object()
+
+            name = request.POST.get("name")
+            image = request.FILES.get("image")
+            course_slug = request.POST.get("course")
+            place_slug = request.POST.get("place")
+            text = request.POST.get("testimonial")
+            rating = request.POST.get("rating", 5)
+            order = request.POST.get("order", 0)
+
+            name = name.strip() if name else None
+            course_slug = course_slug.strip() if course_slug else None
+            place_slug = place_slug.strip() if place_slug else None
+            text = text.strip() if text else None
+            rating = rating.strip() if rating else None
+            order = order.strip() if order else None
+
+            required_fields = {
+                "Name": name,
+                "Image": image,
+                "Course": course_slug,
+                "Place": place_slug,
+                "Testimonal Text": text,
+                "Rating": rating,
+                "Order": order 
+            }
+
+            for key, value in required_fields.items():
+                if key == "Image" and self.object.image:
+                    continue
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            course = self.get_course(course_slug)
+            place = self.get_place(place_slug)
+
+            if not course or not place:
+                invalid_msg = ""
+                if not course:
+                    invalid_msg = "Invalid Course"
+                else:
+                    invalid_msg = "Invalid Place"
+
+                messages.error(request, invalid_msg)
+                return redirect(self.get_redirect_url())
+            
+            similar_client = self.model.objects.filter(
+                company = self.object.company, name = name, course = course, place = place
+                ).first()
+
+            if similar_client:
+                dublicate_error_msg = ""
+
+                if similar_client.slug == self.object.slug:
+                    if not (image or order or text or rating):
+                        dublicate_error_msg = "No changes detected"
+                else:
+                    dublicate_error_msg = "Similar testimonial already exists"
+
+                if dublicate_error_msg:
+                    messages.warning(request, dublicate_error_msg)
+                    return redirect(self.get_redirect_url())
+            
+            self.object.name = name
+            self.object.course = course
+            self.object.place = place
+            self.object.text = text
+            self.object.rating = rating
+            self.object.order = order
+
+            if image:
+                self.object.image = image
+
+            self.object.save()
+
+            messages.success(request, "Success! Testimonial Updated")
+            return redirect(self.get_success_url())
         
         except Http404:
-            messages.error(self.request, "Invalid course for this company")
+            messages.error(request, "Invalid Testimonial")
 
         except Exception as e:
-            logger.exception(f"Error in get_object function of CourseDetailView of superadmin: {e}")
+            logger.exception(f"Error in post function of UpdateStudentTestimonialView of superadmin app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
     
 
-class UpdateCourseDetailView(BaseCompanyView, UpdateView):
-    model = CourseDetail
-    fields = "__all__"
-    template_name = "education_company/course_detail/update.html"
-    success_url = redirect_url = reverse_lazy('superadmin:home')
+class DeleteStudentTestimonialView(BaseStudentTestimonialView, DeleteView):
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            self.object.delete()
+            messages.success(request, "Success! Testimonial Deleted")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Testimonial")
+
+        except Exception as e:
+            logger.exception(f"Error in delete function of DeleteStudentTestimonialView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
     
+# General Testimonial
+class BaseTestimonialView(BaseCompanyView):
+    model = Testimonial
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    slug_url_kwarg = 'slug'
+
     def get_current_company(self):
         try:
-            company_slug = self.kwargs.get('slug')            
-            return get_object_or_404(Company, slug = company_slug)
+            self.company = get_object_or_404(Company, slug = self.kwargs.get('slug'))
+            return self.company
         except Http404:
-            messages.error(self.request, "Failed! Invalid Company")
+            messages.error(self.request, "Invalid company")
             return redirect(self.redirect_url)
-        
-    def get_course(self):
-        try:
-            course_slug = self.kwargs.get('course_slug')
-            return get_object_or_404(Course, slug = course_slug)
-        except Http404:
-            messages.error(self.request, "Invalid Course")
-            return redirect(self.get_redirect_url())
-        
-    def get_course_detail(self):
-        try:
-            current_company = self.get_current_company()
-            current_course = self.get_course()
-
-            return get_object_or_404(CourseDetail, company = current_company, course = current_course)
-        
-        except Http404:
-            messages.error(self.request, "Invalid course detail object")
-            return redirect(self.get_redirect_url())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        try:
-            context["course_detail_page"] = True
-            
-            current_company = self.get_current_company()
-            
-            context["current_company"] = current_company
-
-            context["course_detail"] = self.get_course_detail()
-
-            context["course"] = Course.objects.filter(company = current_company)
-        except Exception as e:
-            logger.exception(f"Error in getting context data of UpdateCourseDetailView of superadmin: {e}")
-        
+        context["testimonial_page"] = context["company_page"] = True
+        context["current_company"] = self.get_current_company()
+        context["company_type_page"] = False
         return context
-    
-    def get_object(self):
-        try:
-            return self.get_course_detail()
-        except Exception as e:
-            logger.exception(f"Error in get_object function of UpdateCourseDetailView of superadmin: {e}")
-            return None
     
     def get_success_url(self):
         try:
-            return reverse_lazy('superadmin:add_course_details', kwargs = {"slug": self.kwargs.get('slug')})
+            if self.slug_url_kwarg:
+                return reverse_lazy("superadmin:testimonials", kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
         except Exception as e:
-            logger.exception(f"Error in fetching success url of UpdateCourseDetailView of superadmin: {e}")
-            return self.success_url
+            logger.exception(f"Error in get_success_url function of BaseTestimonialView of superadmin app: {e}")
         
+        return self.success_url
+    
     def get_redirect_url(self):
-        try:
-            return self.get_success_url()
-        except Exception as e:
-            logger.exception(f"Error in fetching redirect url of UpdateCourseDetailView of superadmin: {e}")
-            return self.redirect_url
+        return self.get_success_url()
+    
+    def get_object(self):
+        company_slug = self.kwargs.get(self.slug_url_kwarg)
+        testimonial_slug = self.kwargs.get('testimonial_slug')
+
+        return get_object_or_404(self.model, company__slug = company_slug, slug = testimonial_slug)    
         
-    def get_course(self, course_slug):
+    def get_place(self, place_slug):
         try:
-            return get_object_or_404(Course, slug = course_slug)
+            return get_object_or_404(UniquePlace, slug = place_slug)
         except Http404:
-            messages.error(self.request, "Invalid Course")
-            return redirect(self.get_redirect_url())
+            return None
+    
+
+class AddTestimonialView(BaseTestimonialView, CreateView):    
+    template_name = "admin_testimonials/add.html"
+    fields = ["company", "name", "image", "company", "place", "text", "rating", "order"]
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy("superadmin:add_testimonial", kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in get_success_url function of AddTestimonialView of superadmin app: {e}")
         
+        return self.success_url
+    
+    def get_redirect_url(self):
+        return self.get_success_url()    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        context["add_testimonial_page"] = True
+        context["ratings"] = list(range(1,6))
+
+        context["states"] = UniqueState.objects.all().order_by('name')
+        
+        return context
+
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_current_company()
+
+            name = request.POST.get("name")
+            image = request.FILES.get("image")
+            client_company = request.POST.get("company")
+            place_slug = request.POST.get("place")
+            text = request.POST.get("testimonial")
+            rating = request.POST.get("rating", 5)
+            order = request.POST.get("order", 0)
+
+            name = name.strip() if name else None
+            client_company = client_company.strip() if client_company else None
+            place_slug = place_slug.strip() if place_slug else None
+            text = text.strip() if text else None
+            rating = rating.strip() if rating else None
+            order = order.strip() if order else None
+
+            required_fields = {
+                "Name": name,
+                "Image": image,
+                "Company": client_company,
+                "Place": place_slug,
+                "Testimonal Text": text,
+                "Rating": rating,
+                "Order": order 
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+                
+            place = self.get_place(place_slug)
+
+            if not place:                
+                messages.error(request, "Invalid Place")
+                return redirect(self.get_redirect_url())
+                        
+            if self.model.objects.filter(
+                company = company, name = name, client_company = client_company, place = place
+                ).exists():
+
+                messages.warning(request, "Similar testimonial already exists")
+                return redirect(self.get_redirect_url())
+            
+            self.model.objects.create(
+                company = company, name = name, image = image, client_company = client_company, place = place,
+                text = text, rating = rating, order = order
+            )
+
+            messages.success(request, "Success! Testimonial Created")
+            return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddTestimonialView of superadmin app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+            return redirect(self.get_redirect_url())
+
+
+class TestimonialListView(BaseTestimonialView, ListView):
+    template_name = "admin_testimonials/list.html"
+    context_object_name = "testimonials"
+    queryset = Testimonial.objects.none()
+    
+    def get_queryset(self):
+        company_slug = self.kwargs.get('slug')
+
+        if company_slug:
+            return self.model.objects.filter(company = self.get_current_company()).order_by("order")        
+        
+        return self.queryset
+    
+
+class UpdateTestimonialView(BaseTestimonialView, UpdateView):    
+    fields = ["name", "image", "company", "place", "text", "rating", "order"]
+    template_name = "admin_testimonials/update.html"
+    slug_url_kwarg = 'slug'
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        context["update_testimonial_page"] = True
+        context["ratings"] = list(range(1,6))
+        
+        context["states"] = UniqueState.objects.all().order_by('name')
+        context["districts"] = UniqueDistrict.objects.filter(state = self.object.place.state).order_by('name')
+        context["places"] = UniquePlace.objects.filter(district = self.object.place.district).order_by('name')
+        
+        return context    
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+
+            name = request.POST.get("name")
+            image = request.FILES.get("image")
+            client_company = request.POST.get("company")
+            place_slug = request.POST.get("place")
+            text = request.POST.get("testimonial")
+            rating = request.POST.get("rating", 5)
+            order = request.POST.get("order", 0)
+
+            name = name.strip() if name else None
+            client_company = client_company.strip() if client_company else None
+            place_slug = place_slug.strip() if place_slug else None
+            text = text.strip() if text else None
+            rating = rating.strip() if rating else None
+            order = order.strip() if order else None
+
+            required_fields = {
+                "Name": name,
+                "Image": image,
+                "Company": client_company,
+                "Place": place_slug,
+                "Testimonal Text": text,
+                "Rating": rating,
+                "Order": order 
+            }
+
+            for key, value in required_fields.items():
+                if key == "Image" and self.object.image:
+                    continue
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            place = self.get_place(place_slug)
+
+            if not place:
+                messages.error(request, "Invalid Place")
+                return redirect(self.get_redirect_url())
+            
+            similar_client = self.model.objects.filter(
+                company = self.object.company, name = name, client_company = client_company, place = place
+                ).first()
+
+            if similar_client:
+                dublicate_error_msg = ""
+
+                if similar_client.slug == self.object.slug:
+                    if not (image or order or text or rating):
+                        dublicate_error_msg = "No changes detected"
+                else:
+                    dublicate_error_msg = "Similar testimonial already exists"
+
+                if dublicate_error_msg:
+                    messages.warning(request, dublicate_error_msg)
+                    return redirect(self.get_redirect_url())
+            
+            self.object.name = name
+            self.object.client_company = client_company
+            self.object.place = place
+            self.object.text = text
+            self.object.rating = rating
+            self.object.order = order
+
+            if image:
+                self.object.image = image
+
+            self.object.save()
+
+            messages.success(request, "Success! Testimonial Updated")
+            return redirect(self.get_success_url())
+        
+        except Http404:
+            messages.error(request, "Invalid Testimonial")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateTestimonialView of superadmin app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+    
+
+class DeleteTestimonialView(BaseTestimonialView, DeleteView):
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            self.object.delete()
+            messages.success(request, "Success! Testimonial Deleted")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Testimonial")
+
+        except Exception as e:
+            logger.exception(f"Error in delete function of DeleteTestimonialView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+    
+
