@@ -70,17 +70,13 @@ class Specialization(models.Model):
 class Course(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
 
+    image = models.ImageField(upload_to="course/", null=True, blank=True)
     name = models.CharField(max_length=150)
     program = models.ForeignKey(Program, on_delete=models.CASCADE)
     specialization = models.ForeignKey(Specialization, on_delete=models.CASCADE)
     mode = models.CharField(max_length=150)
     duration = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    description = models.TextField(null=True, blank=True)
-
-    place = models.ForeignKey(UniquePlace, on_delete=models.CASCADE, null=True, blank=True)
-    district = models.ForeignKey(UniqueDistrict, on_delete=models.CASCADE, null=True, blank=True)
-    state = models.ForeignKey(UniqueState, on_delete=models.CASCADE, null=True, blank=True)
 
     slug = models.SlugField(null=True, blank=True, max_length=500)
     created = models.DateTimeField(auto_now_add=True)
@@ -107,6 +103,12 @@ class Course(models.Model):
         db_table = "courses"
         ordering = ["name"]
 
+    @property
+    def get_image_name(self):
+        if self.image:
+            return self.image.name.replace('course/', '')
+        return None
+
 
 class Feature(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
@@ -130,6 +132,7 @@ class VerticalBullet(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
 
     heading = models.CharField(max_length=250, null=True, blank=True)
+    sub_heading = models.CharField(max_length=250, null=True, blank=True)
 
     bullet = models.CharField(max_length=250)
 
@@ -363,14 +366,10 @@ class CourseDetail(models.Model):
         return transposed_data
 
 
-
-        
-
-
-
 class Enquiry(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="course_enquiry_company")
 
+    name = models.CharField(max_length=250)
     phone = models.CharField(max_length=20)
     email = models.EmailField(max_length=254)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
@@ -402,3 +401,85 @@ class Enquiry(models.Model):
     class Meta:
         db_table = "course_enquiries"
         ordering = ["-created"]
+
+
+class Faq(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="faq_company")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+
+    question = models.TextField()
+    answer = models.TextField()
+
+    slug = models.SlugField(null=True, blank=True, max_length=500)
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.company.name}-{self.course.name}")
+            slug = base_slug
+
+            count = 1
+            while Faq.objects.filter(slug = slug).exists():
+                slug = f"{base_slug}-{count}"
+                count += 1
+
+            self.slug = slug
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.company.name}-{self.course.name}"
+    
+    class Meta:
+        db_table = "course_faqs"
+        ordering = ["-created"]
+
+
+class Testimonial(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+
+    name = models.CharField(max_length=250)
+    image = models.ImageField(upload_to="student_testimonials/")
+
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    place = models.ForeignKey(UniquePlace, on_delete=models.CASCADE)
+
+    text = models.TextField()
+    rating = models.PositiveIntegerField(default=5)
+
+    order = models.PositiveIntegerField(default=0)
+
+    slug = models.SlugField(null=True, blank=True, max_length=500)
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.company.name}-{self.name}-{self.course.name}-{self.place.name}")
+
+            slug = base_slug
+            count = 1
+
+            while Testimonial.objects.filter(slug = slug).exists():
+                slug = f"{base_slug}-{count}"
+                count += 1
+
+            self.slug = slug
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.company.name}-{self.name}-{self.course.name}-{self.place.name}"
+
+    class Meta:
+        db_table = "student_testimonials"
+        ordering = ["created"]
+
+    @property
+    def get_image_name(self):
+        if self.image:
+            return f"{self.image.name}".replace('student_testimonials/', '')
+        return None
