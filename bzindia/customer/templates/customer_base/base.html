@@ -58,6 +58,7 @@
 				padding-left: 0;
 			}
 		</style>
+		{% block styles %}{% endblock styles %}
     </head>
     <body id="skin-color" class="inter">
 		 
@@ -386,6 +387,18 @@
 							{% if company.type.name == "Product" %}
 							{% include "menu/product_menu.html" %}							
 							{% endif %}
+
+							{% if company.type.name == "Service" %}
+							{% include "menu/service_menu.html" %}							
+							{% endif %}
+
+							{% if company.type.name == "Registration" %}
+							{% include "menu/registration_menu.html" %}							
+							{% endif %}
+
+							{% if company.type.name == "Education" %}
+							{% include "menu/education_menu.html" %}							
+							{% endif %}
 							<li> 
 								<a href="settings.html"><i class="feather-settings"></i> <span>Settings</span></a>
 							</li>
@@ -684,7 +697,227 @@
 
 				</div><!-- modal-content -->
 			</div><!-- modal-dialog -->
-		</div><!-- modal -->		
+		</div><!-- modal -->	
+		
+		<!-- Service Modal Start -->
+		<!-- Service Category Modal (Start) -->
+		<div class="modal fade" id="add_service_category_modal" tabindex="-1" role="dialog" aria-modal="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+
+					<div class="modal-header">
+						<h4 class="modal-title text-center">Add Service Category</h4>
+						<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
+					</div>
+
+					<div class="modal-body">
+						<div class="row">
+							<div class="col-md-12">
+								<form method="post" action="{% url 'customer:add_service_categories' %}" class="needs-validation" id="add-service-category-form" novalidate>
+									{% csrf_token %}
+									<h4>Service Category</h4>
+									<div class="form-group row">
+										<div class="col-md-12"><label class="col-form-label">Name <span class="text-danger">*</span></label></div>
+										<div class="col-md-12">
+											<input class="form-control" type="text" id="name-input" placeholder="Name of Service Category" name="name">
+											<div class="invalid-feedback">
+												Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
+											</div>
+											<div class="valid-feedback">
+												Looks good!
+											</div>
+										</div>
+									</div>									
+									<div class="text-center py-3">
+										<button type="submit" class="border-0 btn btn-primary btn-gradient-primary btn-rounded" id="submit-button">Save</button>&nbsp;&nbsp;
+										<button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">Cancel</button>
+									</div>
+								</form>
+							</div>
+						</div>
+
+					</div>
+
+				</div><!-- modal-content -->
+			</div><!-- modal-dialog -->
+		</div><!-- modal -->
+		<!-- Service Category Modal (End) -->
+
+		<!-- Service Sub Category Modal (Start) -->
+		<div class="modal fade" id="add_service_sub_category_modal" tabindex="-1" role="dialog" aria-modal="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+
+					<div class="modal-header">
+						<h4 class="modal-title text-center">Add Service Sub Category</h4>
+						<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
+					</div>
+
+					<div class="modal-body">
+						<div class="row">
+							<div class="col-md-12">
+								<form method="post" action="{% url 'customer:add_service_sub_categories' %}" class="needs-validation" id="add-service-sub-category-form" novalidate>
+									{% csrf_token %}
+									<h4>Service Sub Category</h4>
+									<div class="form-group row">
+										<div class="col-md-12"><label class="col-form-label">Name <span class="text-danger">*</span></label></div>
+										<div class="col-md-12">
+											<input class="form-control" type="text" id="name-input" placeholder="Name of Service Sub Category" name="name">
+											<div class="invalid-feedback">
+												Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
+											</div>
+											<div class="valid-feedback">
+												Looks good!
+											</div>
+										</div>
+									</div>
+									<div class="form-row">
+										<div class="col-md-12 mb-3">
+											<label for="product-category-dropdown">Service Category <span class="text-danger">*</span></label>
+											<select class="form-control" id="category-dropdown" name="category" required>
+												<option value="" hidden disabled selected>Select Category</option>
+												{% for category in categories %}
+												<option value="{{category.slug}}">{{category.name}}</option>
+												{% endfor %}
+											</select>
+											<div class="invalid-feedback">
+												Please provide a valid category.
+											</div>
+											<div class="valid-feedback">
+												Looks good!
+											</div>
+										</div>                            										                                                       
+									</div>
+									<div class="text-center py-3">
+										<button type="submit" class="border-0 btn btn-primary btn-gradient-primary btn-rounded" id="submit-button">Save</button>&nbsp;&nbsp;
+										<button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">Cancel</button>
+									</div>
+								</form>
+							</div>
+						</div>
+
+					</div>
+
+				</div><!-- modal-content -->
+			</div><!-- modal-dialog -->
+		</div><!-- modal -->
+		<!-- Service Sub Category Modal (End) -->
+		<!-- Service Modal End -->
+
+		<!-- Registration Modal Start -->
+		<!-- Add Registration Type Modal (Start) -->
+		<div class="modal fade" id="add_registration_type_modal" tabindex="-1" role="dialog" aria-modal="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+
+					<div class="modal-header">
+						<h4 class="modal-title text-center">Add Registration Type</h4>
+						<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
+					</div>
+
+					<div class="modal-body">
+						<div class="row">
+							<div class="col-md-12">
+								<form method="post" action="{% url 'customer:add_registration_types' %}" class="needs-validation" id="add-service-type-form" novalidate>
+									{% csrf_token %}
+									<h4>Registration Type</h4>
+									<div class="form-group row">
+										<div class="col-md-12"><label class="col-form-label">Name <span class="text-danger">*</span></label></div>
+										<div class="col-md-12">
+											<input class="form-control" type="text" id="name-input" placeholder="Name of Registration Type" name="name">
+											<div class="invalid-feedback">
+												Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
+											</div>
+											<div class="valid-feedback">
+												Looks good!
+											</div>
+										</div>
+										<div class="col-md-12"><label class="col-form-label">Description </label></div>
+										<div class="col-md-12">
+											<textarea class="form-control" name="description" id="description-input" placeholder="Description"></textarea>									
+										</div>
+									</div>									
+									<div class="text-center py-3">
+										<button type="button" class="border-0 btn btn-primary btn-gradient-primary btn-rounded" id="submit-button">Save</button>&nbsp;&nbsp;
+										<button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">Cancel</button>
+									</div>
+								</form>
+							</div>
+						</div>
+
+					</div>
+
+				</div><!-- modal-content -->
+			</div><!-- modal-dialog -->
+		</div><!-- modal -->
+		<!-- Registration Type Modal (End) -->
+		 <!-- Registration Modal End -->
+
+		<!-- Registration Sub Types Modal (Start) -->
+		<div class="modal fade" id="add_registration_sub_type_modal" tabindex="-1" role="dialog" aria-modal="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+
+					<div class="modal-header">
+						<h4 class="modal-title text-center">Add Registration Sub Types</h4>
+						<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
+					</div>
+
+					<div class="modal-body">
+						<div class="row">
+							<div class="col-md-12">
+								<form method="post" action="{% url 'customer:add_registration_sub_types' %}" class="needs-validation" id="add-service-sub-type-form" novalidate>
+									{% csrf_token %}
+									<h4>Registration Sub Types</h4>
+									<div class="form-group row">
+										<div class="col-md-12"><label class="col-form-label">Name <span class="text-danger">*</span></label></div>
+										<div class="col-md-12">
+											<input class="form-control" type="text" id="name-input" placeholder="Name of Registration Sub Types" name="name">
+											<div class="invalid-feedback">
+												Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
+											</div>
+											<div class="valid-feedback">
+												Looks good!
+											</div>
+										</div>
+									</div>
+									<div class="form-row">
+										<div class="col-md-12 mb-3">
+											<label for="product-type-dropdown">Registration Types <span class="text-danger">*</span></label>
+											<select class="form-control" id="type-dropdown" name="type" required>
+												<option value="" hidden disabled selected>Select Types</option>
+												{% for type in types %}
+												<option value="{{type.slug}}">{{type.name}}</option>
+												{% endfor %}
+											</select>
+											<div class="invalid-feedback">
+												Please provide a valid type.
+											</div>
+											<div class="valid-feedback">
+												Looks good!
+											</div>
+										</div>                            										                                                       
+									</div>
+									<div class="form-row">
+										<div class="col-md-12 mb-3">
+											<label for="product-type-dropdown">Description </label>
+											<textarea class="form-control" name="description" id="description-input" placeholder="Description"></textarea>									
+										</div>                            										                                                       
+									</div>
+									<div class="text-center py-3">
+										<button type="submit" class="border-0 btn btn-primary btn-gradient-primary btn-rounded" id="submit-button">Save</button>&nbsp;&nbsp;
+										<button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">Cancel</button>
+									</div>
+								</form>
+							</div>
+						</div>
+
+					</div>
+
+				</div><!-- modal-content -->
+			</div><!-- modal-dialog -->
+		</div><!-- modal -->
+		<!-- Registration Sub Types Modal (End) -->
 
 		 <!--theme settings modal-->
 
@@ -878,13 +1111,13 @@
 		<!-- Chart JS -->
 		<script src="{% static 'assets/plugins/morris/morris.min.js' %}"></script>
 		<script src="{% static 'assets/plugins/raphael/raphael.min.js' %}"></script>
-		<script src="{% static 'assets/js/chart.js' %}"></script>
-		<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
-		<script src="{% static 'assets/js/chartsLine.js' %}"> </script>        								
+		{% comment %} <script src="{% static 'assets/js/chart.js' %}"></script> {% endcomment %}
+		{% comment %} <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script> {% endcomment %}
+		{% comment %} <script src="{% static 'assets/js/chartsLine.js' %}"> </script>        								 {% endcomment %}
         		
-		<script src="{% static 'assets/js/linebar.min.js' %}"></script>
-		<script src="{% static 'assets/js/piechart.js' %}"></script>
-		<script src="{% static 'assets/js/apex.min.js' %}"></script>
+		{% comment %} <script src="{% static 'assets/js/linebar.min.js' %}"></script> {% endcomment %}
+		{% comment %} <script src="{% static 'assets/js/piechart.js' %}"></script> {% endcomment %}
+		{% comment %} <script src="{% static 'assets/js/apex.min.js' %}"></script> {% endcomment %}
         				
 
         <!-- Select2 JS -->
@@ -906,7 +1139,7 @@
 		<!-- Custom JS -->
 		<script src="{% static 'assets/js/app.js' %}"></script>
 
-        <script src="{% static 'assets/js/dynamicActive.js' %}"></script>
+        {% comment %} <script src="{% static 'assets/js/dynamicActive.js' %}"></script> {% endcomment %}
 		
 
 		<script>

@@ -1,15 +1,18 @@
 from django.db.models.base import Model as Model
-from django.db.models.query import QuerySet
 from django.views.generic import TemplateView, CreateView, UpdateView, ListView, View
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.http import Http404, JsonResponse
+from datetime import timedelta
 import logging
 
 from company.models import Company
+from educational.models import Course, Program, Specialization, Faq as CourseFaq, Enquiry as EducationEnquiry
 from product.models import Category as ProductCategory, Brand, Size, Color, Product, SubCategory as ProductSubCategory
+from service.models import Service, Category as ServiceCategory, SubCategory as ServiceSubCategory, Enquiry as ServiceEnquiry, Faq as ServiceFaq
+from registration.models import RegistrationDetail, RegistrationType, RegistrationSubType, Faq as RegistrationFaq, Enquiry as RegistrationEnquiry
 
 logger = logging.getLogger(__name__)
 
@@ -1039,3 +1042,1989 @@ class DeleteProductView(BaseProductView, View):
             logger.exception(f"Error in deleting product object: {e}")
             messages.error(request, "Failed! Server Error.")
             return redirect(self.redirect_url)
+        
+
+class BaseCustomerView(LoginRequiredMixin):
+    login_url = reverse_lazy('authentication:login')
+    success_url = redirect_url = reverse_lazy("customer:home")
+
+    def get_company(self):
+        try:
+            email = self.request.user.email
+            self.company = get_object_or_404(Company, email = email)
+            return self.company
+        except Http404:
+            messages.error(self.request, "Invalid Company")
+            return  redirect(reverse_lazy('authentication:logout'))
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["company"] = self.get_company()
+        return context
+
+
+# Service Company
+class BaseServiceView(BaseCustomerView, View):
+    model = Service
+    success_url = redirect_url = reverse_lazy("customer:services")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["service_page"] = True
+
+        return context
+    
+    def get_category(self, category_slug):
+        try:
+            return get_object_or_404(ServiceCategory, slug = category_slug)
+        except Http404:
+            return None
+        
+    def get_sub_category(self, sub_category_slug):
+        try:
+            return get_object_or_404(ServiceSubCategory, slug = sub_category_slug)
+        except Http404:
+            return None
+
+
+class AddServiceView(BaseServiceView, CreateView):
+    model = Service
+    fields = ["company", "image", "name", "category", "sub_category", "is_active", "price"]
+    template_name = "customer_services/service/add.html"
+    success_url = redirect_url = reverse_lazy("customer:add_services")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["add_service_page"] = True
+        context["categories"] = ServiceCategory.objects.filter(company = self.get_company()).order_by("name")
+        context["sub_categories"] = ServiceSubCategory.objects.filter(company = self.get_company()).order_by("name")        
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_company()
+
+            image = request.FILES.get('image')
+            name = request.POST.get("name")
+            category_slug = request.POST.get("category")
+            sub_category_slug = request.POST.get("sub_category")
+
+            price = request.POST.get("price")
+            duration = request.POST.get("duration")
+            is_active = request.POST.get("is_active")
+            
+            name = name.strip() if name else None
+            category_slug = category_slug.strip() if category_slug else None
+            sub_category_slug = sub_category_slug.strip() if sub_category_slug else None
+            price = price.strip() if price else None
+            duration = duration.strip() if duration else None
+            is_active = is_active.strip() if is_active else None
+
+            required_fields = {
+                "Service Name": name,
+                "Category": category_slug,
+                "Sub Category": sub_category_slug,                
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.redirect_url)
+
+            category = self.get_category(category_slug)
+            
+            sub_category = self.get_sub_category(sub_category_slug)
+
+            if not category or not sub_category:
+                invalid_msg = "Invalid "
+                
+                if not category:
+                    invalid_msg += "Category"
+                else:
+                    invalid_msg += "Sub Category"
+
+                messages.error(request, invalid_msg)
+                return redirect(self.redirect_url)
+            
+            if Service.objects.filter(company=company, name=name, category=category, sub_category=sub_category).exists():
+                messages.warning(request, "Similar Service already exists")
+                return redirect(self.redirect_url)
+
+            Service.objects.create(
+                company = company, image = image, name = name, category = category, sub_category = sub_category, 
+                price = price, duration = timedelta(days = int(duration.strip())) if duration else None, 
+                is_active = bool(is_active)
+                )
+            
+            messages.success(request, "Success! Service Created.")
+            return redirect(self.success_url)
+
+        except Exception as e:
+            logger.exception(f"Error in post functio of AddServiceView in customer app: {e}")
+            messages.error(request, "Server Error")
+            return redirect(self.redirect_url)
+        
+
+class UpdateServiceView(BaseServiceView, UpdateView):
+    model = Service
+    fields = ["name", "image", "category", "sub_category", "price", "duration", "is_active"]
+    success_url = redirect_url = reverse_lazy("customer:services")    
+    template_name = "customer_services/service/edit.html"
+    slug_url_kwarg = 'slug'
+
+    def get_redirect_url(self):
+        try:  
+            return reverse_lazy("customer:update_service", kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_redirect_url function of UpdateServiceView in customer app: {e}")
+            return self.redirect_url    
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        company = self.get_company()
+        context["categories"] = ServiceCategory.objects.filter(company = company).order_by("name")
+        context["sub_categories"] = ServiceSubCategory.objects.filter(company = company).order_by("name")        
+        
+        return context      
+
+    def post(self, request, *args, **kwargs):
+        try:
+            image = request.FILES.get("image")
+            name = request.POST.get("name")
+            category_slug = request.POST.get("category")
+            sub_category_slug = request.POST.get("sub_category")
+
+            price = request.POST.get("price")
+            duration = request.POST.get("duration")
+            is_active = request.POST.get("is_active")
+
+            name = name.strip() if name else None
+            category_slug = category_slug.strip() if category_slug else None
+            sub_category_slug = sub_category_slug.strip() if sub_category_slug else None
+            price = price.strip() if price else None
+            duration = duration.strip() if duration else None
+            is_active = is_active.strip() if is_active else None
+
+            required_fields = {
+                "Service Name": name,
+                "Category": category_slug,
+                "Sub Category": sub_category_slug,                
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            category = self.get_category(category_slug)
+            
+            sub_category = self.get_sub_category(sub_category_slug)
+
+            if not category or not sub_category:
+                invalid_msg = "Invalid "
+                
+                if not category:
+                    invalid_msg += "Category"
+                else:
+                    invalid_msg += "Sub Category"
+
+                messages.error(request, invalid_msg)
+                return redirect(self.get_redirect_url())
+            
+            service = self.get_object()
+
+            similar_service = self.model.objects.filter(
+                company = service.company, name = name, category = category, sub_category = sub_category
+                ).first()
+
+            if similar_service and similar_service.slug != service.slug:                
+                messages.warning(request, "Similar service already exists")
+                return redirect(self.get_redirect_url())
+
+            service.name = name
+            service.category = category
+            service.sub_category = sub_category
+            service.price = price
+            service.is_active = bool(is_active)
+
+            if duration:
+                service.duration = timedelta(days = int(duration))
+            if image:
+                service.image = image
+            service.save()
+            
+            messages.success(request, "Success! Service Updated")
+            return redirect(self.success_url)
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateServiceView in customer app: {e}")
+            messages.error(request, "An unexpected error occurred")
+            return redirect(self.get_redirect_url())
+
+
+class ServiceListView(BaseServiceView, ListView):
+    queryset = Service.objects.none()
+    template_name = "customer_services/service/list.html"
+    context_object_name = "services"
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            if company.type.name == "Service":
+                return self.model.objects.filter(company = company)                            
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of list ServiceListView of customer app: {e}")
+
+        return self.queryset
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["list_service_page"] = True
+
+        return context
+    
+
+class DeleteServiceView(BaseServiceView, View): 
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(self.model, slug = self.kwargs.get("slug"))
+            self.object.delete()
+            messages.success(request, "Success! Deleted service")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid service")
+
+        except Exception as e:
+            logger.exception(f"Error in get function of DeleteServiceView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class BaseServiceCategoryView(BaseCustomerView, View):
+    model = ServiceCategory
+    success_url = redirect_url = reverse_lazy("customer:service_categories")
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["service_category_page"] = True
+
+        return context
+
+
+class AddServiceCategoryView(BaseServiceCategoryView, CreateView):
+    fields = ["company", "name"]
+    success_url = redirect_url = reverse_lazy("customer:service_categories")    
+
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_company()
+
+            name = request.POST.get("name")
+            name = name.strip() if name else None
+            
+            if name:
+                product, created = self.model.objects.get_or_create(company = company, name = name)
+
+                if created:
+                    messages.success(request, "Success! Service category created.")
+                    return redirect(self.success_url)
+
+                else:
+                    messages.warning(request, "Service category already exists.")
+            
+            else:
+                messages.error(request, "Service category name is required.")            
+        
+        except Exception as e:
+            logger.error(f"Error in post function of AddServiceCategoryView in customer app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class ListServiceCategoryView(BaseServiceCategoryView, ListView):
+    queryset = ServiceCategory.objects.none()
+    context_object_name = "categories"
+    template_name = "customer_services/category/list.html"
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company)
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of ListServiceCategoryView in customer app: {e}")
+            return self.queryset
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["list_service_category_page"] = True
+
+        return context
+    
+
+class UpdateServiceCategoryView(BaseServiceCategoryView, UpdateView):
+    fields = ["name"]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            name = request.POST.get("name")
+            name = name.strip() if name else None
+
+            if not name:
+                messages.error(request, f"Failed! Name of service category is required")
+                return redirect(self.redirect_url)
+            
+            category = self.get_object()
+            
+            existing_category = self.model.objects.filter(company = category.company, name = name).first()
+
+            if existing_category:
+                if existing_category.slug == category.slug:
+                    messages.warning(request, "No changes detected")
+                else:
+                    messages.warning(request, "Similar category already exists")
+
+                return redirect(self.redirect_url)
+            
+            category.name = name
+            category.save()
+
+            messages.success(request, "Success! Service category updated.")
+            return redirect(self.success_url)                                                       
+        
+        except Exception as e:
+            logger.exception(f"Error post function of UpdateServiceCategoryView in customer app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class DeleteServiceCategoryView(BaseServiceCategoryView, View):
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(self.model, slug = self.kwargs.get(self.slug_url_kwarg))
+            self.object.delete()
+            messages.success(request, "Success! Deleted service category")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid service category")
+
+        except Exception as e:
+            logger.exception(f"Error in get function of DeleteServiceCategoryView in customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class BaseServiceSubCategoryView(BaseCustomerView, View):
+    model = ServiceSubCategory
+    success_url = redirect_url = reverse_lazy("customer:service_sub_categories")
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["service_sub_category_page"] = True
+        context["categories"] = ServiceCategory.objects.filter(company = self.get_company())
+
+        return context
+    
+    def get_category(self, category_slug):
+        try:
+            return get_object_or_404(ServiceCategory, slug = category_slug)
+        except Http404:
+            return None
+    
+
+class AddServiceSubCategoryView(BaseServiceSubCategoryView, CreateView):
+    model = ServiceSubCategory
+    fields = ["company", "name", "category"]  
+
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_company()
+
+            name = request.POST.get("name")
+            name = name.strip() if name else None
+
+            category_slug = request.POST.get("category")
+
+            if not category_slug or not name:
+                error_msg = "Name of service sub category is required."
+                if not category_slug:
+                    error_msg = "Service category is required."
+
+                messages.error(request, f"Failed! {error_msg}")
+                return redirect(self.redirect_url)
+            
+            category = self.get_category(category_slug)
+
+            if not category:
+                messages.error(request, "Invalid category")
+                return redirect(self.redirect_url)
+            
+            sub_category, created = self.model.objects.get_or_create(company = company, name = name, category = category)
+
+            if created:
+                messages.success(request, "Success! Service sub category created.")
+                return redirect(self.success_url)
+
+            else:
+                messages.warning(request, "Service sub category already exists.")                                    
+        
+        except Exception as e:
+            logger.error(f"Error in post function of AddServiceSubCategoryView in customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class ListServiceSubCategoryView(BaseServiceSubCategoryView, ListView):
+    queryset = ServiceSubCategory.objects.none()
+    context_object_name = "sub_categories"
+    template_name = "customer_services/sub_category/list.html"
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company)
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of ListServiceSubCategoryView in customer app: {e}")
+            return self.queryset
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["list_service_sub_category_page"] = True
+
+        return context
+    
+
+class UpdateServiceSubCategoryView(BaseServiceSubCategoryView, UpdateView):
+    fields = ["name", "category"]        
+
+    def post(self, request, *args, **kwargs):
+        try:
+            name = request.POST.get("name")
+            category_slug = request.POST.get("category")
+
+            name = name.strip() if name else None
+            category_slug = category_slug.strip() if category_slug else None
+
+            if not category_slug or not name:
+                error_msg = "Name of service sub category is required."
+                if not category_slug:
+                    error_msg = "Service category is required."
+
+                messages.error(request, f"Failed! {error_msg}")
+                return redirect(self.redirect_url)
+            
+            category = self.get_category(category_slug)
+
+            if not category:
+                messages.error(request, "Failed! Invalid Category")
+                return redirect(self.redirect_url)
+            
+            sub_category = self.get_object()
+            
+            existing_sub_category = self.model.objects.filter(company = sub_category.company, name = name, category = category).first()
+
+            if existing_sub_category:
+                if existing_sub_category.slug == sub_category.slug:
+                    messages.warning(request, "No changes detected")
+                else:
+                    messages.warning(request, "Similar Sub category already exists")
+                return redirect(self.redirect_url)
+            
+            sub_category.name = name
+            sub_category.category = category
+            sub_category.save()
+
+            messages.success(request, "Success! Service sub category updated.")
+            return redirect(self.success_url)                                                       
+        
+        except Exception as e:
+            logger.error(f"Error in post function of UpdateServiceSubCategoryView in customer app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class DeleteServiceSubCategoryView(BaseServiceSubCategoryView, View):
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(self.model, slug = self.kwargs.get(self.slug_url_kwarg))
+            self.object.delete()
+            messages.success(request, "Success! Deleted service sub category")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid service sub category")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteServiceSubCategoryView in customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class BaseServiceFaqBaseView(BaseCustomerView):
+    model = ServiceFaq
+    success_url = redirect_url = reverse_lazy('customer:service_faqs')
+    slug_url_kwarg = 'slug'
+        
+    def get_service(self, service_slug):
+        try:            
+            return get_object_or_404(Service, slug = service_slug)
+        except Http404:
+            return None
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["service_faq_page"] = True
+
+        return context
+
+
+class AddServiceFaqView(BaseServiceFaqBaseView, CreateView):    
+    fields = ["company", "service", "question", "answer"]
+    template_name = "customer_services/faq/add.html"    
+    success_url = redirect_url = reverse_lazy('customer:add_service_faqs')    
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["add_service_faq_page"] = True
+        context["categories"] = ServiceCategory.objects.filter(company = self.get_company()).order_by("name")
+
+        return context
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_company()
+
+            service_slug = self.request.POST.get('service')
+            question = request.POST.get("question")
+            answer = request.POST.get("answer")
+
+            service_slug = service_slug.strip() if service_slug else None
+            question = question.strip() if question else None
+            answer = answer.strip() if answer else None
+
+            required_fields = {
+                "Service": service_slug,
+                "Question": question,
+                "Answer": answer
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.redirect_url)
+
+            service = self.get_service(service_slug)
+
+            if not service:
+                messages.error(request, "Invalid Service")
+                return redirect(self.redirect_url)
+
+            ServiceFaq.objects.update_or_create(company = company, service = service, question = question, defaults={"answer": answer})
+
+            messages.success(request, f"Success! Created FAQ object for service: {service.name}")
+            return redirect(self.success_url)
+
+        except Exception as e:
+            logger.exception(f"Error in get function of AddServiceFaqView of customer app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class ListServiceFaqView(BaseServiceFaqBaseView, ListView):
+    template_name = "customer_services/faq/list.html"
+    queryset = ServiceFaq.objects.none()
+    context_object_name = "faqs"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["list_service_faqs"] = True
+
+        return context
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company)
+            
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of ListServiceFaqView in customer app: {e}")
+            return self.queryset
+
+
+class UpdateServiceFaqView(BaseServiceFaqBaseView, UpdateView):
+    model = ServiceFaq
+    fields = ["service", "question", "answer"]
+    template_name = "customer_services/faq/update.html"
+    context_object_name = "faq"
+
+    def get_redirect_url(self):
+        try:
+            return reverse_lazy('customer:update_service_faq', kwargs = {'slug': self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_redirect_url of UpdateServiceFaqView in customer app: {e}")
+            return self.redirect_url
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        company = self.get_company()
+
+        context["update_service_faq_page"] = True
+
+        context["categories"] = ServiceCategory.objects.filter(company = company).order_by("name")
+        context["sub_categories"] = ServiceSubCategory.objects.filter(company = company, category = self.object.service.category).order_by("name")
+        context["services"] = Service.objects.filter(company = company, category = self.object.service.category, sub_category = self.object.service.sub_category).order_by("name")
+
+        return context
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+
+            service_slug = self.request.POST.get('service')
+            question = request.POST.get("question")
+            answer = request.POST.get("answer")
+
+            question = question.strip() if question else None
+            answer = answer.strip() if answer else None
+
+            required_fields = {
+                "Service": service_slug,
+                "Question": question,
+                "Answer": answer
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            service = self.get_service(service_slug)
+
+            if not service:
+                messages.error(request, "Invalid Service")
+                return redirect(self.get_redirect_url())
+
+            similar_faq = self.model.objects.filter(company = self.object.company, service = service, question = question, answer = answer).first()
+
+            if similar_faq:
+                if similar_faq.slug == self.object.slug:
+                    messages.warning(request, "No changes detected")
+                else:
+                    messages.warning(request, "Similar service FAQ already exists")
+                return redirect(self.get_redirect_url())
+
+            self.object.service = service
+            self.object.question = question
+            self.object.answer = answer
+            self.object.save()
+
+            messages.success(request, f"Success! Updated FAQ")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Invalid service FAQ object")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateServiceFaqView in customer app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class DeleteServiceFaqView(BaseServiceFaqBaseView, View):
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(self.model, slug = self.kwargs.get(self.slug_url_kwarg))
+            service_name = self.object.service.name
+            self.object.delete()
+
+            messages.success(request, f"Success! Removed service FAQ object of: {service_name}")
+            return redirect(self.success_url)
+
+        except Http404:
+            messages.error(request, "Invalid Service FAQ")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteServiceFaqView in customer app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class BaseServiceEnquiryView(BaseCustomerView, View):
+    model = ServiceEnquiry
+    success_url = redirect_url = reverse_lazy('customer:service_enquiries')
+    slug_url_kwarg = 'slug'    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["service_enquiry_page"] = True        
+
+        return context
+
+
+class ListServiceEnquiryView(BaseServiceEnquiryView, ListView):
+    queryset = ServiceEnquiry.objects.none()
+    context_object_name = "enquiries"
+    template_name = "customer_services/enquiry/list.html"
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company)
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of ListServiceEnquiryView of customer app: {e}")
+            return self.queryset
+
+
+class DeleteServiceEnquiryView(BaseServiceEnquiryView, View):
+    def post(self, request, *args, **kwargs):
+        try:            
+            self.object = get_object_or_404(self.model, slug = self.kwargs.get(self.slug_url_kwarg))
+            self.object.delete()
+
+            messages.success(request, "Success! Deleted Service Enquiry")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid Service Enquiry")
+            return redirect(self.redirect_url)
+        
+
+# Registration Company
+class BaseRegistrationView(BaseCustomerView, View):
+    model = RegistrationDetail
+    success_url = redirect_url = reverse_lazy('customer:registrations')
+    slug_url_kwarg = 'slug'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["company_list_page"] = True
+
+        return context
+    
+    def get_sub_type(self, sub_type_slug):
+        try:            
+            return get_object_or_404(RegistrationSubType, slug = sub_type_slug)
+        except Http404:
+            None
+        
+
+class ListRegistrationView(BaseRegistrationView, ListView):    
+    queryset = RegistrationDetail.objects.none()
+    context_object_name = "registrations"
+    template_name = "customer_registrations/registration_detail/list.html"
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company)
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of ListRegistrationView of customer app: {e}")
+            return self.queryset
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["registration_page"] = True        
+
+        return context
+
+class AddRegistrationView(BaseRegistrationView, CreateView):
+    model = RegistrationDetail
+    fields = ["company", "sub_type", "price", "time_required", "required_documents", "additional_info"]
+    template_name = "customer_registrations/registration_detail/add.html"
+    success_url = redirect_url = reverse_lazy('customer:add_registrations')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        company = self.get_company()
+        context["types"] = RegistrationType.objects.filter(company = company).order_by("name")
+        context["add_registration_page"] = True
+
+        return context        
+
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_company()
+
+            sub_type_slug = request.POST.get("sub_type")
+            price = request.POST.get("price")
+            time_required = request.POST.get("time_required")
+            required_documents = request.POST.get("required_documents")
+            additional_info = request.POST.get("additional_info")
+
+            sub_type_slug = sub_type_slug.strip() if sub_type_slug else None
+            price = price.strip() if price else None
+            time_required = time_required.strip() if time_required else None
+            required_documents = required_documents.strip() if required_documents else None
+            additional_info = additional_info.strip() if additional_info else None
+
+            required_fields = {
+                "Sub Type": sub_type_slug,
+                "Price": price,
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.redirect_url)            
+            
+            sub_type = self.get_sub_type(sub_type_slug)
+
+            if not sub_type:
+                messages.error(request, "Failed! Invalid Sub Type")
+            
+            if self.model.objects.filter(company=company, sub_type=sub_type).exists():
+                messages.warning(request, "Similar registration already exists")
+                return redirect(self.redirect_url)
+
+            self.model.objects.create(
+                company = company, sub_type = sub_type, price = price, 
+                time_required = time_required, required_documents = required_documents, 
+                additional_info = additional_info
+                )
+            
+            messages.success(request, "Success! Registration Created.")
+            return redirect(self.success_url)        
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddRegistrationView in customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class UpdateRegistrationView(BaseRegistrationView, UpdateView):
+    fields = ["sub_type", "price", "time_required", "required_documents", "additional_info"]
+    template_name = "customer_registrations/registration_detail/edit.html"    
+    context_object_name = "registration"
+        
+    def get_redirect_url(self):
+        try:
+            return reverse_lazy("customer:update_registration", kwargs = {'slug': self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_redirect_url function in UpdateRegistrationView of customer app: {e}")
+            return self.redirect_url    
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        current_company = self.get_company()
+        registration = self.get_object()
+        context["types"] = RegistrationType.objects.filter(company = current_company)
+        context["sub_types"] = RegistrationSubType.objects.filter(company = current_company, type = registration.sub_type.type)
+
+        return context 
+
+    def post(self, request, *args, **kwargs):
+        try:
+            sub_type_slug = request.POST.get("sub_type")
+            price = request.POST.get("price")
+            time_required = request.POST.get("time_required")
+            required_documents = request.POST.get("required_documents")
+            additional_info = request.POST.get("additional_info")
+
+            sub_type_slug = sub_type_slug.strip() if sub_type_slug else None
+            price = price.strip() if price else None
+            time_required = time_required.strip() if time_required else None
+            required_documents = required_documents.strip() if required_documents else None
+            additional_info = additional_info.strip() if additional_info else None
+
+            required_fields = {
+                "Sub Type": sub_type_slug,
+                "Price": price,
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+            
+            sub_type = self.get_sub_type(sub_type_slug)
+
+            if not sub_type:
+                messages.error(request, "Failed! Invalid Sub Type")
+                return redirect(self.get_redirect_url())
+            
+            registration = self.get_object()
+                        
+            similar_registration = self.model.objects.filter(company = registration.company, sub_type=sub_type).first()
+            
+            if similar_registration:
+                similar_error_msg = ""
+                if similar_registration.slug == registration.slug:
+                    if price == similar_registration.price and time_required == similar_registration.time_required and required_documents == similar_registration.required_documents and additional_info == similar_registration.additional_info:
+                        similar_error_msg = "No changes detected"
+                else:
+                    similar_error_msg = "Similar registration already exists"
+
+                if similar_error_msg:
+                    messages.warning(request, similar_error_msg)
+                    return redirect(self.get_redirect_url())
+
+            registration.sub_type = sub_type
+            registration.price = price
+            registration.time_required = time_required
+            registration.required_documents = required_documents
+            registration.additional_info = additional_info
+            registration.save()        
+            
+            messages.success(request, "Success! Registration Updated.")
+            return redirect(self.success_url)
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateRegistrationView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+    
+
+class DeleteRegistrationView(BaseRegistrationView, View):
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(self.model, slug = self.kwargs.get(self.slug_url_kwarg))
+            self.object.delete()
+            messages.success(request, "Success! Deleted registration")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid registration")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteRegistrationView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class BaseRegistrationTypeView(BaseCustomerView, View):
+    model = RegistrationType
+    template_name = "customer_registrations/type/list.html"
+    success_url = redirect_url = reverse_lazy('customer:registration_types')
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["registration_type_page"] = True
+
+        return context
+
+
+class ListRegistrationTypeView(BaseRegistrationTypeView, ListView):
+    queryset = RegistrationType.objects.none()
+    context_object_name = "types"    
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company)
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of ListRegistrationTypeView of customer app: {e}")
+            return self.queryset
+    
+
+class AddRegistrationTypeView(BaseRegistrationTypeView, CreateView):
+    fields = ["company", "name", "description"]    
+
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_company()
+
+            name = request.POST.get("name")
+            description = request.POST.get("description")
+
+            name = name.strip() if name else None
+            description = description.strip() if description else None
+
+            if not name:
+                messages.error(request, "Name of registration type is required.")
+                return redirect(self.redirect_url)
+            
+            registration_type, created = self.model.objects.get_or_create(company = company, name = name, description = description)
+
+            if not created:
+                messages.warning(request, "Registration type already exists.")
+                return redirect(self.redirect_url)
+
+            messages.success(request, "Success! Registration type created.")
+            return redirect(self.success_url)
+        
+        except Exception as e:
+            logger.error(f"Error post function of AddRegistrationTypeView in customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+            return redirect(self.redirect_url)
+        
+
+class UpdateRegistrationTypeView(BaseRegistrationTypeView, UpdateView):
+    fields = ["name", "description"]    
+
+    def post(self, request, *args, **kwargs):
+        try:
+            name = request.POST.get("name")
+            name = name.strip() if name else None
+
+            description = request.POST.get("description")
+            description = description.strip() if description else None
+
+            if not name:
+                messages.error(request, "Name of registration type is required.")
+                return redirect(self.redirect_url)
+            
+            registration_type = self.get_object()
+
+            similar_registration_type = self.model.objects.filter(company = registration_type.company, name = name).first()
+
+            if similar_registration_type:
+                similar_error_msg = ''
+                if similar_registration_type.slug == registration_type.slug:
+                    if similar_registration_type.description == description:
+                        similar_error_msg = "No changes detected"
+                else:
+                    similar_error_msg = "Similar registration type already exists"
+
+                if similar_error_msg:
+                    messages.warning(request, similar_error_msg)
+                    return redirect(self.redirect_url)
+            
+            registration_type.name = name
+            registration_type.description = description
+            registration_type.save()
+
+            messages.success(request, "Success! Registration type updated.")
+            return redirect(self.success_url)
+        
+        except Exception as e:
+            logger.error(f"Error in post function of UpdateRegistrationTypeView in customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+            return redirect(self.redirect_url)
+        
+
+class DeleteRegistrationTypeView(BaseRegistrationTypeView, View):
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(self.model, slug = self.kwargs.get(self.slug_url_kwarg))
+            self.object.delete()
+            messages.success(request, "Success! Deleted registration type")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid registration type")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteRegistrationTypeView in customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class BaseRegistrationSubTypeView(BaseCustomerView, View):
+    model = RegistrationSubType
+    success_url = redirect_url = reverse_lazy('customer:registration_sub_types')
+    template_name = "customer_registrations/sub_type/list.html"
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["registration_sub_type_page"] = True
+
+        return context
+    
+    def get_type(self, type_slug):
+        try:
+            return get_object_or_404(RegistrationType, slug = type_slug)
+        except Http404:
+            return None
+
+
+class ListRegistrationSubTypeView(BaseRegistrationSubTypeView, ListView):
+    queryset = RegistrationSubType.objects.none()
+    context_object_name = "sub_types"
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company)
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of ListRegistrationSubTypeView of customer app: {e}")
+            return self.queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        company = self.get_company()
+        context["types"] = RegistrationType.objects.filter(company = company).order_by('name')
+
+        return context
+    
+    
+class AddRegistrationSubTypeView(BaseRegistrationSubTypeView, CreateView):
+    fields = ["company", "name", "category", "description"]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_company()
+
+            name = request.POST.get("name")
+            description = request.POST.get("description")
+
+            type_slug = request.POST.get("type")
+
+            type_slug = type_slug.strip() if type_slug else None
+            name = name.strip() if name else None
+            description = description.strip() if description else None
+
+            if not type_slug or not name:
+                error_msg = "Name of registration sub type is required."
+                if not type_slug:
+                    error_msg = "Registration type is required."
+
+                messages.error(request, f"Failed! {error_msg}")
+                return redirect(self.redirect_url)
+            
+            type = self.get_type(type_slug)
+
+            if not type:
+                messages.error(request, "Failed! Invalid Type")
+                return redirect(self.redirect_url)
+            
+            sub_type, created = self.model.objects.get_or_create(company = company, name = name, type = type, description = description)
+
+            if not created:
+                messages.warning(request, "Registration sub type already exists.")
+                return redirect(self.redirect_url)
+
+            messages.success(request, "Success! Registration sub type created.")
+            return redirect(self.success_url)                                   
+        
+        except Exception as e:
+            logger.error(f"Error in post function of AddRegistrationSubTypeView in customer: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class UpdateRegistrationSubTypeView(BaseRegistrationSubTypeView, UpdateView):
+    fields = ["name", "category", "description"]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            name = request.POST.get("name")
+            type_slug = request.POST.get("type")
+            description = request.POST.get("description")
+
+            name = name.strip() if name else None
+            type_slug = type_slug.strip() if type_slug else None
+            description = description.strip() if description else None
+
+            if not type_slug or not name:
+                error_msg = "Name of registration sub type is required."
+                if not type_slug:
+                    error_msg = "Registration type is required."
+
+                messages.error(request, f"Failed! {error_msg}")
+                return redirect(self.redirect_url)
+            
+            type = self.get_type(type_slug)
+
+            if not type:
+                messages.error(request, "Invalid Type")
+                return redirect(self.redirect_url)
+            
+            registration_sub_type = self.get_object()
+
+            similar_registration_sub_type = self.model.objects.filter(
+                company = registration_sub_type.company, name = name, type = type
+                ).first()
+            
+            if similar_registration_sub_type:
+                similar_error_msg = ''
+                if similar_registration_sub_type.slug == registration_sub_type.slug:
+                    if similar_registration_sub_type.description == description:
+                        similar_error_msg = "No changes detected"
+                else:
+                    similar_error_msg = "Similar registration sub type already exists"
+
+                if similar_error_msg:
+                    messages.warning(request, similar_error_msg)
+                    return redirect(self.redirect_url)
+            
+            registration_sub_type.name = name
+            registration_sub_type.type = type
+            registration_sub_type.description = description
+            registration_sub_type.save()
+
+            messages.success(request, "Success! Registration sub type updated.")
+            return redirect(self.success_url)                                 
+        
+        except Exception as e:
+            logger.error(f"Error in post function of UpdateRegistrationSubTypeView in customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class DeleteRegistrationSubTypeView(BaseRegistrationSubTypeView, View):
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(self.model, slug = self.kwargs.get(self.slug_url_kwarg))
+            self.object.delete()
+            messages.success(request, "Success! Deleted registration sub type")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid registration sub type")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteRegistrationSubTypeView in customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+
+
+class BaseRegistrationFaqView(BaseCustomerView, View):
+    model = RegistrationFaq
+    success_url = redirect_url = reverse_lazy("customer:registration_faqs")
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["registration_faq_page"] = True
+
+        return context
+    
+    def get_registration_sub_type(self, registration_sUb_type_slug):
+        try:            
+            return get_object_or_404(RegistrationSubType, slug = registration_sUb_type_slug)
+        except Http404:
+            return None
+    
+
+class AddRegistrationFaqView(BaseRegistrationFaqView, CreateView):    
+    fields = ["company", "registration_sub_type", "question", "answer"]
+    template_name = "customer_registrations/faq/add.html"     
+    success_url = redirect_url = reverse_lazy("customer:add_registration_faqs")       
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        context["add_registration_faq_page"] = True
+        company = self.get_company()
+        context["types"] = RegistrationType.objects.filter(company = company).order_by("name")
+
+        return context
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            registration_sub_type_slug = self.request.POST.get('sub_type')
+            question = request.POST.get("question")
+            answer = request.POST.get("answer")
+
+            registration_sub_type_slug = registration_sub_type_slug.strip() if registration_sub_type_slug else None
+            question = question.strip() if question else None
+            answer = answer.strip() if answer else None
+
+            required_fields = {
+                "Registration Sub Type": registration_sub_type_slug,
+                "Question": question,
+                "Answer": answer
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.redirect_url)
+
+            company = self.get_company()
+            registration_sub_type = self.get_registration_sub_type(registration_sub_type_slug)
+
+            if not company or not registration_sub_type:
+                invalid_msg = ""
+                
+                if not company:
+                    invalid_msg = "Invalid Registration Company"
+                else:
+                    invalid_msg = "Invalid Registration Sub Type"
+
+                messages.error(request, invalid_msg)
+                return redirect(self.redirect_url)
+
+            RegistrationFaq.objects.update_or_create(company = company, registration_sub_type = registration_sub_type, question = question, defaults={"answer": answer})
+
+            messages.success(request, f"Success! Created FAQ object for registration sub type: {registration_sub_type.name}")
+            return redirect(self.success_url)
+
+        except Exception as e:
+            logger.exception(f"Error in get function of AddRegistrationFaqView of customer app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class ListRegistrationFaqView(BaseRegistrationFaqView, ListView):
+    template_name = "customer_registrations/faq/list.html"
+    queryset = RegistrationFaq.objects.none()
+    context_object_name = "faqs"
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company)
+            
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of ListRegistrationFaqView in customer app: {e}")
+            return self.queryset
+
+
+class UpdateRegistrationFaqView(BaseRegistrationFaqView, UpdateView):
+    fields = ["registration_sub_type", "question", "answer"]
+    template_name = "customer_registrations/faq/update.html"
+    context_object_name = "faq"    
+
+    def get_redirect_url(self):
+        try:
+            return reverse_lazy('customer:update_registration_faq', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_redirect_url function of UpdateRegistrationFaqView in customer app: {e}")
+            return self.redirect_url
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        company = self.get_company()
+
+        context["types"] = RegistrationType.objects.filter(company = company).order_by("name")
+        context["sub_types"] = RegistrationSubType.objects.filter(company = company, type = self.object.registration_sub_type.type).order_by("name")
+
+        return context
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+
+            registration_sub_type_slug = self.request.POST.get('sub_type')
+            question = request.POST.get("question")
+            answer = request.POST.get("answer")
+
+            question = question.strip() if question else None
+            answer = answer.strip() if answer else None
+
+            required_fields = {
+                "Registration Sub Type": registration_sub_type_slug,
+                "Question": question,
+                "Answer": answer
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            registration_sub_type = self.get_registration_sub_type(registration_sub_type_slug)
+
+            if not registration_sub_type:
+                messages.error(request, "Invalid Registration Sub Type")
+                return redirect(self.get_redirect_url())
+
+            similar_faq = self.model.objects.filter(company = self.object.company, registration_sub_type = registration_sub_type, question = question).first()
+
+            if similar_faq:
+                if similar_faq.slug == self.object.slug:
+                    if similar_faq.answer == answer:
+                        messages.warning(request, "No changes detected")
+                else:
+                    messages.warning(request, "Similar registration FAQ already exists")
+                return redirect(self.get_redirect_url())
+
+            self.object.registration_sub_type = registration_sub_type
+            self.object.question = question
+            self.object.answer = answer
+            self.object.save()
+
+            messages.success(request, f"Success! Updated FAQ")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Invalid registration FAQ object")
+
+        except Exception as e:
+            logger.exception(f"Error in get function of UpdateRegistrationFaqView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class DeleteRegistrationFaqView(BaseRegistrationFaqView, View):    
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(self.model, slug = self.kwargs.get(self.slug_url_kwarg))
+            registration_sub_type_name = self.object.registration_sub_type.name
+            self.object.delete()
+
+            messages.success(request, f"Success! Removed registration FAQ object of: {registration_sub_type_name}")
+            return redirect(self.success_url)
+
+        except Http404:
+            messages.error(request, "Invalid Registration FAQ")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteRegistrationFaqView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+class BaseRegistrationEnquiryView(BaseCustomerView, View):
+    model = RegistrationEnquiry
+    success_url = redirect_url = reverse_lazy('customer:registration_enquiries')
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["registration_enquiry_page"] = True
+
+        return context
+
+
+class ListRegistrationEnquiryView(BaseRegistrationEnquiryView, ListView):
+    queryset = RegistrationEnquiry.objects.none()
+    context_object_name = "enquiries"
+    template_name = "customer_registrations/enquiry/list.html"
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company)
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of ListRegistrationEnquiryView of customer: {e}")
+            return self.queryset
+
+
+class DeleteRegistrationEnquiryView(BaseRegistrationEnquiryView, View):
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(RegistrationEnquiry, slug = self.kwargs.get(self.slug_url_kwarg))
+            self.object.delete()
+
+            messages.success(request, "Success! Delete Registration Enquiry")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid Registration Enquiry")
+            return redirect(self.redirect_url)
+        
+
+# Education Company
+class BaseCourseView(BaseCustomerView, View):
+    model = Course
+    success_url = redirect_url = reverse_lazy("customer:courses")
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["course_page"] = True
+
+        return context
+    
+    def get_program(self, program_slug):
+        try:
+            return get_object_or_404(Program, slug = program_slug)
+        except Http404:
+            return None
+        
+    def get_specialization(self, specialization_slug):
+        try:
+            return get_object_or_404(Specialization, slug = specialization_slug)
+        except Http404:
+            return None
+
+
+class CourseListView(BaseCourseView, ListView):
+    queryset = Course.objects.none()
+    context_object_name = "courses"
+    template_name = "customer_education/course/list.html"
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company)
+        except Exception as e:
+            logger.exception(f"Error in get_context_data function of CourseListView in customer app: {e}")
+            return self.queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['list_course_page'] = True
+
+        return context
+    
+
+class AddCourseView(BaseCourseView, CreateView): 
+    fields = ["company", "image", "name", "program", "specialization", "mode", "duration", "price", "duration"]   
+    template_name = "customer_education/course/add.html"
+    success_url = redirect_url = reverse_lazy("customer:add_courses")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        company = self.get_company()
+        context["add_course_page"] = True
+        context["programs"] = Program.objects.filter(company = company)
+
+        return context
+    
+    def post(self, request, *args, **kwargs):        
+        try:
+            company = self.get_company()
+
+            image = request.FILES.get('image')
+            name = request.POST.get("name")
+            program_slug = request.POST.get("program")
+            specialization_slug = request.POST.get("specialization")
+            mode = request.POST.get("mode")
+            duration = request.POST.get("duration")
+            price = request.POST.get("price")
+
+            program = self.get_program(program_slug)
+            specialization = self.get_specialization(specialization_slug)
+            
+            if not program or not specialization:
+                invalid_msg = "Failed! "
+
+                if not program:
+                    invalid_msg += "Invalid Program"
+                else:
+                    invalid_msg += "Invalid Specialization"
+
+                messages.error(request, invalid_msg)
+                return redirect(self.redirect_url)
+
+            course, created = self.model.objects.get_or_create(
+                company = company, image = image,
+                name=name, program=program, specialization=specialization,
+                mode=mode, duration=duration, price=price
+                )
+            
+            if created:
+                messages.success(request, "Success! Course created.")
+                return redirect(self.success_url)
+            
+            messages.error(request, "Failed! Course already exists")
+
+        except Exception as e:
+            messages.error(request, "Failed! An unexpected error occurred")
+            logger.exception(f"Error in post function of AddCourseView in customer app: {e}")
+
+        return redirect(self.redirect_url)
+    
+
+class UpdateCourseView(BaseCourseView, UpdateView): 
+    fields = ["image", "name", "program", "specialization", "mode", "duration", "price", "duration"]   
+    template_name = "customer_education/course/edit.html"    
+    
+    def get_redirect_url(self):
+        try:
+            return reverse_lazy("customer:update_course", kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_redirect_url of UpdateCourseView of customer app: {e}")
+        
+        return self.success_url
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)   
+                
+        context["modes"] = ("Online", "Offline")
+        company = self.get_company()
+        current_course = self.get_object()
+        context["programs"] = Program.objects.filter(company = company)
+        context["specializations"] = Specialization.objects.filter(company = company, program = current_course.program)                        
+
+        return context
+    
+    def post(self, request, *args, **kwargs):        
+        try:
+            image = request.FILES.get("image")
+
+            name = request.POST.get("name")
+            program_slug = request.POST.get("program")
+            specialization_slug = request.POST.get("specialization")
+            mode = request.POST.get("mode")
+            duration = request.POST.get("duration")
+            price = request.POST.get("price")
+            description = request.POST.get("description")
+
+            name = name.strip() if name else None
+            program_slug = program_slug.strip() if program_slug else None
+            specialization_slug = specialization_slug.strip() if specialization_slug else None
+            mode = mode.strip() if mode else None
+            duration = duration.strip() if duration else None
+            price = price.strip() if price else None
+            description = description.strip() if description else None
+
+
+            required_fields = {
+                "Name": name,
+                "Program": program_slug,
+                "Specialization": specialization_slug,
+                "Mode": mode,
+                "Price": price
+            }
+                
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+                
+            
+            program = self.get_program(program_slug)            
+            specialization = self.get_specialization(specialization_slug)     
+
+            if not program or not specialization:
+                invalid_msg = "Failed! "
+
+                if not program:
+                    invalid_msg += "Invalid Program"
+                else:
+                    invalid_msg += "Invalid Specialization"
+
+                messages.error(request, invalid_msg)
+                return redirect(self.get_redirect_url())
+                
+            course = self.get_object()
+
+            similar_course = self.model.objects.filter(
+                company = course.company, name = name, program = program,
+                specialization = specialization, mode = mode
+                ).first()
+            
+            if similar_course:
+                similar_error_msg = ""
+                if similar_course.slug != course.slug:
+                    similar_error_msg = "No changes detected"
+                else:
+                    similar_error_msg = "Similar course already exists"
+
+                if similar_error_msg:
+                    messages.warning(request, similar_error_msg)
+                    return redirect(self.get_redirect_url())
+            
+            course.name = name
+            course.program = program
+            course.specialization = specialization
+            course.mode = mode
+            course.duration = duration
+            course.price = price
+            course.description = description
+            if image:
+                course.image = image
+            course.save()
+            
+            messages.success(request, "Success! Course updated.")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Invalid Course")            
+            
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateCourseView of customer app: {e}")
+            messages.error(request, "Failed! An expected error occurred")
+
+        return redirect(self.get_redirect_url())
+    
+
+class DeleteCourseView(BaseCourseView, View):
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(self.model, slug = self.kwargs.get(self.slug_url_kwarg))
+            self.object.delete()
+            messages.success(request, "Success! Deleted course")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid Course")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteCourseView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+
+
+class ListCourseProgramView(BaseCustomerView, ListView):
+    model = Program
+    queryset = model.objects.none()
+    context_object_name = "programs"
+    template_name = "customer_education/program/list.html"
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company)
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of ListCourseProgramView in customer app: {e}")
+            return self.queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        context["course_program_page"] = True
+        
+        return context
+    
+
+class ListCourseSpecializationView(BaseCustomerView, ListView):
+    model = Specialization
+    queryset = model.objects.none()
+    context_object_name = "specializations"
+    template_name = "customer_education/specialization/list.html"
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company)
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of ListCourseSpecializationView in customer section: {e}")        
+            return self.queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["course_specialization_page"] = True
+        context["programs"] = Program.objects.all()
+        
+        return context
+    
+
+class BaseEducationFaqView(BaseCustomerView, View):
+    model = CourseFaq
+    success_url = redirect_url = reverse_lazy("customer:course_faqs")
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["course_faq_page"] = True
+
+        return context
+    
+    def get_course(self, course_slug):
+        try:
+            return get_object_or_404(Course, slug = course_slug)
+        except Http404:
+            return None
+    
+
+class ListCourseFaqView(BaseEducationFaqView, ListView):
+    queryset = CourseFaq.objects.none()
+    template_name = "customer_education/faq/list.html"
+    context_object_name = "faqs"    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["list_course_faq_page"] = True
+
+        return context
+
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company)
+            
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of ListCourseFaqView in customer app: {e}")
+            return self.queryset
+
+
+class AddCourseFaqView(BaseEducationFaqView, CreateView):
+    fields = ["company", "course", "question", "answer"]
+    template_name = "customer_education/faq/add.html"
+    success_url = redirect_url = reverse_lazy('customer:add_course_faqs')
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        company = self.get_company()
+        context["add_course_faq_page"] = True
+        context["programs"] = Program.objects.filter(company = company).order_by("name")
+
+        return context
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            course_slug = self.request.POST.get('course')
+            question = request.POST.get("question")
+            answer = request.POST.get("answer")
+
+            question = question.strip() if question else None
+            answer = answer.strip() if answer else None
+
+            required_fields = {
+                "Course": course_slug,
+                "Question": question,
+                "Answer": answer
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.redirect_url)
+
+            company = self.get_company()
+
+            course = self.get_course(course_slug)
+
+            if not course:
+                messages.error(request, "Invalid Course")
+                return redirect(self.redirect_url)
+
+            CourseFaq.objects.update_or_create(company = company, course = course, question = question, defaults={"answer": answer})
+
+            messages.success(request, f"Success! Created FAQ object for course: {course.name}")
+            return redirect(self.success_url)
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddCourseFaqView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+
+
+class UpdateCourseFaqView(BaseEducationFaqView, UpdateView):
+    fields = ["course", "question", "answer"]
+    template_name = "customer_education/faq/update.html"
+    context_object_name = "faq"
+
+    def get_redirect_url(self):
+        try:
+            return reverse_lazy('customer:update_course_faq', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_redirect_url of UpdateCourseFaqView of customer app: {e}")
+            return self.redirect_url
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        company = self.get_company()
+        self.object = self.get_object()
+        context["programs"] = Program.objects.filter(company = company).order_by("name")
+        context["courses"] = Course.objects.filter(company = company, program = self.object.course.program).order_by("name")
+
+        return context    
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            faq = self.get_object()
+
+            course_slug = self.request.POST.get('course')
+            question = request.POST.get("question")
+            answer = request.POST.get("answer")
+
+            question = question.strip() if question else None
+            answer = answer.strip() if answer else None
+
+            required_fields = {
+                "Course": course_slug,
+                "Question": question,
+                "Answer": answer
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            course = self.get_course(course_slug)
+
+            if not course:
+                messages.error(request, "Invalid Course")
+                return redirect(self.get_redirect_url())
+
+            similar_faq = self.model.objects.filter(company = faq.company, course = course, question = question, answer = answer).first()
+
+            if similar_faq:
+                if similar_faq.slug == faq.slug:
+                    messages.warning(request, "No changes detected")
+                else:
+                    messages.warning(request, "Similar course FAQ already exists")
+                return redirect(self.get_redirect_url())
+
+            faq.course = course
+            faq.question = question
+            faq.answer = answer
+            faq.save()
+
+            messages.success(request, f"Success! Updated FAQ")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Invalid course FAQ object")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateCourseFaqView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class DeleteCourseFaqView(BaseEducationFaqView, View):
+    def get_object(self):
+        faq_slug = self.kwargs.get('course_faq_slug')
+        company_slug = self.kwargs.get('slug')
+
+        return get_object_or_404(self.model, slug = faq_slug, company__slug = company_slug)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            faq =  get_object_or_404(self.model, slug = self.kwargs.get(self.slug_url_kwarg))
+            course_name = faq.course.name
+            faq.delete()
+
+            messages.success(request, f"Success! Removed course FAQ object of: {course_name}")
+            return redirect(self.success_url)
+
+        except Http404:
+            messages.error(request, "Invalid Course FAQ")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteCourseFaqView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)

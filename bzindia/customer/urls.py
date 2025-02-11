@@ -7,13 +7,34 @@ from .views import (CustomerHomeView,
                     AddSizeView, DeleteSizeView, UpdateSizeView, ListSizeView,
                     AddColorView, DeleteColorView, UpdateColorView, ListColorView, 
                     AddProductView, DeleteProductView, UpdateProductView, ListProductView,
-                    get_sub_categories_and_sizes)
+                    get_sub_categories_and_sizes,
+                    
+                    # Service Company
+                    ServiceListView, DeleteServiceView, AddServiceView, UpdateServiceView,
+                    AddServiceCategoryView, ListServiceCategoryView, UpdateServiceCategoryView, DeleteServiceCategoryView,
+                    AddServiceSubCategoryView, ListServiceSubCategoryView, UpdateServiceSubCategoryView, DeleteServiceSubCategoryView,
+                    ListServiceFaqView, AddServiceFaqView, DeleteServiceFaqView, UpdateServiceFaqView,
+                    ListServiceEnquiryView, DeleteServiceEnquiryView,
+
+                    # Registration Company
+                    AddRegistrationView, ListRegistrationView, UpdateRegistrationView, DeleteRegistrationView,
+                    AddRegistrationTypeView, ListRegistrationTypeView, UpdateRegistrationTypeView, DeleteRegistrationTypeView,
+                    AddRegistrationSubTypeView, ListRegistrationSubTypeView, UpdateRegistrationSubTypeView, DeleteRegistrationSubTypeView,
+                    AddRegistrationFaqView, ListRegistrationFaqView, UpdateRegistrationFaqView, DeleteRegistrationFaqView,
+                    ListRegistrationEnquiryView, DeleteRegistrationEnquiryView,
+
+                    # Education Company
+                    CourseListView, AddCourseView, UpdateCourseView, DeleteCourseView,
+                    ListCourseProgramView, ListCourseSpecializationView,
+                    AddCourseFaqView, ListCourseFaqView, UpdateCourseFaqView, DeleteCourseFaqView
+                    )
 
 app_name = "customer"
 
 urlpatterns = [
     path('', CustomerHomeView.as_view(), name="home"),
 
+    # Product Company
     path('add_product_category/', AddProductCategoryView.as_view(), name="add_product_category"),
     path('product_categories/', ListProductCategoryView.as_view(), name="product_categories"),
     path('update_product_category/<str:slug>', UpdateProductCategoryView.as_view(), name="update_product_category"),
@@ -46,4 +67,67 @@ urlpatterns = [
     path('delete_product/<str:slug>', DeleteProductView.as_view(), name="delete_product"),
 
     path('get_sub_categories_and_sizes/', get_sub_categories_and_sizes, name="get_sub_categories_and_sizes"),
+
+
+    # Service Company
+    path('services/', ServiceListView.as_view(), name="services"),
+    path('add_services/', AddServiceView.as_view(), name="add_services"),
+    path('delete_service/<str:slug>', DeleteServiceView.as_view(), name="delete_service"),
+    path('update_service/<str:slug>', UpdateServiceView.as_view(), name="update_service"),
+
+    path('service_categories/', ListServiceCategoryView.as_view(), name="service_categories"),
+    path('add_service_categories/', AddServiceCategoryView.as_view(), name="add_service_categories"),
+    path('delete_service_category/<str:slug>', DeleteServiceCategoryView.as_view(), name="delete_service_category"),
+    path('update_service_category/<str:slug>', UpdateServiceCategoryView.as_view(), name="update_service_category"),
+
+    path('service_sub_categories/', ListServiceSubCategoryView.as_view(), name="service_sub_categories"),
+    path('add_service_sub_categories/', AddServiceSubCategoryView.as_view(), name="add_service_sub_categories"),
+    path('delete_service_sub_category/<str:slug>', DeleteServiceSubCategoryView.as_view(), name="delete_service_sub_category"),
+    path('update_service_sub_category/<str:slug>', UpdateServiceSubCategoryView.as_view(), name="update_service_sub_category"),
+
+    path('service_faqs/', ListServiceFaqView.as_view(), name="service_faqs"),
+    path('add_service_faqs/', AddServiceFaqView.as_view(), name="add_service_faqs"),
+    path('delete_service_faq/<str:slug>', DeleteServiceFaqView.as_view(), name="delete_service_faq"),
+    path('update_service_faq/<str:slug>', UpdateServiceFaqView.as_view(), name="update_service_faq"),
+
+    path('service_enquiries/', ListServiceEnquiryView.as_view(), name="service_enquiries"),
+    path('delete_service_enquiry/<str:slug>', DeleteServiceEnquiryView.as_view(), name="delete_service_enquiry"),
+
+    # Registration Company
+    path('add_registrations/', AddRegistrationView.as_view(), name="add_registrations"),
+    path('registrations/', ListRegistrationView.as_view(), name="registrations"),
+    path('update_registration/<str:slug>', UpdateRegistrationView.as_view(), name="update_registration"),
+    path('delete_registration/<str:slug>', DeleteRegistrationView.as_view(), name="delete_registration"),
+
+    path('add_registration_types/', AddRegistrationTypeView.as_view(), name="add_registration_types"),
+    path('registration_types/', ListRegistrationTypeView.as_view(), name="registration_types"),
+    path('update_registration_type/<str:slug>', UpdateRegistrationTypeView.as_view(), name="update_registration_type"),
+    path('delete_registration_type/<str:slug>', DeleteRegistrationTypeView.as_view(), name="delete_registration_type"),
+
+    path('add_registration_sub_types/', AddRegistrationSubTypeView.as_view(), name="add_registration_sub_types"),
+    path('registration_sub_types/', ListRegistrationSubTypeView.as_view(), name="registration_sub_types"),
+    path('update_registration_sub_type/<str:slug>', UpdateRegistrationSubTypeView.as_view(), name="update_registration_sub_type"),
+    path('delete_registration_sub_type/<str:slug>', DeleteRegistrationSubTypeView.as_view(), name="delete_registration_sub_type"),
+
+    path('add_registration_faqs/', AddRegistrationFaqView.as_view(), name="add_registration_faqs"),
+    path('registration_faqs/', ListRegistrationFaqView.as_view(), name="registration_faqs"),
+    path('update_registration_faq/<str:slug>', UpdateRegistrationFaqView.as_view(), name="update_registration_faq"),
+    path('delete_registration_faq/<str:slug>', DeleteRegistrationFaqView.as_view(), name="delete_registration_faq"),
+
+    path('registration_enquiries/', ListRegistrationEnquiryView.as_view(), name="registration_enquiries"),
+    path('delete_registration_enquiry/<str:slug>', DeleteRegistrationEnquiryView.as_view(), name="delete_registration_enquiry"),
+
+    # Education Company
+    path('add_courses/', AddCourseView.as_view(), name="add_courses"),
+    path('courses/', CourseListView.as_view(), name="courses"),
+    path('update_course/<str:slug>', UpdateCourseView.as_view(), name="update_course"),
+    path('delete_course/<str:slug>', DeleteCourseView.as_view(), name="delete_course"),
+
+    path('course_programs/', ListCourseProgramView.as_view(), name="course_programs"),
+    path('course_specializations/', ListCourseSpecializationView.as_view(), name="course_specializations"),
+
+    path('add_course_faqs/', AddCourseFaqView.as_view(), name="add_course_faqs"),
+    path('course_faqs/', ListCourseFaqView.as_view(), name="course_faqs"),
+    path('update_course_faq/<str:slug>', UpdateCourseFaqView.as_view(), name="update_course_faq"),
+    path('delete_course_faq/<str:slug>', DeleteCourseFaqView.as_view(), name="delete_course_faq"),
 ]
