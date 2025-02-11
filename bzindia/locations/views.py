@@ -14,7 +14,9 @@ import sys
 from .models import (
     State, District, Place,
     TestedCoordinates, RetestedCoordinates, TestPincode, 
-    UniqueState, UniqueDistrict, UniquePlace
+    UniqueState, UniqueDistrict, UniquePlace,
+
+    AndmanAndNicobarTestedCoordinates
     )
 
 logger = logging.getLogger(__name__)
@@ -51,20 +53,20 @@ def update_location_data():
     # bottom_right = (6.7, 93.8)
 
     # Jammu And Kashmir
-    # top_left = (36.5, 73.2) # fetched till 0.5 precision
-    # bottom_right = (32.1, 80.3) # fetched till 0.5 precision
+    # top_left = (36.6, 73.2) # fetched till 0.3 precision - with pincode
+    # bottom_right = (32.1, 80.4) # fetched till 0.3 precision - with pincode
 
     # Madhya Pradesh
-    # top_left = (24.5, 74.7) # fetched till 0.03 precision
-    # bottom_right = (18.4, 81.8) # fetched till 0.03 precision
+    # top_left = (24.5, 74.7) # fetched till 0.02 precision with and without pincode
+    # bottom_right = (18.4, 81.8) # fetched till 0.02 precision with and without pincode
 
     # Kerala
     # top_left = (12.7, 74.8) # fetched till 0.02 precision (midway)
     # bottom_right = (8.2, 77.4) # fetched till 0.02 precision (midway)
 
     # Gujarat
-    # top_left = (24.7, 68.1) # fetched till 0.3 precision
-    # bottom_right = (20.1, 74.4) # fetched till 0.3 precision
+    # top_left = (24.7, 68.1) # fetched till 0.2 precision - with and without pincode
+    # bottom_right = (20.1, 74.4) # fetched till 0.2 precision - with and without pincode
 
     # Karnataka
     # top_left = (18.4, 74.0) # fetched till 0.02 precision
@@ -107,12 +109,12 @@ def update_location_data():
     # bottom_right = (29.5, 77.9) # fetched till 0.03 precision
     
     # Uttar Pradesh
-    # top_left = (30.4, 77.0) # Ended midway at 0.03 precision
-    # bottom_right = (23.8, 84.6) # Ended midway at 0.03 precision
+    top_left = (30.4, 77.0) # Ended midway at 0.03 precision
+    bottom_right = (23.8, 84.6) # Ended midway at 0.03 precision
 
     # Meghalaya
-    # top_left = (26.1, 89.8) # fetched till 0.03 precision
-    # bottom_right = (25.0, 92.8) # fetched till 0.03 precision
+    # top_left = (26.1, 89.8) # fetched till 0.02 precision- with and without pincode
+    # bottom_right = (25.0, 92.8) # fetched till 0.02 precision- with and without pincode
 
     # Manipur
     # top_left = (25.6, 92.9) # fetched till 0.03 precision
@@ -123,12 +125,12 @@ def update_location_data():
     # bottom_right = (21.9, 93.4) # fetched till 0.03 precision
 
     # Tripura
-    # top_left = (25.5, 91.1) # fetched till 0.05 precision
-    # bottom_right = (22.9, 92.3) # fetched till 0.05 precision
-
+    # top_left = (25.6, 91.1) # fetched till 0.03 precision
+    # bottom_right = (22.9, 92.4) # fetched till 0.03 precision
+    
     # Nagaland
-    # top_left = (27.0, 93.3) # fetched till 0.05 precision
-    # bottom_right = (25.1, 95.2) # fetched till 0.05 precision
+    # top_left = (27.1, 93.3) # fetched till 0.03 precision
+    # bottom_right = (25.1, 95.3) # fetched till 0.03 precision
 
     # Goa
     # top_left = (15.8, 73.6) # fetched till 0.01 precision
@@ -139,8 +141,8 @@ def update_location_data():
     # bottom_right = (17.8, 87.4) # fetched till 0.03 precision
 
     # Rajasthan
-    top_left = (30.1, 69.4) # fetched till 0.05 precision
-    bottom_right = (23.0, 78.2) # fetched till 0.05 precision
+    # top_left = (30.1, 69.4) # fetched till 0.03 precision
+    # bottom_right = (23.0, 78.2) # fetched till 0.03 precision
 
     # Himachal Pradesh
     # top_left = (33.2, 75.5) # fetched till 0.02 precision, stopped midway at (32.34, 78.72)
@@ -159,12 +161,12 @@ def update_location_data():
     # bottom_right = (27.0, 88.9) # fetched till 0.01 precision
 
     # Assam
-    # top_left = (28.2, 89.4) # fetched till 0.05 precision
-    # bottom_right = (24.8, 96.0) # fetched till 0.05 precision
+    # top_left = (28.2, 89.4) # fetched till 0.03 precision
+    # bottom_right = (24.8, 96.0) # fetched till 0.03 precision
 
     # Arunachal Pradesh
-    # top_left = (29.4, 91.5) # fetched till 0.05 precision
-    # bottom_right = (26.4, 97.4) # fetched till 0.05 precision
+    # top_left = (29.5, 91.5) # fetched till 0.03 precision
+    # bottom_right = (26.4, 97.5) # fetched till 0.03 precision
 
     # Chandigarh
     # top_left = (30.7, 76.7) # fetched till 0.01 precision
@@ -175,8 +177,8 @@ def update_location_data():
     # bottom_right = (10.5, 93.1) # fetched till 0.03 precision
 
     # Andaman And Nicobar Islands (2nd Part)
-    # top_left = (13.6, 92.2) # fetched till 0.05 precision
-    # bottom_right = (6.7, 93.9) # fetched till 0.05 precision
+    # top_left = (9.26, 92.7) # fetched till 0.03 precision
+    # bottom_right = (6.75, 94.0) # fetched till 0.03 precision
 
     # Delhi
     # top_left = (28.9, 76.8) # fetched till 0.01 precision
@@ -186,13 +188,17 @@ def update_location_data():
     # top_left = (27.6, 83.3) # fetched till 0.01 precision
     # bottom_right = (24.2, 88.3) # fetched till 0.01 precision
 
+    # Lekshadweep
+    # top_left = (11.7, 71.7) # fetched till 0.03 precision
+    # bottom_right = (8.2, 74.0) # fetched till 0.03 precision
+
     api_key = os.getenv('OPENCAGE_API_KEY')
     base_url = 'https://api.opencagedata.com/geocode/v1/json'
 
-    top_left = (23.95, 69.4)
+    top_left = (26.22, 77.0)
 
-    lat_step = 0.03
-    lon_step = 0.03
+    lat_step = 0.02
+    lon_step = 0.02
 
     latitude = top_left[0]
     
@@ -200,15 +206,16 @@ def update_location_data():
         longitude = top_left[1]
 
         while longitude <= bottom_right[1]:
-            request_count = cache.get('opencage_requested', 0)
+            request_count = cache.get('opencage_requested', 0)            
             
+            # if not AndmanAndNicobarTestedCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
             if not RetestedCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
-                if request_count <= 20000:
+                if request_count <= 20050:
                     try:
                         print(f"Querying Coordinates: ({latitude}, {longitude})")
                         response = requests.get(f"{base_url}?q={latitude}+{longitude}&key={api_key}")
-                        response.raise_for_status()                        
-                        
+                        response.raise_for_status()
+
                         request_count += 1
                         cache.set('opencage_requested', request_count, timeout=60*60*24)
                         data = response.json()
@@ -225,7 +232,7 @@ def update_location_data():
                                 district_name = components.get("state_district")
                                 pincode = components.get("postcode")
                                 
-                                if place and state_name and district_name and pincode:
+                                if place and state_name and district_name:
                                     state, _ = State.objects.get_or_create(name=state_name)
                                     district, _ = District.objects.get_or_create(name=district_name, state=state)
 
@@ -242,9 +249,15 @@ def update_location_data():
                                         print(f"Place created for {place}, {district.name}, {state.name}")
                         
                         RetestedCoordinates.objects.create(latitude=latitude, longitude=longitude)
+                        # AndmanAndNicobarTestedCoordinates.objects.create(latitude=latitude, longitude=longitude)
                         
                     except requests.exceptions.RequestException as e:
                         print(f"Error during API request: {e}")
+                        time.sleep(2)
+                        break
+
+                    except Exception as e:
+                        print(f"An Unexpected Error occured: {e}")
                         time.sleep(2)
                         break
             

@@ -109,13 +109,21 @@ class RetestedCoordinates(models.Model):
         return f"{self.latitude}-{self.longitude}"
     
 
+class AndmanAndNicobarTestedCoordinates(models.Model):
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.latitude}-{self.longitude}"
+    
+
 class TestPincode(models.Model):
     pincode = models.PositiveIntegerField()
 
     def __str__(self):
         return self.pincode
-    
-
 
 
 class UniqueState(models.Model):
