@@ -7,6 +7,7 @@ from celery import Celery
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bzindia.settings')
 
 app = Celery('bzindia')
+app.conf.worker_concurrency = 3
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.

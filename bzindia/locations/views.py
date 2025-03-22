@@ -1,7 +1,8 @@
 from django.http import JsonResponse, HttpResponse, Http404
 from django.core.cache import cache
+from django.db import transaction
 from django.shortcuts import get_object_or_404
-from django.utils.text import slugify
+
 import logging
 import requests
 import csv
@@ -16,7 +17,8 @@ from .models import (
     TestedCoordinates, RetestedCoordinates, TestPincode, 
     UniqueState, UniqueDistrict, UniquePlace,
 
-    AndmanAndNicobarTestedCoordinates
+    AndmanAndNicobarTestedCoordinates, UaeCoordinates, KsaCoordinates,    
+    UaeLocationData, KsaLocationData
     )
 
 logger = logging.getLogger(__name__)
@@ -45,157 +47,13 @@ def generate_location_csv(request):
         ])
 
     return response
-    
 
-def update_location_data():
-    # For India
-    # top_left = (35.2, 68.1)
-    # bottom_right = (6.7, 93.8)
+def places_count():
+    places = Place.objects.all()
+    return places.count()
 
-    # Jammu And Kashmir
-    # top_left = (36.6, 73.2) # fetched till 0.3 precision - with pincode
-    # bottom_right = (32.1, 80.4) # fetched till 0.3 precision - with pincode
-
-    # Madhya Pradesh
-    # top_left = (24.5, 74.7) # fetched till 0.02 precision with and without pincode
-    # bottom_right = (18.4, 81.8) # fetched till 0.02 precision with and without pincode
-
-    # Kerala
-    # top_left = (12.7, 74.8) # fetched till 0.02 precision (midway)
-    # bottom_right = (8.2, 77.4) # fetched till 0.02 precision (midway)
-
-    # Gujarat
-    # top_left = (24.7, 68.1) # fetched till 0.2 precision - with and without pincode
-    # bottom_right = (20.1, 74.4) # fetched till 0.2 precision - with and without pincode
-
-    # Karnataka
-    # top_left = (18.4, 74.0) # fetched till 0.02 precision
-    # bottom_right = (11.6, 78.3) # fetched till 0.02 precision
-
-    # Telangana
-    # top_left = (19.9, 77.2) # fetched till 0.03 precision
-    # bottom_right = (15.8, 81.3) # fetched till 0.03 precision
-
-    # Chhattisgarh
-    # top_left = (24.1, 80.2) # Ended midway at 0.03 precision
-    # bottom_right = (17.7, 84.3) # Ended midway at 0.03 precision
-
-    # Tamil Nadu
-    # top_left = (13.5, 76.2) # fetched till 0.03 precision
-    # bottom_right = (8.0, 80.3) # fetched till 0.03 precision
-
-    # Andhra Pradesh
-    # top_left = (19.1, 76.7) # fetched till 0.03 precision
-    # bottom_right = (12.6, 84.7) # fetched till 0.03 precision
-
-    # Maharashtra
-    # top_left = (22.0, 72.6) # fetched till 0.03 precision
-    # bottom_right = (15.6, 80.8) # fetched till 0.03 precision
-
-    # Jharkhand
-    # top_left = (25.3, 83.3) # fetched till 0.03 precision
-    # bottom_right = (21.9, 87.9) # fetched till 0.03 precision
-
-    # Haryana
-    # top_left = (30.9, 74.4) # fetched till 0.03 precision
-    # bottom_right = (27.6, 77.6) # fetched till 0.03 precision
-
-    # West Bengal
-    # top_left = (27.2, 85.5) # fetched till 0.03 precision
-    # bottom_right = (21.5, 89.8) # fetched till 0.03 precision
-
-    # Punjab
-    # top_left = (32.5, 73.8) # fetched till 0.03 precision
-    # bottom_right = (29.5, 77.9) # fetched till 0.03 precision
-    
-    # Uttar Pradesh
-    top_left = (30.4, 77.0) # Ended midway at 0.03 precision
-    bottom_right = (23.8, 84.6) # Ended midway at 0.03 precision
-
-    # Meghalaya
-    # top_left = (26.1, 89.8) # fetched till 0.02 precision- with and without pincode
-    # bottom_right = (25.0, 92.8) # fetched till 0.02 precision- with and without pincode
-
-    # Manipur
-    # top_left = (25.6, 92.9) # fetched till 0.03 precision
-    # bottom_right = (23.8, 94.7) # fetched till 0.03 precision
-
-    # Mizoram
-    # top_left = (24.5, 92.2) # fetched till 0.03 precision
-    # bottom_right = (21.9, 93.4) # fetched till 0.03 precision
-
-    # Tripura
-    # top_left = (25.6, 91.1) # fetched till 0.03 precision
-    # bottom_right = (22.9, 92.4) # fetched till 0.03 precision
-    
-    # Nagaland
-    # top_left = (27.1, 93.3) # fetched till 0.03 precision
-    # bottom_right = (25.1, 95.3) # fetched till 0.03 precision
-
-    # Goa
-    # top_left = (15.8, 73.6) # fetched till 0.01 precision
-    # bottom_right = (14.9, 74.3) # fetched till 0.01 precision
-
-    # Odisha
-    # top_left = (22.5, 81.3) # fetched till 0.03 precision
-    # bottom_right = (17.8, 87.4) # fetched till 0.03 precision
-
-    # Rajasthan
-    # top_left = (30.1, 69.4) # fetched till 0.03 precision
-    # bottom_right = (23.0, 78.2) # fetched till 0.03 precision
-
-    # Himachal Pradesh
-    # top_left = (33.2, 75.5) # fetched till 0.02 precision, stopped midway at (32.34, 78.72)
-    # bottom_right = (30.3, 79.0) # fetched till 0.02 precision, stopped midway at (32.34, 78.72)
-
-    # Uttarakhand
-    # top_left = (31.4, 77.7) # fetched till 0.03 precision
-    # bottom_right = (28.7, 81.0) # fetched till 0.03 precision
-
-    # Puducherry (Pondicherry)
-    # top_left = (11.9, 79.7) # fetched till 0.01 precision
-    # bottom_right = (11.8, 79.8) # fetched till 0.01 precision
-
-    # Sikkim
-    # top_left = (28.1, 88.0) # fetched till 0.01 precision
-    # bottom_right = (27.0, 88.9) # fetched till 0.01 precision
-
-    # Assam
-    # top_left = (28.2, 89.4) # fetched till 0.03 precision
-    # bottom_right = (24.8, 96.0) # fetched till 0.03 precision
-
-    # Arunachal Pradesh
-    # top_left = (29.5, 91.5) # fetched till 0.03 precision
-    # bottom_right = (26.4, 97.5) # fetched till 0.03 precision
-
-    # Chandigarh
-    # top_left = (30.7, 76.7) # fetched till 0.01 precision
-    # bottom_right = (30.6, 76.8) # fetched till 0.01 precision
-
-    # Andaman And Nicobar Islands (1st Part)
-    # top_left = (13.6, 92.2) # fetched till 0.03 precision
-    # bottom_right = (10.5, 93.1) # fetched till 0.03 precision
-
-    # Andaman And Nicobar Islands (2nd Part)
-    # top_left = (9.26, 92.7) # fetched till 0.03 precision
-    # bottom_right = (6.75, 94.0) # fetched till 0.03 precision
-
-    # Delhi
-    # top_left = (28.9, 76.8) # fetched till 0.01 precision
-    # bottom_right = (28.4, 77.4) # fetched till 0.01 precision
-
-    # Bihar
-    # top_left = (27.6, 83.3) # fetched till 0.01 precision
-    # bottom_right = (24.2, 88.3) # fetched till 0.01 precision
-
-    # Lekshadweep
-    # top_left = (11.7, 71.7) # fetched till 0.03 precision
-    # bottom_right = (8.2, 74.0) # fetched till 0.03 precision
-
-    api_key = os.getenv('OPENCAGE_API_KEY')
+def get_locations(top_left, bottom_right, api_key, opencage_cache):
     base_url = 'https://api.opencagedata.com/geocode/v1/json'
-
-    top_left = (26.22, 77.0)
 
     lat_step = 0.02
     lon_step = 0.02
@@ -206,72 +64,322 @@ def update_location_data():
         longitude = top_left[1]
 
         while longitude <= bottom_right[1]:
-            request_count = cache.get('opencage_requested', 0)            
-            
-            # if not AndmanAndNicobarTestedCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
-            if not RetestedCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
-                if request_count <= 20050:
-                    try:
-                        print(f"Querying Coordinates: ({latitude}, {longitude})")
-                        response = requests.get(f"{base_url}?q={latitude}+{longitude}&key={api_key}")
-                        response.raise_for_status()
+            request_count = cache.get(opencage_cache, 0)
 
-                        request_count += 1
-                        cache.set('opencage_requested', request_count, timeout=60*60*24)
-                        data = response.json()
+            with transaction.atomic():            
+                if not RetestedCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
+                    if request_count <= 10000:
+                        try:
+                            logger.info(f"Querying Coordinates: ({latitude}, {longitude})")
+                            response = requests.get(f"{base_url}?q={latitude}+{longitude}&key={api_key}")
+                            response.raise_for_status()
 
-                        print(f"Request number: {request_count}")
+                            request_count += 1
+                            cache.set(opencage_cache, request_count, timeout=60*60*24)
+                            data = response.json()
 
-                        if "results" in data and data["results"]:
-                            components = data["results"][0].get("components", {})
-                            country = components.get("country")
+                            logger.info(f"Request number: {request_count}")
 
-                            if country == "India":
-                                place = components.get("village") or components.get("town") or components.get("city") or components.get("county")
-                                state_name = components.get("state")
-                                district_name = components.get("state_district")
-                                pincode = components.get("postcode")
-                                
-                                if place and state_name and district_name:
-                                    state, _ = State.objects.get_or_create(name=state_name)
-                                    district, _ = District.objects.get_or_create(name=district_name, state=state)
+                            if "results" in data and data["results"]:
+                                components = data["results"][0].get("components", {})
+                                country = components.get("country")
 
-                                    if not Place.objects.filter(name = place, district = district, state = state, pincode = pincode).exists():
+                                if country == "India":
+                                    place = components.get("village") or components.get("town") or components.get("city") or components.get("county")
+                                    state_name = components.get("state")
+                                    district_name = components.get("state_district")
+                                    pincode = components.get("postcode")
+                                    
+                                    if place and state_name and district_name:
+                                        state, _ = State.objects.get_or_create(name=state_name)
+                                        district, _ = District.objects.get_or_create(name=district_name, state=state)
 
-                                        Place.objects.create(
-                                            name = place,
-                                            district=district,
-                                            state=state,
-                                            pincode=pincode,
-                                            latitude=data["results"][0]["geometry"]["lat"],
-                                            longitude=data["results"][0]["geometry"]["lng"]
-                                        )
-                                        print(f"Place created for {place}, {district.name}, {state.name}")
-                        
-                        RetestedCoordinates.objects.create(latitude=latitude, longitude=longitude)
-                        # AndmanAndNicobarTestedCoordinates.objects.create(latitude=latitude, longitude=longitude)
-                        
-                    except requests.exceptions.RequestException as e:
-                        print(f"Error during API request: {e}")
-                        time.sleep(2)
+                                        if not Place.objects.filter(name = place, district = district, state = state, pincode = pincode).exists():
+
+                                            Place.objects.create(
+                                                name = place,
+                                                district=district,
+                                                state=state,
+                                                pincode=pincode,
+                                                latitude=data["results"][0]["geometry"]["lat"],
+                                                longitude=data["results"][0]["geometry"]["lng"]
+                                            )
+                                            logger.info(f"Place created for {place}, {district.name}, {state.name}")
+                            
+                            RetestedCoordinates.objects.create(latitude=latitude, longitude=longitude)
+                            
+                        except requests.exceptions.RequestException as e:
+                            logger.info(f"Error during API request: {e}")
+                            time.sleep(2)
+                            break
+
+                        except Exception as e:
+                            logger.info(f"An Unexpected Error occured: {e}")
+                            time.sleep(2)
+                            break
+                
+                        time.sleep(0.25)
+
+                    else:
+                        logger.info("You have used up your daily API call limit.")
                         break
 
-                    except Exception as e:
-                        print(f"An Unexpected Error occured: {e}")
-                        time.sleep(2)
-                        break
-            
-                    time.sleep(0.25)
+                longitude += lon_step
+                longitude = round(longitude, 2)
 
-                else:
-                    print("You have used up your daily API call limit.")
-                    break
+        latitude -= lat_step
+        latitude = round(latitude, 2)
+
+def get_uae_locations(top_left, bottom_right, api_key, opencage_cache):
+    base_url = 'https://api.opencagedata.com/geocode/v1/json'
+
+    lat_step = 0.01
+    lon_step = 0.01
+
+    latitude = top_left[0]
+    
+    while latitude >= bottom_right[0]:
+        longitude = top_left[1]
+
+        while longitude <= bottom_right[1]:
+            request_count = cache.get(opencage_cache, 0)
+
+            if not UaeCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
+                with transaction.atomic():            
+                    if request_count <= 10000:
+                        try:
+                            logger.info(f"Querying Coordinates: ({latitude}, {longitude})")
+
+                            response = requests.get(base_url, params={
+                                "q": f"{latitude},{longitude}",
+                                "key": api_key
+                            })
+
+                            response.raise_for_status()
+
+                            request_count += 1
+                            cache.set(opencage_cache, request_count, timeout=60*60*24)
+                            data = response.json()
+
+                            logger.info(f"Request number: {request_count}")
+
+                            if "results" in data and data["results"]:
+                                first_result = data["results"][0]
+                                components = first_result.get("components", {})
+                                formatted = first_result.get("formatted")
+
+                                country = components.get("country")
+
+                                if str(country).lower() in {"united arab emirates", "uae"}:
+                                    road = components.get("road")
+                                    address = formatted.replace(f"{road},", "").strip() if road else formatted
+
+                                    location, created = UaeLocationData.objects.get_or_create(                                        
+                                        address= address,                                        
+                                        defaults={
+                                            "json_data": data,
+                                            "requested_latitude": latitude,
+                                            "requested_longitude": longitude
+                                            }
+                                    )
+
+                                    if created:
+                                        logger.info(f"Place created: '{address}'\n")
+                            
+                            UaeCoordinates.objects.get_or_create(latitude=latitude, longitude=longitude)
+
+                        except requests.exceptions.RequestException as e:
+                            logger.info(f"Error during API request: {e}")
+                            time.sleep(2)
+                            continue
+
+                        except Exception as e:
+                            logger.info(f"An Unexpected Error occured: {e}")
+                            time.sleep(2)
+                            continue
+                
+                        time.sleep(0.2)
+
+                    else:
+                        logger.info("You have used up your daily API call limit.")
+                        return
 
             longitude += lon_step
             longitude = round(longitude, 2)
 
         latitude -= lat_step
         latitude = round(latitude, 2)
+
+def get_ksa_locations(top_left, bottom_right, api_key, opencage_cache):
+    base_url = 'https://api.opencagedata.com/geocode/v1/json'
+
+    lat_step = 0.7
+    lon_step = 0.7
+
+    latitude = top_left[0]
+    
+    while latitude >= bottom_right[0]:
+        longitude = top_left[1]
+
+        while longitude <= bottom_right[1]:
+            request_count = cache.get(opencage_cache, 0)
+
+            if not KsaCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
+                with transaction.atomic():            
+                    if request_count <= 10000:
+                        try:
+                            logger.info(f"Querying Coordinates: ({latitude}, {longitude})")
+
+                            response = requests.get(base_url, params={
+                                "q": f"{latitude},{longitude}",
+                                "key": api_key
+                            })
+
+                            response.raise_for_status()
+
+                            request_count += 1
+                            cache.set(opencage_cache, request_count, timeout=60*60*24)
+                            data = response.json()
+
+                            logger.info(f"Request number: {request_count}")
+
+                            if "results" in data and data["results"]:
+                                first_result = data["results"][0]
+                                components = first_result.get("components", {})
+                                formatted = first_result.get("formatted")
+
+                                country = components.get("country")
+
+                                if str(country).lower() in {"kingdom of saudi arabia", "saudi arabia", "ksa"}:
+                                    road = components.get("road")
+                                    address = formatted.replace(f"{road},", "").strip() if road else formatted
+
+                                    location, created = KsaLocationData.objects.get_or_create(                                        
+                                        address= address,                                        
+                                        defaults={
+                                            "json_data": data,
+                                            "requested_latitude": latitude,
+                                            "requested_longitude": longitude
+                                            }
+                                    )
+
+                                    if created:
+                                        logger.info(f"Place created: '{address}'\n")
+                            
+                            KsaCoordinates.objects.get_or_create(latitude=latitude, longitude=longitude)
+
+                        except requests.exceptions.RequestException as e:
+                            logger.info(f"Error during API request: {e}")
+                            time.sleep(2)
+                            continue
+
+                        except Exception as e:
+                            logger.info(f"An Unexpected Error occured: {e}")
+                            time.sleep(2)
+                            continue
+                
+                        time.sleep(0.2)
+
+                    else:
+                        logger.info("You have used up your daily API call limit.")
+                        return
+
+            longitude += lon_step
+            longitude = round(longitude, 2)
+
+        latitude -= lat_step
+        latitude = round(latitude, 2)
+
+
+def reset_count():
+    for opencage_count in ("opencage_requested_1", "opencage_requested_2", "opencage_requested_3"):
+        cache.set(opencage_count, 0, 24 * 3600)
+    
+    print("Resetted Counts\n")
+
+# def update_location_data():
+#     # Maharashtra
+#     top_left = (22.0, 72.6) # fetched till 0.03 precision
+#     bottom_right = (15.6, 80.8) # fetched till 0.03 precision
+
+#     api_key = os.getenv('OPENCAGE_API_KEY')
+#     base_url = 'https://api.opencagedata.com/geocode/v1/json'
+
+#     top_left = (18.58, 72.6)
+
+#     lat_step = 0.02
+#     lon_step = 0.02
+
+#     latitude = top_left[0]
+    
+#     while latitude >= bottom_right[0]:
+#         longitude = top_left[1]
+
+#         while longitude <= bottom_right[1]:
+#             request_count = cache.get('opencage_requested', 0)            
+            
+#             if not RetestedCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
+#                 if request_count <= 20015:
+#                     try:
+#                         print(f"Querying Coordinates: ({latitude}, {longitude})")
+#                         response = requests.get(f"{base_url}?q={latitude}+{longitude}&key={api_key}")
+#                         response.raise_for_status()
+
+#                         request_count += 1
+#                         cache.set('opencage_requested', request_count, timeout=60*60*24)
+#                         data = response.json()
+
+#                         print(f"Request number: {request_count}")
+
+#                         if "results" in data and data["results"]:
+#                             components = data["results"][0].get("components", {})
+#                             country = components.get("country")
+
+#                             if country == "India":
+#                                 place = components.get("village") or components.get("town") or components.get("city") or components.get("county")
+#                                 state_name = components.get("state")
+#                                 district_name = components.get("state_district")
+#                                 pincode = components.get("postcode")
+                                
+#                                 if place and state_name and district_name:
+#                                     state, _ = State.objects.get_or_create(name=state_name)
+#                                     district, _ = District.objects.get_or_create(name=district_name, state=state)
+
+#                                     if not Place.objects.filter(name = place, district = district, state = state, pincode = pincode).exists():
+
+#                                         Place.objects.create(
+#                                             name = place,
+#                                             district=district,
+#                                             state=state,
+#                                             pincode=pincode,
+#                                             latitude=data["results"][0]["geometry"]["lat"],
+#                                             longitude=data["results"][0]["geometry"]["lng"]
+#                                         )
+#                                         print(f"Place created for {place}, {district.name}, {state.name}")
+                        
+#                         RetestedCoordinates.objects.create(latitude=latitude, longitude=longitude)
+                        
+#                     except requests.exceptions.RequestException as e:
+#                         print(f"Error during API request: {e}")
+#                         time.sleep(2)
+#                         break
+
+#                     except Exception as e:
+#                         print(f"An Unexpected Error occured: {e}")
+#                         time.sleep(2)
+#                         break
+            
+#                     time.sleep(0.25)
+
+#                 else:
+#                     print("You have used up your daily API call limit.")
+#                     break
+
+#             longitude += lon_step
+#             longitude = round(longitude, 2)
+
+#         latitude -= lat_step
+#         latitude = round(latitude, 2)
         
 
 def get_districts(request):
@@ -325,12 +433,17 @@ def populate_unique_states():
     state_names = set(State.objects.values_list('name', flat=True))
     existing_names = set(UniqueState.objects.values_list('name', flat=True))
     
-    new_names = state_names - existing_names
+    new_state_names = state_names - existing_names
     
-    unique_states = [UniqueState(name=name) for name in new_names]
+    unique_states = [UniqueState(name=name) for name in new_state_names]
     
     if unique_states:
         UniqueState.objects.bulk_create(unique_states)
+
+    unsaved_states = UniqueState.objects.all()
+
+    for state in unsaved_states:
+        state.save()
 
     print(f"Inserted {len(unique_states)} new records into unique state.")
 
@@ -365,47 +478,141 @@ def populate_unique_districts():
     if unique_districts:
         UniqueDistrict.objects.bulk_create(unique_districts)
 
+    unsaved_districts = UniqueDistrict.objects.all()
+
+    for district in unsaved_districts:
+        district.save()
+
     print(f"Inserted {len(unique_districts)} new unique district records.")
+
+# def populate_unique_places():
+#     places = Place.objects.all()
+#     length = places.count()
+
+#     existing_states = {state.name: state for state in UniqueState.objects.all()}
+#     existing_districts = {district.name: district for district in UniqueDistrict.objects.all()}
+
+#     unique_places = []
+#     unique_combinations = set()  
+
+#     for index, place in enumerate(places):
+#         name = place.name
+#         district_name = place.district.name
+#         state_name = place.state.name
+
+#         if state_name in existing_states:
+#             state = existing_states[state_name]
+#         else:
+#             continue
+
+#         if district_name in existing_districts:
+#             district = existing_districts[district_name]
+#         else:
+#             continue
+        
+#         unique_key = (name, district.id, state.id)
+        
+#         if unique_key not in unique_combinations:
+            
+#             if not UniquePlace.objects.filter(name=name, district=district, state=state).exists():
+#                 unique_places.append(UniquePlace(name=name, district=district, state=state))
+            
+#             unique_combinations.add(unique_key)
+
+#         print(f"\rChecked {int((index + 1) / length * 100)}%", end="")
+
+#     if unique_places:
+#         UniquePlace.objects.bulk_create(unique_places)
+
+#     print(f"Inserted {len(unique_places)} new unique place records.")
+
+# def populate_unique_places():
+#     places = Place.objects.all()
+#     length = places.count()
+
+#     existing_states = {state.name: state for state in UniqueState.objects.all()}
+#     existing_districts = {(district.name, district.state.name): district for district in UniqueDistrict.objects.select_related('state')}
+#     existing_places = set(UniquePlace.objects.values_list("name", "district_id", "state_id"))
+
+#     unique_places = []
+#     unique_combinations = set()
+    
+#     progress = 0
+#     for index, place in enumerate(places):
+#         name = place.name
+#         state = existing_states.get(place.state.name)
+#         district = existing_districts.get((place.district.name, place.state.name))
+        
+#         if not state or not district:
+#             continue
+        
+#         unique_key = (name, district.id, state.id)
+        
+#         if unique_key not in existing_places:
+#             unique_places.append(UniquePlace(name=name, district=district, state=state))
+#             existing_places.add(unique_key)
+
+#         new_progress = (index + 1) * 100 // length
+#         if new_progress > progress:
+#             print(f"\rProgress: {new_progress}%", end="")
+#             progress = new_progress
+
+#     if unique_places:
+#         UniquePlace.objects.bulk_create(unique_places, ignore_conflicts=True)
+
+#     print(f"\nInserted {len(unique_places)} new unique place records.")
+
 
 def populate_unique_places():
     places = Place.objects.all()
     length = places.count()
-
+    
     existing_states = {state.name: state for state in UniqueState.objects.all()}
-    existing_districts = {district.name: district for district in UniqueDistrict.objects.all()}
+    existing_districts = {
+        (district.name, district.state.name): district
+        for district in UniqueDistrict.objects.select_related("state")
+    }
+    existing_places = set(UniquePlace.objects.values_list("name", "district_id", "state_id"))
 
     unique_places = []
-    unique_combinations = set()  
+    unique_combinations = set()
+    
+    progress = 0
+    batch_size = 1000
 
-    for index, place in enumerate(places):
+    for index, place in enumerate(places.iterator()):
         name = place.name
-        district_name = place.district.name
-        state_name = place.state.name
-
-        if state_name in existing_states:
-            state = existing_states[state_name]
-        else:
-            continue
-
-        if district_name in existing_districts:
-            district = existing_districts[district_name]
-        else:
+        state = existing_states.get(place.state.name)
+        district = existing_districts.get((place.district.name, place.state.name))
+        
+        if not state or not district:
             continue
         
         unique_key = (name, district.id, state.id)
         
-        if unique_key not in unique_combinations:
-            
-            if not UniquePlace.objects.filter(name=name, district=district, state=state).exists():
-                unique_places.append(UniquePlace(name=name, district=district, state=state))
-            
-            unique_combinations.add(unique_key)
+        if unique_key not in existing_places:
+            unique_places.append(UniquePlace(name=name, district=district, state=state))
+            existing_places.add(unique_key)
 
-        print(f"\rChecked {int((index + 1) / length * 100)}%", end="")
+        if (index + 1) % batch_size == 0 or index + 1 == length:
+            UniquePlace.objects.bulk_create(unique_places, ignore_conflicts=True)
+            unique_places.clear()
 
-    if unique_places:
-        UniquePlace.objects.bulk_create(unique_places)
+        new_progress = (index + 1) * 100 // length
+        if new_progress > progress:
+            print(f"\rProgress: {new_progress}%", end="")
+            progress = new_progress
 
-    print(f"Inserted {len(unique_places)} new unique place records.")
+    print(f"\nInserted {len(existing_places)} new unique place records.")
+
+    print(f"\nWait for the function to finish. . .")
+
+    unsaved_places = UniquePlace.objects.all()
+
+    for place in unsaved_places:
+        place.save()
+
+    print(f"\nCompleted!")
+
 
 

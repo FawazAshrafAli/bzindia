@@ -28,7 +28,20 @@
                                     Looks good!
                                 </div>
                             </div>                            
-                        </div>                        
+                        </div>  
+                        
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <label for="text-input">Subtitles <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="subtitles" id="subtitles-input" placeholder="Subtitles" required>{% if page.subtitles %}{{page.subtitles}}{% endif %}</textarea>
+                                <div class="invalid-feedback">
+                                    Please provide the subtitles.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>                            
+                        </div>
 
                     </div>
                 </div>     

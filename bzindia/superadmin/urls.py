@@ -2,8 +2,7 @@ from django.urls import path
 from .views import (
     HomeView, CompanyListView, AddCompanyView, UpdateCompanyView, DeleteCompanyView,
     CompanyDetailView,
-    CompanyTypeListView, AddCompanyTypeView, DeleteCompanyTypeView, UpdateCompanyTypeView,
-    MultiPageDetailView, AddMultiPageView, UpdateMultiPageView, DeleteMultiPageView,
+    CompanyTypeListView, AddCompanyTypeView, DeleteCompanyTypeView, UpdateCompanyTypeView,    
 
     # Product Company
 
@@ -27,12 +26,15 @@ from .views import (
     AddCourseFaqView, ListCourseFaqView, UpdateCourseFaqView, DeleteCourseFaqView,
     ListCourseEnquiryView, DeleteCourseEnquiryView,
 
+    AddCourseMultiPageView, CourseMultiPageListView, CourseMultiPageDetailView, UpdateCourseMultiPageView,
+
     # Service Company
     ListServiceView, AddServiceView, RemoveServiceView, UpdateServiceView,
     ListServiceCategoryView, AddServiceCategoryView, RemoveServiceCategoryView, UpdateServiceCategoryView,
     ListServiceSubCategoryView, AddServiceSubCategoryView, RemoveServiceSubCategoryView, UpdateServiceSubCategoryView,
     AddServiceFaqView, ListServiceFaqView, UpdateServiceFaqView, DeleteServiceFaqView,
     ListServiceEnquiryView, DeleteServiceEnquiryView,
+    AddServiceDetailView, ServiceDetailsListView, ServiceDetailView, UpdateServiceDetailView,
 
     # Registration Company
     ListRegistrationView, AddRegistrationView, RemoveRegistrationView, UpdateRegistrationView,
@@ -67,6 +69,10 @@ from .views import (
 
     # General Testimonials
     AddTestimonialView, TestimonialListView, UpdateTestimonialView, DeleteTestimonialView,
+
+    # Blog
+    AddBlogView, ListBlogView, UpdateBlogView, DeleteBlogView,
+    PublishBlogView, UnPublishBlogView
     )
 
 app_name = "superadmin"
@@ -87,12 +93,7 @@ urlpatterns = [
     path('add_company_type/', AddCompanyTypeView.as_view(), name="add_company_type"),
     path('update_company_type/<str:slug>', UpdateCompanyTypeView.as_view(), name="update_company_type"),
     path('company_types/', CompanyTypeListView.as_view(), name="company_types"),
-    path('delete_company_type/<str:slug>', DeleteCompanyTypeView.as_view(), name="delete_company_type"),
-
-    path('multipage/<str:slug>', MultiPageDetailView.as_view(), name="multipage"),
-    path('add_multipage/<str:slug>', AddMultiPageView.as_view(), name="add_multipage"),
-    path('update_multipage/<str:slug>', UpdateMultiPageView.as_view(), name="update_multipage"),
-    path('delete_multipage/<str:slug>', DeleteMultiPageView.as_view(), name="delete_multipage"),
+    path('delete_company_type/<str:slug>', DeleteCompanyTypeView.as_view(), name="delete_company_type"),    
 
     # Product Company
     path('add_product/<str:slug>', AddProductView.as_view(), name="add_product"),
@@ -154,6 +155,11 @@ urlpatterns = [
     path('remove_course_specialization/<str:slug>/<str:specialization_slug>/', RemoveCourseSpecializationView.as_view(), name="remove_course_specialization"),
     path('update_course_specialization/<str:slug>/<str:specialization_slug>/', UpdateCourseSpecializationView.as_view(), name="update_course_specialization"),
 
+    path('add_course_multipage/<str:slug>', AddCourseMultiPageView.as_view(), name="add_course_multipage"),
+    path('update_course_multipage/<str:slug>/<str:multipage_slug>', UpdateCourseMultiPageView.as_view(), name="update_course_multipage"),
+    path('course_multipages/<str:slug>', CourseMultiPageListView.as_view(), name="course_multipages"),
+    path('course_multipage/<str:slug>/<str:course_slug>', CourseMultiPageDetailView.as_view(), name="course_multipage"),
+
     # Service Company
     path('companies/services/<str:slug>', ListServiceView.as_view(), name="services"),
     path('companies/add_service/<str:slug>', AddServiceView.as_view(), name="add_service"),
@@ -177,6 +183,11 @@ urlpatterns = [
 
     path('service_enquiries/<str:slug>', ListServiceEnquiryView.as_view(), name="service_enquiries"),
     path('delete_service_enquiry/<str:slug>/<str:enquiry_slug>/', DeleteServiceEnquiryView.as_view(), name="delete_service_enquiry"),
+
+    path('add_service_details/<str:slug>', AddServiceDetailView.as_view(), name="add_service_details"),
+    path('service_details/<str:slug>', ServiceDetailsListView.as_view(), name="service_details"),
+    path('service_detail/<str:slug>/<str:service_slug>', ServiceDetailView.as_view(), name="service_detail"),
+    path('update_service_details/<str:slug>/<str:service_slug>', UpdateServiceDetailView.as_view(), name="update_service_details"),
 
     # Registration Company
     path('companies/registrations/<str:slug>', ListRegistrationView.as_view(), name="registrations"),
@@ -255,4 +266,13 @@ urlpatterns = [
     path('testimonials/<str:slug>', TestimonialListView.as_view(), name="testimonials"),
     path('update_testimonial/<str:slug>/<str:testimonial_slug>', UpdateTestimonialView.as_view(), name="update_testimonial"),
     path('delete_testimonial/<str:slug>/<str:testimonial_slug>', DeleteTestimonialView.as_view(), name="delete_testimonial"),
+
+    # Blog
+    path('add_blogs/', AddBlogView.as_view(), name="add_blogs"),
+    path('blogs/', ListBlogView.as_view(), name="blogs"),
+    path('update_blog/<str:slug>', UpdateBlogView.as_view(), name="update_blog"),
+    path('delete_blog/<str:slug>', DeleteBlogView.as_view(), name="delete_blog"),
+
+    path('publish_blog/<str:slug>', PublishBlogView.as_view(), name="publish_blog"),
+    path('unpublish_blog/<str:slug>', UnPublishBlogView.as_view(), name="unpublish_blog"),
 ]

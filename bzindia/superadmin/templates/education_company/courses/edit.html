@@ -109,7 +109,25 @@
                                     Looks good!
                                 </div>
                             </div>
-                        </div>                        
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="meta-tags-input" class="form-label">Meta Tags <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="meta-tags-input" name="meta_tags" placeholder="Meta Tags" value="{{course.meta_tags}}" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="subtitles-input" class="form-label">Subtitles</label>
+                                <textarea name="subtitles" id="subtitles-input" class="form-control" placeholder="Subtitles">{% if course.subtitles %}{{course.subtitles}}{% endif %}</textarea>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="meta-description-input" class="form-label">Meta Description <span class="text-danger">*</span></label>
+                                <textarea name="meta_description" id="meta-description-input" class="form-control" placeholder="Meta Description" required>{% if course.meta_description %}{{course.meta_description}}{% endif %}</textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>                
 

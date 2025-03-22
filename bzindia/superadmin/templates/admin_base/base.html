@@ -51,9 +51,13 @@
 		<!-- [if lt IE 9]>
 			<script src="assets/js/html5shiv.min.js"></script>
 			<script src="assets/js/respond.min.js"></script>
-		<![endif] -->
-		<!-- Froala Editor CSS -->
-		<link href='https://cdn.jsdelivr.net/npm/froala-editor@4.0.10/css/froala_editor.pkgd.min.css' rel='stylesheet' type='text/css' />
+		<![endif] -->		
+
+		<style>
+			.django-ckeditor-widget {
+				display: block !important;
+			}
+		</style>
 		{% block styles %}{% endblock styles %}
     </head>
     <body id="skin-color" class="inter">
@@ -104,29 +108,7 @@
 					<li class="nav-item">
 						
 					</li>
-					<!-- /Search -->
-				
-					<!-- Flag -->
-					<li class="nav-item dropdown has-arrow flag-nav">
-						<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button">
-							<img src="{% static 'assets/img/flags/us.png' %}" alt="" height="20"> <span>English</span>
-						</a>
-						<div class="dropdown-menu dropdown-menu-right">
-							<a href="javascript:void(0);" class="dropdown-item">
-								<img src="{% static 'assets/img/flags/us.png' %}" alt="" height="16"> English
-							</a>
-							<a href="javascript:void(0);" class="dropdown-item">
-								<img src="{% static 'assets/img/flags/fr.png' %}" alt="" height="16"> French
-							</a>
-							<a href="javascript:void(0);" class="dropdown-item">
-								<img src="{% static 'assets/img/flags/es.png' %}" alt="" height="16"> Spanish
-							</a>
-							<a href="javascript:void(0);" class="dropdown-item">
-								<img src="{% static 'assets/img/flags/de.png' %}" alt="" height="16"> German
-							</a>
-						</div>
-					</li>
-					<!-- /Flag -->
+					<!-- /Search -->									
 				
 					<!-- Notifications -->
 					<li class="nav-item dropdown">
@@ -215,7 +197,7 @@
 					<!-- /Notifications -->
 					
 					<!-- Message Notifications -->
-					<li class="nav-item dropdown">
+					<!-- <li class="nav-item dropdown">
 						<a href="#" class="dropdown-toggle nav-link" data-bs-toggle="dropdown">
 							<i class="fa fa-comment-o"></i> <span class="badge rounded-pill">8</span>
 						</a>
@@ -317,7 +299,7 @@
 								<a href="#">View all Messages</a>
 							</div>
 						</div>
-					</li>
+					</li> -->
 					<!-- /Message Notifications -->
 
 					<li class="nav-item dropdown has-arrow main-drop">
@@ -403,6 +385,8 @@
 									<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_service_category_modal">Add Service Category</a></li>
 									{% elif service_sub_category_page %}
 									<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_service_sub_category_modal">Add Service Sub Category</a></li>
+									{% elif service_detail_page %}
+									<li><a {% if add_service_detail_page %}class="active"{% endif %} href="{% url 'superadmin:add_service_details' current_company.slug %}">Add Service Detail</a></li>
 									{% elif registration_page %}
 									<li><a {% if add_registration_page %}class="active"{% endif %} href="{% url 'superadmin:add_registration' current_company.slug %}">Add Registration</a></li>
 									{% elif registration_type_page %}
@@ -431,10 +415,14 @@
 									<li><a {% if add_client_page %}class="active"{% endif %} href="{% url 'superadmin:add_client' current_company.slug %}">{% if current_company.type.name == 'Education' %}Add Corporate Partner{% else %}Add Client{% endif %}</a></li>
 
 									{% elif testimonial_page %}
-									<li><a {% if add_testimonial_page %}class="active"{% endif %} href="{% if current_company.type.name == Education %}{% url 'superadmin:add_student_testimonial' current_company.slug %}{% else %}{% url 'superadmin:add_testimonial' current_company.slug %}"{% endif %}>Add Testimonal</a></li>
+									<li><a {% if add_testimonial_page %}class="active"{% endif %} href="{% if current_company.type.name == 'Education' %}{% url 'superadmin:add_student_testimonial' current_company.slug %}{% else %}{% url 'superadmin:add_testimonial' current_company.slug %}{% endif %}">Add Testimonal</a></li>
 
 									{% elif product_review_page %}
 									<li><a {% if add_product_review_page %}class="active"{% endif %} href="{% url 'superadmin:add_product_reviews' current_company.slug %}">Add Review</a></li>
+
+									{% elif course_multipage %}
+									<li><a {% if add_product_review_page %}class="active"{% endif %} href="{% url 'superadmin:add_course_multipage' current_company.slug %}">Add Multipage</a></li>
+
 									{% endif %}									
 								</ul>
 							</li>
@@ -458,6 +446,16 @@
 									<li class="submenu">										
 										<li><a href="{% url 'superadmin:custom_pages' %}" {% if custom_page %}class="active"{% endif %}> <span>Custom Pages</span></a></li>
 										<li><a href="{% url 'superadmin:add_custom_page' %}"> <span>Add Custom Page</span></a></li>
+									</li>
+								</ul>
+							</li>
+
+							<li class="submenu">
+								<a href="javascript:void(0);" {% if blog_page %}class="active"{% endif %}><i class="feather-edit"></i> <span>Blogs</span> <span class="menu-arrow"></span></a>
+								<ul class="sub-menus">									
+									<li class="submenu">										
+										<li><a href="{% url 'superadmin:blogs' %}" {% if list_blog_page %}class="active"{% endif %}> <span>Blogs</span></a></li>
+										<li><a href="{% url 'superadmin:add_blogs' %}" {% if add_blog_page %}class="active"{% endif %}> <span>Add Blog</span></a></li>
 									</li>
 								</ul>
 							</li>
@@ -1117,20 +1115,7 @@
 			</script>
 			
 
-		{% block scripts %}{% endblock scripts %}
-		<!-- Froala Editor JS -->
-		<script type='text/javascript' src='https://cdn.jsdelivr.net/npm/froala-editor@latest/js/froala_editor.pkgd.min.js'></script>
-
-		<script>
-			function intializeFroala() {
-				new FroalaEditor('.froala-editor', {
-					// Options (optional)
-					toolbarInline: false,
-					placeholderText: 'Start typing here...',
-					charCounterCount: true,
-				});
-			}
-		</script>	
+		{% block scripts %}{% endblock scripts %}	
 
 		<script>
 			$('.btn-secondary').click(function () {
@@ -1138,6 +1123,36 @@
 					$('.btn-close').click();
 				}
 			});
+		</script>
+
+		<script>
+			function getCourses() {
+				const program = $('#program-dropdown').val();
+				const company = `{{current_company.slug}}`;
+	
+				$.ajax({
+					type: 'GET',
+					url: `{% url 'education:get_courses' %}`,
+					dataType: 'json',
+					data: {
+						"program": program,
+						"company": company
+					},
+					success: response => {
+						if (response.courses && response.courses.length > 0) {
+							$('#course-dropdown').html(`<option value="" hidden disabled selected>Select Course</option>`);
+							response.courses.forEach(course => {
+								$('#course-dropdown').append(`<option value="${course.slug}">${course.name}</option>`)
+							})
+						}
+						
+						if (response.error) {
+							console.error("Error: ", response.error)
+						}
+					},
+					error: error => console.error("Error: ", error),
+				});            
+			};
 		</script>
     </body>
 </html>

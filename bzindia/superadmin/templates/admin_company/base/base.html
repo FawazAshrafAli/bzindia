@@ -76,6 +76,9 @@
                                 <li class="nav-item {% if testimonial_page %}active{% endif %}">
                                     <a class="nav-link" href="{% url 'superadmin:student_testimonials' current_company.slug %}">Testimonials</a>
                                 </li>
+                                <li class="nav-item {% if course_multipage %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:course_multipages' current_company.slug %}">Multi Page</a>
+                                </li>        
 
                             {% endif %}
 
@@ -91,6 +94,9 @@
                                 </li>
                                 <li class="nav-item {% if service_enquiry_page %}active{% endif %}">
                                     <a class="nav-link" href="{% url 'superadmin:service_enquiries' current_company.slug %}">Enquiries</a>
+                                </li>
+                                <li class="nav-item {% if service_detail_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:service_details' current_company.slug %}">Service Detail</a>
                                 </li>
                                 <li class="nav-item {% if service_faq_page %}active{% endif %}">
                                     <a class="nav-link" href="{% url 'superadmin:service_faqs' current_company.slug %}">FAQs</a>
@@ -127,15 +133,11 @@
                                     <a class="nav-link" href="{% url 'superadmin:testimonials' current_company.slug %}">Testimonials</a>
                                 </li>
 
-                            {% endif %}
-
-                            <li class="nav-item {% if multipage %}active{% endif %}">
-                                <a class="nav-link" href="{% url 'superadmin:multipage' current_company.slug %}">Multi Page</a>
-                            </li>
+                            {% endif %}                                                        
 						</ul>
 					</div>
 					
-                    {% include "base/message.html" %}
+                    {% include "message.html" %}
 
 					{% block company_content %}{% endblock company_content %}
 					

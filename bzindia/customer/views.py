@@ -8,9 +8,11 @@ from django.http import Http404, JsonResponse
 from datetime import timedelta
 import logging
 
-from company.models import Company
-from educational.models import Course, Program, Specialization, Faq as CourseFaq, Enquiry as CourseEnquiry
-from product.models import Category as ProductCategory, Brand, Size, Color, Product, SubCategory as ProductSubCategory
+from company.models import Company, Client, Testimonial
+from locations.models import UniquePlace, UniqueState, UniqueDistrict
+
+from educational.models import Course, Program, Specialization, Faq as CourseFaq, Enquiry as CourseEnquiry, Testimonial as StudentTestimonial
+from product.models import Category as ProductCategory, Brand, Size, Color, Product, SubCategory as ProductSubCategory, Faq as ProductFaq
 from service.models import Service, Category as ServiceCategory, SubCategory as ServiceSubCategory, Enquiry as ServiceEnquiry, Faq as ServiceFaq
 from registration.models import RegistrationDetail, RegistrationType, RegistrationSubType, Faq as RegistrationFaq, Enquiry as RegistrationEnquiry
 
@@ -35,7 +37,7 @@ class CustomerHomeView(CustomerBaseView, TemplateView):
     template_name = "customer/home.html"
 
 
-# For Product based company
+# Product Company
 class BaseProductCategoryView(CustomerBaseView, View):
     model = ProductCategory
     
@@ -1046,7 +1048,7 @@ class DeleteProductView(BaseProductView, View):
 
 class BaseCustomerView(LoginRequiredMixin):
     login_url = reverse_lazy('authentication:login')
-    success_url = redirect_url = reverse_lazy("customer:home")
+    success_url = redirect_url = reverse_lazy("customer:testimonials")
 
     def get_company(self):
         try:
@@ -1055,12 +1057,213 @@ class BaseCustomerView(LoginRequiredMixin):
             return self.company
         except Http404:
             messages.error(self.request, "Invalid Company")
-            return  redirect(reverse_lazy('authentication:logout'))
+        
+        except Exception as e:
+            logger.exception(f"Error in get_company function of BaseCustomerView in customer app: {e}")
+
+        return  redirect(reverse_lazy('authentication:logout'))
         
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["company"] = self.get_company()
         return context
+
+
+# class BaseProductFaqView(BaseCustomerView):
+#     model = ProductFaq
+#     slug_url_kwarg = 'slug'
+#     success_url = redirect_url = reverse_lazy('customer:product_faqs')
+        
+#     def get_product(self, product_slug):
+#         try:            
+#             return get_object_or_404(Product, slug = product_slug)
+#         except Http404:
+#             return None
+        
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data()
+
+#         context["product_faq_page"] = True
+
+#         return context
+
+
+# class AddProductFaqView(BaseProductFaqView, CreateView):    
+#     fields = ["company", "product", "question", "answer"]
+#     template_name = "customer_product/faq/add.html"
+#     success_url = redirect_url = reverse_lazy('customer:add_product_faqs') 
+
+#     def dispatch(self, request, *args, **kwargs):
+#         self.get_company()
+#         return super().dispatch(request, *args, **kwargs)     
+        
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data()
+
+#         company = self.company
+#         context["add_product_faq_page"] = True
+#         context["categories"] = ProductCategory.objects.filter(company = company).order_by("name")
+
+#         return context
+        
+#     def post(self, request, *args, **kwargs):
+#         try:
+#             product_slug = self.request.POST.get('product')
+#             question = request.POST.get("question")
+#             answer = request.POST.get("answer")
+
+#             product_slug = product_slug.strip() if product_slug else None
+#             question = question.strip() if question else None
+#             answer = answer.strip() if answer else None
+
+#             required_fields = {
+#                 "Product": product_slug,
+#                 "Question": question,
+#                 "Answer": answer
+#             }
+
+#             for key, value in required_fields.items():
+#                 if not value:
+#                     print(f"Failed! {key} is required")
+#                     return redirect(self.redirect_url)
+
+#             company = self.company
+#             product = self.get_product(product_slug)
+
+#             if not company or not product:
+#                 invalid_msg = ""
+                
+#                 if not company:
+#                     invalid_msg = "Invalid Product Company"
+#                 else:
+#                     invalid_msg = "Invalid Product"
+
+#                 messages.error(request, invalid_msg)
+#                 return redirect(self.redirect_url)
+
+#             ProductFaq.objects.update_or_create(company = company, product = product, question = question, defaults={"answer": answer})
+
+#             messages.success(request, "Success! Added FAQ")
+#             return redirect(self.success_url)
+
+#         except Exception as e:
+#             logger.exception(f"Error in post function of AddProductFaqView of customer app: {e}")
+#             messages.error(request, "Failed! An unexpected error occurred")
+
+#         return redirect(self.redirect_url)
+    
+
+# class ListProductFaqView(BaseProductFaqView, ListView):
+#     template_name = "customer_product/faq/list.html"
+#     queryset = ProductFaq.objects.none()
+#     context_object_name = "faqs"
+
+#     def get_queryset(self):
+#         try:
+#             company = self.get_company()
+#             return self.model.objects.filter(company = company)
+            
+#         except Exception as e:
+#             logger.exception(f"Error in get_queryset function of ListProductFaqView in customer app: {e}")
+#             return redirect(self.redirect_url)
+
+
+# class UpdateProductFaqView(BaseProductFaqView, UpdateView):
+#     fields = ["product", "question", "answer"]
+#     template_name = "customer_product/faq/update.html"
+#     context_object_name = "faq"
+
+#     def get_redirect_url(self):
+#         try:
+#             return reverse_lazy('customer:update_product_faq', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+#         except Exception as e:
+#             logger.exception(f"Error in get_redirect_url function of UpdateProductFaqView in customer app: {e}")
+#             return self.redirect_url
+    
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data()
+
+#         context["categories"] = ProductCategory.objects.filter(company = self.company).order_by("name")
+#         context["sub_categories"] = ProductSubCategory.objects.filter(company = self.company, category = self.object.product.category).order_by("name")
+#         context["products"] = Product.objects.filter(company = self.company, category = self.object.product.category, sub_category = self.object.product.sub_category).order_by("name")
+
+#         return context
+        
+#     def post(self, request, *args, **kwargs):
+#         try:
+#             self.object = self.get_object()
+
+#             product_slug = self.request.POST.get('product')
+#             question = request.POST.get("question")
+#             answer = request.POST.get("answer")
+
+#             question = question.strip() if question else None
+#             answer = answer.strip() if answer else None
+
+#             required_fields = {
+#                 "Product": product_slug,
+#                 "Question": question,
+#                 "Answer": answer
+#             }
+
+#             for key, value in required_fields.items():
+#                 if not value:
+#                     print(f"Failed! {key} is required")
+#                     return redirect(self.get_redirect_url())
+
+#             product = self.get_product(product_slug)
+
+#             if not product:
+#                 messages.error(request, "Invalid Product")
+#                 return redirect(self.get_redirect_url())
+
+#             similar_faq = self.model.objects.filter(company = self.object.company, product = product, question = question, answer = answer).first()
+
+#             if similar_faq:
+#                 if similar_faq.slug == self.object.slug:
+#                     messages.warning(request, "No changes detected")
+#                 else:
+#                     messages.warning(request, "Similar product FAQ already exists")
+#                 return redirect(self.get_redirect_url())
+
+#             self.object.product = product
+#             self.object.question = question
+#             self.object.answer = answer
+#             self.object.save()
+
+#             messages.success(request, f"Success! Updated FAQ")
+#             return redirect(self.success_url)
+        
+#         except Http404:
+#             messages.error(request, "Invalid product FAQ object")
+
+#         except Exception as e:
+#             logger.exception(f"Error in post function of UpdateProductFaqView of customer app: {e}")
+#             messages.error(request, "Failed! An unexpected error occurred")
+
+#         return redirect(self.get_redirect_url())
+
+
+# class DeleteProductFaqView(BaseProductFaqView, View):
+#     def get(self, request, *args, **kwargs):
+#         try:
+#             self.object = get_object_or_404(self.model, slug = self.kwargs.get(self.slug_url_kwarg))
+#             product_name = str(self.object.product.name)[:25]
+#             if len(str(self.object.product.name)) > 25:
+#                 product_name += "..."
+#             self.object.delete()
+
+#             messages.success(request, f"Success! Removed product FAQ object of: {product_name}")
+#             return redirect(self.success_url)
+
+#         except Http404:
+#             messages.error(request, "Invalid Product FAQ")
+
+#         except Exception as e:
+#             logger.exception(f"Error in get function of DeleteProductFaqView of customer app: {e}")
+#             messages.error(request, "An unexpected error occurred")
+
+#         return redirect(self.redirect_url)
 
 
 # Service Company
@@ -3070,5 +3273,669 @@ class DeleteCourseEnquiryView(BaseCustomerView, View):
         except Exception as e:
             messages.error(request, "Failed! An unexpected error occurred")
             logger.exception(f"Error in post function of DeleteCourseEnquiryView of customer app: {e}")
+
+        return redirect(self.redirect_url)
+    
+
+class BaseStudentTestimonialView(BaseCustomerView):
+    model = StudentTestimonial
+    success_url = redirect_url = reverse_lazy('customer:student_testimonials')
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["testimonial_page"] = context["company_page"] = True
+
+        return context    
+    
+    def get_course(self, course_slug):
+        try:
+            company = self.get_company()
+            return get_object_or_404(Course, company = company, slug = course_slug)
+        except Http404:
+            return None
+        
+    def get_place(self, place_slug):
+        try:
+            return get_object_or_404(UniquePlace, slug = place_slug)
+        except Http404:
+            return None
+    
+
+class AddStudentTestimonialView(BaseStudentTestimonialView, CreateView):    
+    template_name = "customer_education/testimonial/add.html"
+    fields = ["company", "name", "image", "course", "place", "text", "rating", "order"]
+    success_url = redirect_url = reverse_lazy('customer:add_student_testimonials')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        context["add_testimonial_page"] = True
+        context["ratings"] = list(range(1,6))
+        company = self.get_company()
+        context["programs"] = Program.objects.filter(company = company)
+        context["states"] = UniqueState.objects.all().order_by('name')
+        
+        return context
+
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_company()
+
+            name = request.POST.get("name")
+            image = request.FILES.get("image")
+            course_slug = request.POST.get("course")
+            place_slug = request.POST.get("place")
+            text = request.POST.get("testimonial")
+            rating = request.POST.get("rating", 5)
+            order = request.POST.get("order", 0)
+
+            name = name.strip() if name else None
+            course_slug = course_slug.strip() if course_slug else None
+            place_slug = place_slug.strip() if place_slug else None
+            text = text.strip() if text else None
+            rating = rating.strip() if rating else None
+            order = order.strip() if order else None
+
+            required_fields = {
+                "Name": name,
+                "Image": image,
+                "Course": course_slug,
+                "Place": place_slug,
+                "Testimonal Text": text,
+                "Rating": rating,
+                "Order": order 
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.redirect_url)
+                
+
+            course = self.get_course(course_slug)
+            place = self.get_place(place_slug)
+
+            if not course or not place:
+                invalid_msg = ""
+                if not course:
+                    invalid_msg = "Invalid Course"
+                else:
+                    invalid_msg = "Invalid Place"
+
+                messages.error(request, invalid_msg)
+                return redirect(self.redirect_url)
+                        
+            if self.model.objects.filter(
+                company = company, name = name, course = course, place = place
+                ).exists():
+
+                messages.warning(request, "Similar testimonial already exists")
+                return redirect(self.redirect_url)
+            
+            self.model.objects.create(
+                company = company, name = name, image = image, course = course, place = place,
+                text = text, rating = rating, order = order
+            )
+
+            messages.success(request, "Success! Testimonial Created")
+            return redirect(self.success_url)
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddStudentTestimonialView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+            return redirect(self.redirect_url)
+
+
+class StudentTestimonialListView(BaseStudentTestimonialView, ListView):
+    template_name = "customer_education/testimonial/list.html"
+    context_object_name = "testimonials"
+    queryset = StudentTestimonial.objects.none()
+    
+    def get_queryset(self):
+        try:
+            company = self.get_company()        
+            return self.model.objects.filter(company = company).order_by("order")
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of StudentTestimonialListView in customer app: {e}")
+            return self.queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["list_testimonial_page"] = True
+
+        return context
+    
+
+class UpdateStudentTestimonialView(BaseStudentTestimonialView, UpdateView):    
+    fields = ["name", "image", "course", "place", "text", "rating", "order"]
+    template_name = "customer_education/testimonial/update.html"       
+
+    def get_redirect_url(self):
+        try:
+            return reverse_lazy('customer:update_student_testimonial', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_redirect_url of UpdateStudentTestimonialView of customer app: {e}")
+            return self.redirect_url
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        context["ratings"] = list(range(1,6))
+
+        context["programs"] = Program.objects.filter(company = self.company).order_by("name")
+        context["courses"] = Course.objects.filter(program = self.object.course.program).order_by("name")
+        context["states"] = UniqueState.objects.all().order_by('name')
+        context["districts"] = UniqueDistrict.objects.filter(state = self.object.place.state).order_by('name')
+        context["places"] = UniquePlace.objects.filter(district = self.object.place.district).order_by('name')
+        
+        return context    
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+
+            name = request.POST.get("name")
+            image = request.FILES.get("image")
+            course_slug = request.POST.get("course")
+            place_slug = request.POST.get("place")
+            text = request.POST.get("testimonial")
+            rating = request.POST.get("rating", 5)
+            order = request.POST.get("order", 0)
+
+            name = name.strip() if name else None
+            course_slug = course_slug.strip() if course_slug else None
+            place_slug = place_slug.strip() if place_slug else None
+            text = text.strip() if text else None
+            rating = rating.strip() if rating else None
+            order = order.strip() if order else None
+
+            required_fields = {
+                "Name": name,
+                "Image": image,
+                "Course": course_slug,
+                "Place": place_slug,
+                "Testimonal Text": text,
+                "Rating": rating,
+                "Order": order 
+            }
+
+            for key, value in required_fields.items():
+                if key == "Image" and self.object.image:
+                    continue
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            course = self.get_course(course_slug)
+            place = self.get_place(place_slug)
+
+            if not course or not place:
+                invalid_msg = ""
+                if not course:
+                    invalid_msg = "Invalid Course"
+                else:
+                    invalid_msg = "Invalid Place"
+
+                messages.error(request, invalid_msg)
+                return redirect(self.get_redirect_url())
+            
+            similar_client = self.model.objects.filter(
+                company = self.object.company, name = name, course = course, place = place
+                ).first()
+
+            if similar_client:
+                dublicate_error_msg = ""
+
+                if similar_client.slug == self.object.slug:
+                    if not (image or order or text or rating):
+                        dublicate_error_msg = "No changes detected"
+                else:
+                    dublicate_error_msg = "Similar testimonial already exists"
+
+                if dublicate_error_msg:
+                    messages.warning(request, dublicate_error_msg)
+                    return redirect(self.get_redirect_url())
+            
+            self.object.name = name
+            self.object.course = course
+            self.object.place = place
+            self.object.text = text
+            self.object.rating = rating
+            self.object.order = order
+
+            if image:
+                self.object.image = image
+
+            self.object.save()
+
+            messages.success(request, "Success! Testimonial Updated")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Invalid Testimonial")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateStudentTestimonialView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+    
+
+class DeleteStudentTestimonialView(BaseStudentTestimonialView, View):
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(self.model, slug = self.kwargs.get(self.slug_url_kwarg))
+            self.object.delete()
+            messages.success(request, "Success! Testimonial Deleted")
+            return redirect(self.success_url)
+
+        except Http404:
+            messages.error(request, "Invalid Testimonial")
+
+        except Exception as e:
+            logger.exception(f"Error in delete function of DeleteStudentTestimonialView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+
+
+# Clients
+class BaseClientView(BaseCustomerView):
+    model = Client
+    success_url = redirect_url = reverse_lazy('customer:clients')
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["client_page"] = True
+
+        return context
+    
+
+class AddClientView(BaseClientView, CreateView):    
+    template_name = "customer_clients/add.html"
+    fields = ["company", "name", "image", "order"]
+    success_url = redirect_url = reverse_lazy('customer:add_clients')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["add_client_page"] = True        
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_company()
+
+            if company.type.name == "Education":
+                obj = "Corporate Partner"
+            else:
+                obj = "Client"
+
+            name = request.POST.get("name")
+            image = request.FILES.get("image")
+            order = request.POST.get("order", 0)
+
+            name = name.strip() if name else None
+
+            if not name or not image:
+                message = "Failed! Name is required"
+                if name:
+                    message = "Failed! Image is required"
+                
+                messages.error(request, message)
+                return redirect(self.redirect_url)
+            
+            if self.model.objects.filter(company = company, name = name).exists():                
+                messages.warning(request, f"Similar {obj} already exists")
+                return redirect(self.redirect_url)
+            
+            self.model.objects.create(company = company, name = name, image = image, order = order)
+            messages.success(request, f"Success! {obj} Created")
+            return redirect(self.success_url)
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddClientView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+            return redirect(self.redirect_url)
+
+
+class ClientListView(BaseClientView, ListView):
+    template_name = "customer_clients/list.html"
+    context_object_name = "clients"
+    queryset = Client.objects.none()
+    
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company).order_by("order")
+        
+        except Exception as e:
+            logger.exception(f"Error in get_queryset of ClientListView in customer app: {e}")
+            return self.queryset
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["list_client_page"] = True
+
+        return context
+
+
+class UpdateClientView(BaseClientView, UpdateView):    
+    fields = ["name", "image", "order"]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+
+            if self.object.company.type.name == "Education":
+                obj = "Corporate Partner"
+            else:
+                obj = "Client"
+
+            name = request.POST.get("name")
+            image = request.FILES.get("image")
+            order = request.POST.get("order", 0)
+
+            name = name.strip() if name else None
+
+            if not name:
+                messages.error(request, "Failed! Name is required")
+                return redirect(self.redirect_url)
+
+            if not image and not self.object.image:
+                messages.error(request, "Failed! Image is required")
+                return redirect(self.redirect_url)     
+            
+            similar_client = self.model.objects.filter(company = self.object.company, name = name).first()
+
+            if similar_client:
+                dublicate_error_msg = ""
+
+                if similar_client.slug == self.object.slug:
+                    if not image and not order:
+                        dublicate_error_msg = "No changes detected"
+                else:
+                    dublicate_error_msg = f"Similar {obj} already exists"
+
+                if dublicate_error_msg:
+                    messages.warning(request, dublicate_error_msg)
+                    return redirect(self.redirect_url)
+            
+            self.object.name = name
+            self.object.order = order
+
+            if image:
+                self.object.image = image
+
+            self.object.save()
+
+            messages.success(request, f"Success! {obj} Updated")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, f"Invalid {obj}")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateClientView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+        
+
+class DeleteClientView(BaseClientView, View):
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(self.model, slug = self.kwargs.get(self.slug_url_kwarg))
+            self.object.delete()
+            messages.success(request, "Success! Client Deleted")
+            return redirect(self.success_url)
+
+        except Http404:
+            messages.error(request, "Invalid client")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteClientView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.redirect_url)
+    
+
+# General Testimonial
+class BaseTestimonialView(BaseCustomerView):
+    model = Testimonial
+    success_url = redirect_url = reverse_lazy('customer:testimonials')
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["testimonial_page"] = context["company_page"] = True
+
+        return context    
+        
+    def get_place(self, place_slug):
+        try:
+            return get_object_or_404(UniquePlace, slug = place_slug)
+        except Http404:
+            return None
+    
+
+class AddTestimonialView(BaseTestimonialView, CreateView):    
+    template_name = "customer_testimonials/add.html"
+    fields = ["company", "name", "image", "company", "place", "text", "rating", "order"]
+    success_url = redirect_url = reverse_lazy('customer:add_testimonials')    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        context["add_testimonial_page"] = True
+        context["ratings"] = list(range(1,6))
+        context["states"] = UniqueState.objects.all().order_by('name')
+        
+        return context
+
+    def post(self, request, *args, **kwargs):
+        try:
+            company = self.get_company()
+
+            name = request.POST.get("name")
+            image = request.FILES.get("image")
+            client_company = request.POST.get("company")
+            place_slug = request.POST.get("place")
+            text = request.POST.get("testimonial")
+            rating = request.POST.get("rating", 5)
+            order = request.POST.get("order", 0)
+
+            name = name.strip() if name else None
+            client_company = client_company.strip() if client_company else None
+            place_slug = place_slug.strip() if place_slug else None
+            text = text.strip() if text else None
+            rating = rating.strip() if rating else None
+            order = order.strip() if order else None
+
+            required_fields = {
+                "Name": name,
+                "Image": image,
+                "Company": client_company,
+                "Place": place_slug,
+                "Testimonal Text": text,
+                "Rating": rating,
+                "Order": order 
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.redirect_url)
+                
+            place = self.get_place(place_slug)
+
+            if not place:                
+                messages.error(request, "Invalid Place")
+                return redirect(self.redirect_url)
+                        
+            if self.model.objects.filter(
+                company = company, name = name, client_company = client_company, place = place
+                ).exists():
+
+                messages.warning(request, "Similar testimonial already exists")
+                return redirect(self.redirect_url)
+            
+            self.model.objects.create(
+                company = company, name = name, image = image, client_company = client_company, place = place,
+                text = text, rating = rating, order = order
+            )
+
+            messages.success(request, "Success! Testimonial Created")
+            return redirect(self.success_url)
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddTestimonialView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+            return redirect(self.redirect_url)
+
+
+class TestimonialListView(BaseTestimonialView, ListView):
+    template_name = "customer_testimonials/list.html"
+    context_object_name = "testimonials"
+    queryset = Testimonial.objects.none()
+    
+    def get_queryset(self):
+        try:
+            company = self.get_company()
+            return self.model.objects.filter(company = company).order_by("order")        
+        except Exception as e:
+            logger.exception(f"Error in get_queryset function of TestimonialListView in customer app: {e}")
+            return self.queryset
+    
+
+class UpdateTestimonialView(BaseTestimonialView, UpdateView):    
+    fields = ["name", "image", "company", "place", "text", "rating", "order"]
+    template_name = "customer_testimonials/update.html"
+    slug_url_kwarg = 'slug'
+
+    def get_redirect_url(self):
+        try:
+            return reverse_lazy('customer:update_testimonial', kwargs = {"slug": self.kwargs.get(self.slug_url_kwarg)})
+        except Exception as e:
+            logger.exception(f"Error in get_redirect_url of UpdateTestimonialView of customer app: {e}")
+            return self.redirect_url
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        context["ratings"] = list(range(1,6))
+        
+        context["states"] = UniqueState.objects.all().order_by('name')
+        context["districts"] = UniqueDistrict.objects.filter(state = self.object.place.state).order_by('name')
+        context["places"] = UniquePlace.objects.filter(district = self.object.place.district).order_by('name')
+        
+        return context    
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+
+            name = request.POST.get("name")
+            image = request.FILES.get("image")
+            client_company = request.POST.get("company")
+            place_slug = request.POST.get("place")
+            text = request.POST.get("testimonial")
+            rating = request.POST.get("rating", 5)
+            order = request.POST.get("order", 0)
+
+            name = name.strip() if name else None
+            client_company = client_company.strip() if client_company else None
+            place_slug = place_slug.strip() if place_slug else None
+            text = text.strip() if text else None
+            rating = rating.strip() if rating else None
+            order = order.strip() if order else None
+
+            required_fields = {
+                "Name": name,
+                "Image": image,
+                "Company": client_company,
+                "Place": place_slug,
+                "Testimonal Text": text,
+                "Rating": rating,
+                "Order": order 
+            }
+
+            for key, value in required_fields.items():
+                if key == "Image" and self.object.image:
+                    continue
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            place = self.get_place(place_slug)
+
+            if not place:
+                messages.error(request, "Invalid Place")
+                return redirect(self.get_redirect_url())
+            
+            similar_client = self.model.objects.filter(
+                company = self.object.company, name = name, client_company = client_company, place = place
+                ).first()
+
+            if similar_client:
+                dublicate_error_msg = ""
+
+                if similar_client.slug == self.object.slug:
+                    if not (image or order or text or rating):
+                        dublicate_error_msg = "No changes detected"
+                else:
+                    dublicate_error_msg = "Similar testimonial already exists"
+
+                if dublicate_error_msg:
+                    messages.warning(request, dublicate_error_msg)
+                    return redirect(self.get_redirect_url())
+            
+            self.object.name = name
+            self.object.client_company = client_company
+            self.object.place = place
+            self.object.text = text
+            self.object.rating = rating
+            self.object.order = order
+
+            if image:
+                self.object.image = image
+
+            self.object.save()
+
+            messages.success(request, "Success! Testimonial Updated")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Invalid Testimonial")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateTestimonialView of customer app: {e}")
+            messages.error(request, "Failed! An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+    
+
+class DeleteTestimonialView(BaseTestimonialView, View):
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = get_object_or_404(self.model, slug = self.kwargs.get(self.slug_url_kwarg))
+            self.object.delete()
+            messages.success(request, "Success! Testimonial Deleted")
+            return redirect(self.success_url)
+
+        except Http404:
+            messages.error(request, "Invalid Testimonial")
+
+        except Exception as e:
+            logger.exception(f"Error in delete function of DeleteTestimonialView of customer app: {e}")
+            messages.error(request, "An unexpected error occurred")
 
         return redirect(self.redirect_url)

@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@)o#t+@k&)a(1boyz2x(ol!(x05k=$ima-fsy=bv3qs#^x@+3%'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -49,6 +49,9 @@ INSTALLED_APPS = [
 
     # dependencies
     'rest_framework',
+    'ckeditor',
+    'crispy_forms',
+    'crispy_bootstrap5',
 
     # apps
     'base',
@@ -64,6 +67,7 @@ INSTALLED_APPS = [
     'service',
     'registration',
     'custom_pages',
+    'blog',
 
     # apis
     'company_api',
@@ -106,9 +110,9 @@ WSGI_APPLICATION = 'bzindia.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'bzindia',
-        'USER': 'root',
-        'PASSWORD': '123456',
+        'NAME': os.getenv('DATABASE_NAME'),
+        'USER': os.getenv('DATABASE_USER'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': {
@@ -191,9 +195,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'  # Replace with your SMTP server
 EMAIL_PORT = 587  # You can also try using port 465 with SSL/TLS
 EMAIL_USE_TLS = True  # Use TLS (True/False)
-EMAIL_HOST_USER = 'w3digitalpmna@gmail.com'  # Replace with your email
-EMAIL_HOST_PASSWORD = 'kznq nfik tmpc fqlj'  # Replace with your email password
-
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # Replace with your email
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Replace with your email password
 
 # Celery configuration
 CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Replace with your Redis URL
@@ -212,4 +215,25 @@ CACHES = {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
     }
+}
+
+# Crispy Forms
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+# Ckedits
+CKEDITOR_UPLOAD_PATH = "uploads/"
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'Custom',
+        'toolbar_Custom': [
+            ['Format', 'Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript'],
+            ['NumberedList', 'BulletedList', 'Blockquote'],
+            ['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
+            ['Link', 'Unlink', 'Anchor'],
+            ['Table', 'HorizontalRule', 'SpecialChar'],
+            ['Source'],
+        ],
+        'allowedContent': True,  # This allows all content, including tables
+    },
 }

@@ -1,0 +1,16 @@
+Saudi Arabia
+
+# top_left = (32.2, 34.4)
+# bottom_right = (16.3, 55.7)
+
+Stage 1
+# top_left = (32.2, 34.4)
+# bottom_right = (26.9, 55.7)
+
+Stage 2
+# top_left = (26.9, 34.4)
+# bottom_right = (21.6, 55.7)
+
+Stage 3
+# top_left = (21.6, 34.4)
+# bottom_right = (16.3, 55.7)

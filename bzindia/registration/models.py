@@ -36,6 +36,10 @@ class RegistrationType(models.Model):
         db_table = "registration_type"
         ordering = ["name"]
 
+    @property
+    def sub_categories(self):
+        return RegistrationSubType.objects.filter(type = self).values("name", "slug")
+
 
 class RegistrationSubType(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
@@ -113,6 +117,7 @@ class Faq(models.Model):
 
     question = models.TextField()
     answer = models.TextField()
+    dynamic_place_rendering = models.BooleanField(default=False)
 
     slug = models.SlugField(null=True, blank=True, max_length=500)
 

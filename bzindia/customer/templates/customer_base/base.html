@@ -399,6 +399,17 @@
 							{% if company.type.name == "Education" %}
 							{% include "menu/education_menu.html" %}							
 							{% endif %}
+
+							<li>
+								<a href="#" {% if client_page %}class="active subdrop"{% endif %}><i class="fa fa-briefcase"></i> <span> {% if company.type.name == "Education" %}Corporate Partners{% else %}Clients{% endif %}</span>
+									<span class="menu-arrow"></span>
+								</a>
+								<ul class="sub-menus {% if client_page %}d-block{% endif %}">
+									<li><a href="{% url 'customer:clients' %}" {% if list_client_page %}class="active"{% endif %}>All {% if company.type.name == "Education" %}Corporate Partners{% else %}Clients{% endif %}</a></li>
+									<li><a {% if add_client_page %}class="active"{% endif %} href="{% url 'customer:add_clients' %}" >Add {% if company.type.name == "Education" %}Corporate Partners{% else %}Clients{% endif %}</a></li>									
+								</ul>
+							</li>
+
 							<li> 
 								<a href="settings.html"><i class="feather-settings"></i> <span>Settings</span></a>
 							</li>

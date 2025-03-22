@@ -3,9 +3,31 @@ from django.http import JsonResponse
 from django.views.generic import View
 import logging
 
-from .models import SubCategory, Service
+from .models import SubCategory, Category, Service
 
 logger = logging.getLogger(__name__)
+
+class GetCategoriesView(View):
+    model = Category
+
+    def get(self, request, *args, **kwargs):
+        try:
+            if request.headers.get('x-requested-with') != "XMLHttpRequest":
+                return JsonResponse({"status": "failed", "error": "Method not allowed"}, status=405)    
+            
+            company_slug = request.GET.get("company_slug")
+
+            if not company_slug:
+                return JsonResponse({"status": "failed", "error": "Bad Request"}, status=400)
+            
+            categories = list(self.model.objects.filter(company__slug = company_slug).values("name", "slug"))
+
+            return JsonResponse({"status": "success", "categories": categories}, status=200)
+
+        except Exception as e:
+            logger.exception(f"Error in get function of GetCategoriesView in service app: {e}")
+            return JsonResponse({"status": "failed", "error": "Some unexpected error occurred."}, status=500)
+
 
 class GetSubCategoriesView(View):
     model = SubCategory
@@ -27,7 +49,7 @@ class GetSubCategoriesView(View):
 
         except Exception as e:
             logger.exception(f"Error in get function of GetSubCategoriesView in service app: {e}")
-            return JsonResponse({"status": "failed", "error": "Some unexpected error occured."}, status=500)
+            return JsonResponse({"status": "failed", "error": "Some unexpected error occurred."}, status=500)
 
 
 class GetServicesView(View):
@@ -50,4 +72,4 @@ class GetServicesView(View):
 
         except Exception as e:
             logger.exception(f"Error in get function of GetServicesView in service app: {e}")
-            return JsonResponse({"status": "failed", "error": "Some unexpected error occured."}, status=500)
+            return JsonResponse({"status": "failed", "error": "Some unexpected error occurred."}, status=500)

@@ -25,10 +25,11 @@
                         {% endif %}
 					</div>
                     {% if page %}
-                    <h4>Orginal Content:</h4>
+                    <h4>Content</h4>
                     <div>{{page.text|safe}}</div>
-                    <h4>Rendered Content:</h4>
-                    <div>{{page.get_content|safe}}</div>
+                    <br>
+                    <h4>Subtitles</h4>
+                    <p>{{page.subtitles}}</p>
                     {% endif %}
 				</div>
 			</div>							

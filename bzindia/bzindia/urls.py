@@ -34,6 +34,7 @@ urlpatterns = [
     path('service/', include('service.urls', namespace="service")),
     path('education/', include('educational.urls', namespace="education")),
     path('registration/', include('registration.urls', namespace="registration")),
+    path('blog/', include('blog.urls', namespace="blog")),
 
     # api-urls
     path('company_api/', include('company_api.urls', namespace="company_api")),

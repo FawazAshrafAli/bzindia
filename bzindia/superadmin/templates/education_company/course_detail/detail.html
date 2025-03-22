@@ -45,6 +45,18 @@
                 <div>{{course_detail.description|safe}}</div>
             </div>
         </div>
+
+		<div class="card">
+            <div class="card-body">
+                <h4>Meta Tags</h4>
+                <div>{% if course_detail.get_meta_tags %}{{course_detail.get_meta_tags}}{% else %}Not Provided{% endif %}</div>
+				<br>
+				<h4>Meta Description</h4>
+                <div>{% if course_detail.meta_description %}{{course_detail.meta_description}}{% else %}Not Provided{% endif %}</div>
+            </div>
+        </div>
+
+		{% if not course_detail.hide_features %}
 		<div class="card">
             <div class="card-body">
 				<h4>Features</h4>
@@ -55,6 +67,9 @@
 				</ul>
 			</div>
 		</div>
+		{% endif %}
+
+		{% if not course_detail.hide_vertical_tab %}
 		<div class="card">
 			<div class="card-body">
 				<h4>Vertical Tab</h4>
@@ -99,6 +114,9 @@
 				</table>
 			</div>
 		</div>
+		{% endif %}
+
+		{% if not course_detail.hide_horizontal_tab %}
 		<div class="card">
 			<div class="card-body">
 				<h4>Horizontal Tab</h4>
@@ -139,6 +157,9 @@
 				</table>
 			</div>
 		</div>
+		{% endif %}
+
+		{% if not course_detail.hide_table %}
 		<div class="card">
 			<div class="card-body">
 				<h4>Table</h4>
@@ -165,6 +186,9 @@
 				</table>
 			</div>
 		</div>
+		{% endif %}
+
+		{% if not course_detail.hide_bullets %}
 		<div class="card">
             <div class="card-body">
 				<h4>Bullet Points</h4>
@@ -178,6 +202,9 @@
 				</ul>
 			</div>
 		</div>
+		{% endif %}
+
+		{% if not course_detail.hide_tags %}
 		<div class="card">
             <div class="card-body">
 				<h4>Tags</h4>
@@ -191,6 +218,9 @@
 				</div>
 			</div>
 		</div>
+		{% endif %}
+
+		{% if not course_detail.hide_timeline %}
 		<div class="card">
             <div class="card-body">
 				<h4>Timline</h4>
@@ -209,6 +239,7 @@
 				</div>
 			</div>
 		</div>
+		{% endif %}
 	</div>
 	
 

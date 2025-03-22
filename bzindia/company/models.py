@@ -26,6 +26,40 @@ class CompanyType(models.Model):
 
     def __str__(self):
         return self.name
+    
+    @property
+    def companies(self):
+        return Company.objects.filter(type = self).values("name", "slug").order_by("name")
+    
+    @property
+    def categories(self):
+        from educational.models import Program
+        from product.models import Category as ProductCategory
+        from registration.models import RegistrationType
+        from service.models import Category as ServiceCategory
+
+        current_type = self.name
+        Category = None
+
+        if current_type == "Education":
+            Category = Program
+
+        elif current_type == "Product":
+            Category = ProductCategory
+
+        elif current_type == "Registration":
+            Category = RegistrationType
+
+        elif current_type == "Service":
+            Category = ServiceCategory
+
+        if Category:
+            categories = Category.objects.all().order_by("name")
+
+            return [{"name": category.name, "slug": category.slug, "sub_categories": category.sub_categories} for category in categories]
+
+        return None
+    
 
 class Company(models.Model):
     name = models.CharField(max_length=150)
@@ -56,6 +90,33 @@ class Company(models.Model):
     class Meta:
         db_table = "company"
         ordering = ["name"]
+
+    @property
+    def categories(self):
+        from educational.models import Program
+        from product.models import Category as ProductCategory
+        from registration.models import RegistrationType
+        from service.models import Category as ServiceCategory
+
+        company_type = self.type.name
+        Category = None
+
+        if company_type == "Education":
+            Category = Program
+
+        elif company_type == "Product":
+            Category = ProductCategory
+
+        elif company_type == "Registration":
+            Category = RegistrationType
+
+        elif company_type == "Service":
+            Category = ServiceCategory
+
+        if Category:
+            return Category.objects.filter(company = self).values("name", "slug").order_by("name")
+
+        return None
 
 
 class Client(models.Model):
@@ -141,52 +202,85 @@ class Testimonial(models.Model):
         return None
     
 
-class MultiPage(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="multi_page_company")
+# class MultiPage(models.Model):
+#     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="multi_page_company")
 
-    text = models.TextField()
+#     subtitles = models.TextField(blank=True, null=True)
+#     text = models.TextField()
 
+#     slug = models.SlugField(null=True, blank=True, max_length=500)
+
+#     created = models.DateTimeField(auto_now_add=True)
+#     updated = models.DateTimeField(auto_now=True)
+
+#     def save(self, *args, **kwargs):
+#         if not self.slug:
+#             base_slug = slugify(self.company.name)
+
+#             slug = base_slug
+#             count = 1
+
+#             while MultiPage.objects.filter(slug = slug).exists():
+#                 slug = f"{base_slug}-{count}"
+#                 count += 1
+
+#             self.slug = slug
+
+#         super().save(*args, **kwargs)
+
+#     def __str__(self):
+#         return self.company.name
+
+#     class Meta:
+#         db_table = "multipages"
+#         ordering = ["created"]
+
+#     @property
+#     def get_content(self):
+#         if self.text:
+#             content = self.text
+
+#             replacing_data = {
+#                 'state_name': "Kerala",
+#                 'district_name': "Malappuram",
+#                 "block_name": "Perinthalmanna",                
+#             }
+
+#             for key, value in replacing_data.items():
+#                 content = content.replace(key, value)
+            
+#             return content
+        
+        return None
+    
+
+class MetaTag(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+
+    name = models.CharField(max_length=150)
+    
     slug = models.SlugField(null=True, blank=True, max_length=500)
 
     created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+    updated =models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            base_slug = slugify(self.company.name)
+        base_slug = slugify(f"{self.company}-{self.tag}")
 
-            slug = base_slug
-            count = 1
+        slug = base_slug
+        count = 1
 
-            while MultiPage.objects.filter(slug = slug).exists():
-                slug = f"{base_slug}-{count}"
-                count += 1
+        while MetaTag.objects.filter(slug = slug).exists():
+            slug = f"{base_slug}-{count}"
+            count += 1
 
-            self.slug = slug
+        self.slug = slug
 
         super().save(*args, **kwargs)
 
-    def __str__(self):
-        return self.company.name
-
     class Meta:
-        db_table = "multipages"
-        ordering = ["created"]
+        db_table = "meta_tags"
+        ordering = ["name"]
 
-    @property
-    def get_content(self):
-        if self.text:
-            content = self.text
-
-            replacing_data = {
-                'state_name': "Kerala",
-                'district_name': "Malappuram",
-                "block_name": "Perinthalmanna",                
-            }
-
-            for key, value in replacing_data.items():
-                content = content.replace(key, value)
-            
-            return content
-        
-        return None
+    def __str__(self):
+        return f"{self.company}-{self.tag}"

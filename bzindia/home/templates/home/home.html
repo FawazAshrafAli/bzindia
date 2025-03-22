@@ -1,7 +1,5 @@
-{% extends "base/base.html" %}
+{% extends "base.html" %}
 {% load static %}
-
-{% block title %}{% endblock title %}
 
 {% block content %}
 <!--banner-slider start -->
@@ -12,7 +10,7 @@
   <div class="banner-sech-bar">
     <div class="banner-serch-bar-cntnt">
       <h2>SEARCH YOUR NEEDS</h2>
-      <p>Find Best Companies for your Service or Products</p>
+      <p style="width:80%; margin:0 auto; padding:0px 0px 20px 0px;">Find the best companies in India for your service or product needs. Explore our curated business directory, focusing on one trusted company that delivers top-notch services and products nationwide.</p>
       <form class="search_bx mt-5" role="search">
         <input class="form-control " type="search" placeholder="Search " aria-label="Search">
         <button class="srch-btn" type="submit"><i class="fas fa-search"></i></button>
@@ -28,6 +26,7 @@
   <!--join venture-slider-section start  -->
 
   <section>
+    <div class="container">
     <div class="hm-pge-join-vntr-slider">
       <div class="join-vntr-sldr-bx" data-aos="fade-down">
         <h2>OUR JOIN VENTURES
@@ -44,11 +43,12 @@
                 <img src="{{company.logo.url}}" alt="">
               </a>
             </div>
-          </div>          
+          </div>
           {% endif %}
-          {% endfor %}
+          {% endfor %}          
         </div>
       </div>
+    </div>
     </div>
   </section>
 
@@ -57,107 +57,84 @@
 
 
   
-  <section class="content_area001" style="padding: 0px 0px 40px 0px; margin-bottom: 40px; border-bottom: 1px solid #ddd;">
+  <section class="content_area001" style="padding: 0px 0px 40px 0px; margin-bottom: 0px; border-bottom: 1px solid #ddd;">
     <div class="container">
  
 
       <h3>BZindia Group of Joint Ventures</h3>
-        <span class="line"></span>
+        <p class="flip"><span class="deg1"></span><span class="deg2"></span><span class="deg3"></span></p>
 
       <div class="row">
         
         <div class="col-md-12 col-sm-12 col-xs-12">
         <div id="verticalTab">
           <ul class="resp-tabs-list">
-            {% for company in companies %}
-            <li>{{company.name}}</li>
+            {% for company in companies|slice:":3" %}
+          <li>{{company.name}}</li>
           {% endfor %}
+          <!-- <li>IPCS Automation</li>
+          <li>Leads Constructions</li> -->
+
            </ul>
           <div class="resp-tabs-container">
-            
-            {% for company in companies %}
-            <div>
-              <h4 style="padding-bottom: 10px;" id="company-heading">{{company.name}}</h4>
-              <p class="row">
-                <span class="col-md-2 home_company_list"><img style="width: 100%;" src="{% if company.logo.url %} {{company.logo.url}} {% endif %}"></span>    
-                <span class="col-md-10">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nibh urna, euismod ut ornare non, volutpat vel tortor. Integer laoreet placerat suscipit. Sed sodales scelerisque commodo. Nam porta cursus lectus. Proin nunc erat, gravida a facilisis quis, ornare id lectus. Proin consectetur nibh quis urna gravida mollis.
-                </span>   
-              </p>
+          
+          {% for company in companies|slice:":3" %}
+          <div>
+            <h4 style="padding-bottom: 10px;">{{company.name}}</h4>
+          <p class="row">
+        <span class="col-md-2 home_company_list"><img style="width: 100%;" src="{% if company.logo %}{{company.logo.url}}{% else %}#{% endif %}" alt=""></span>    
+         <span class="col-md-10">
+          {{company.description}}
+         </span>   
+        </p>
  
-              <ul class="row list-default" style="padding:10px 0 20px 0;">
-                {% if company.type.name == "Service" %}
-                {% for category in service_categories %}
-                {% if category.company == company %}
-                <li class="col col-md-6 col-12">{{category.name}}</li>
-                {% endif %}
-                {% endfor %}
+        <ul class="row list-default" style="padding:10px 0 20px 0;">
+          {% for category in company.categories %}
+          <li class="col col-md-6 col-12"><a href="#">{{category.name}}</a></li>
+          {% endfor %}
+          <!-- <li class="col col-md-6 col-12"><a href="#">Cancelled Cheque of firm or passbook first page</a> </li>
+          <li class="col col-md-6 col-12"><a href="#">Photo of all Directors.</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Name of the business</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Nature of business</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Product deals with</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Shop rent agreement</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Building tax receipt</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Electricity bill</a></li>
+          <li class="col col-md-6 col-12"><a href="#">DIN number of all Directors</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Certificate of incorporation</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Board Resolution</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Mobile no and Email id office and all the directors</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Digital Signature</a></li> -->
+          </ul>
 
-                {% elif company.type.name == "Product" %}
-                {% for category in product_categories %}
-                {% if category.company == company %}
-                <li class="col col-md-6 col-12">{{category.name}}</li>
-                {% endif %}
-                {% endfor %}
-
-                {% elif company.type.name == "Education" %}
-                {% for program in course_programs %}
-                {% if program.company == company %}
-                <li class="col col-md-6 col-12">{{program.name}}</li>
-                {% endif %}
-                {% endfor %}
-
-                {% elif company.type.name == "Registration" %}
-                {% for type in registration_types %}
-                {% if type.company == company %}
-                <li class="col col-md-6 col-12">{{type.name}}</li>
-                {% endif %}
-                {% endfor %}
-
-                {% endif %}
-                {% comment %} <li class="col col-md-6 col-12">Cancelled Cheque of firm or passbook first page </li>
-                <li class="col col-md-6 col-12">Photo of all Directors.</li>
-                <li class="col col-md-6 col-12">Name of the business</li>
-                <li class="col col-md-6 col-12">Nature of business</li>
-                <li class="col col-md-6 col-12">Product deals with</li>
-                <li class="col col-md-6 col-12">Shop rent agreement</li>
-                <li class="col col-md-6 col-12">Building tax receipt</li>
-                <li class="col col-md-6 col-12">Electricity bill</li>
-                <li class="col col-md-6 col-12">DIN number of all Directors</li>
-                <li class="col col-md-6 col-12">Certificate of incorporation</li>
-                <li class="col col-md-6 col-12">Board Resolution</li>
-                <li class="col col-md-6 col-12">Mobile no and Email id office and all the directors</li>
-                <li class="col col-md-6 col-12">Digital Signature</li> {% endcomment %}
-              </ul>
-
-              <a href="{% url 'company:company_home' company.slug %}" class="primary_button">Read More</a>
+            <a href="#" class="primary_button">Read More</a>
           </div>
           {% endfor %}
 
-        {% comment %} <div>
-          <h4 style="padding-bottom: 10px;">IPCS - Automation Company in India</h4>
+          {% comment %} <div>
+            <h4 style="padding-bottom: 10px;">IPCS - Automation Company in India</h4>
           <p class="row">
-            <span class="col-md-2 home_company_list"><img style="width: 100%;" src="{% static 'images/brets-logo-english-course-training-institutes-india.webp' %}"></span>    
-            <span class="col-md-10">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nibh urna, euismod ut ornare non, volutpat vel tortor. Integer laoreet placerat suscipit. Sed sodales scelerisque commodo. Nam porta cursus lectus. Proin nunc erat, gravida a facilisis quis, ornare id lectus. Proin consectetur nibh quis urna gravida mollis.
-            </span>   
-          </p>
+        <span class="col-md-2 home_company_list"><img style="width: 100%;" src="{% static 'images/brets-logo-english-course-training-institutes-india.webp' %}" alt=""></span>    
+         <span class="col-md-10">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nibh urna, euismod ut ornare non, volutpat vel tortor. Integer laoreet placerat suscipit. Sed sodales scelerisque commodo. Nam porta cursus lectus. Proin nunc erat, gravida a facilisis quis, ornare id lectus. Proin consectetur nibh quis urna gravida mollis.
+         </span>   
+        </p>
  
         <ul class="row list-default" style="padding:10px 0 20px 0;">
-          <li class="col col-md-6 col-12">passport all Directors</li>
-          <li class="col col-md-6 col-12">Cancelled Cheque of firm or passbook first page </li>
-          <li class="col col-md-6 col-12">Photo of all Directors.</li>
-          <li class="col col-md-6 col-12">Name of the business</li>
-          <li class="col col-md-6 col-12">Nature of business</li>
-          <li class="col col-md-6 col-12">Product deals with</li>
-          <li class="col col-md-6 col-12">Shop rent agreement</li>
-          <li class="col col-md-6 col-12">Building tax receipt</li>
-          <li class="col col-md-6 col-12">Electricity bill</li>
-          <li class="col col-md-6 col-12">DIN number of all Directors</li>
-          <li class="col col-md-6 col-12">Certificate of incorporation</li>
-          <li class="col col-md-6 col-12">Board Resolution</li>
-          <li class="col col-md-6 col-12">Mobile no and Email id office and all the directors</li>
-          <li class="col col-md-6 col-12">Digital Signature</li>
+          <li class="col col-md-6 col-12"><a href="#">Passport all Directors</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Cancelled Cheque of firm or passbook first page</a> </li>
+          <li class="col col-md-6 col-12"><a href="#">Photo of all Directors.</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Name of the business</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Nature of business</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Product deals with</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Shop rent agreement</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Building tax receipt</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Electricity bill</a></li>
+          <li class="col col-md-6 col-12"><a href="#">DIN number of all Directors</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Certificate of incorporation</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Board Resolution</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Mobile no and Email id office and all the directors</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Digital Signature</a></li>
           </ul>
 
             <a href="#" class="primary_button">Read More</a>
@@ -166,31 +143,32 @@
           <div>
             <h4 style="padding-bottom: 10px;">Leads - Construction Company in India</h4>
           <p class="row">
-        <span class="col-md-2 home_company_list"><img style="width: 100%;" src="{% static 'images/brets-logo-english-course-training-institutes-india.webp' %}"></span>    
+        <span class="col-md-2 home_company_list"><img style="width: 100%;" src="{% static 'images/brets-logo-english-course-training-institutes-india.webp' %}" alt=""></span>    
          <span class="col-md-10">
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nibh urna, euismod ut ornare non, volutpat vel tortor. Integer laoreet placerat suscipit. Sed sodales scelerisque commodo. Nam porta cursus lectus. Proin nunc erat, gravida a facilisis quis, ornare id lectus. Proin consectetur nibh quis urna gravida mollis.
          </span>   
         </p>
  
         <ul class="row list-default" style="padding:10px 0 20px 0;">
-          <li class="col col-md-6 col-12">passport all Directors</li>
-          <li class="col col-md-6 col-12">Cancelled Cheque of firm or passbook first page </li>
-          <li class="col col-md-6 col-12">Photo of all Directors.</li>
-          <li class="col col-md-6 col-12">Name of the business</li>
-          <li class="col col-md-6 col-12">Nature of business</li>
-          <li class="col col-md-6 col-12">Product deals with</li>
-          <li class="col col-md-6 col-12">Shop rent agreement</li>
-          <li class="col col-md-6 col-12">Building tax receipt</li>
-          <li class="col col-md-6 col-12">Electricity bill</li>
-          <li class="col col-md-6 col-12">DIN number of all Directors</li>
-          <li class="col col-md-6 col-12">Certificate of incorporation</li>
-          <li class="col col-md-6 col-12">Board Resolution</li>
-          <li class="col col-md-6 col-12">Mobile no and Email id office and all the directors</li>
-          <li class="col col-md-6 col-12">Digital Signature</li>
+          <li class="col col-md-6 col-12"><a href="#">Passport all Directors</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Cancelled Cheque of firm or passbook first page</a> </li>
+          <li class="col col-md-6 col-12"><a href="#">Photo of all Directors.</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Name of the business</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Nature of business</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Product deals with</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Shop rent agreement</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Building tax receipt</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Electricity bill</a></li>
+          <li class="col col-md-6 col-12"><a href="#">DIN number of all Directors</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Certificate of incorporation</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Board Resolution</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Mobile no and Email id office and all the directors</a></li>
+          <li class="col col-md-6 col-12"><a href="#">Digital Signature</a></li>
           </ul>
 
             <a href="#" class="primary_button">Read More</a>
           </div> {% endcomment %}
+          
 
         <div style="clear: both;"></div>
      
@@ -202,165 +180,507 @@
 
 </section>
 
+  
+  <section style="padding-top:50px;">
+  
+  
+  
+    <div class="container">
+   <div class="offerd-service-section" style="margin-bottom: 0px;">
+        <h3>ONLINE REGISTRATION IN INDIA</h3>
+        <p class="flip"><span class="deg1"></span><span class="deg2"></span><span class="deg3"></span></p>
+        <div class="offerd-service">
+          {% for sub_type in registration_sub_types %}
+          <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                       <h5>{{sub_type.name}}</h5>
+                      <span>{{sub_type.type__name}}</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+          {% comment %} <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                        <h5>GST Registration in India</h5>
+                      <span>Brest Accociat 2</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                        <h5>GST Registration in India</h5>
+                      <span>Brest Accociat 3</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                        <h5>GST Registration in India</h5>
+                      <span>Brest Accociat 4</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                        <h5>GST Registration in India</h5>
+                      <span>Brest Accociat 6</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                        <h5>GST Registration in India</h5>
+                      <span>Brest Accociat 6</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
 
-<section>
-  <div class="container">
-    <div class="offerd-service-section">
-      <h2>OFFERED SERVICES IN INDIA</h2>
-      <div class="offerd-service" style="padding-bottom: 30px;">
+          </div>
+          <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                        <h5>GST Registration in India</h5>
+                      <span>Brest Accociat 7</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                        <h5>GST Registration in India</h5>
+                      <span>Brest Accociat 8</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div> {% endcomment %}
+ 
+  
+        </div>
+      </div>
+   </div>
+  
+  
+ 
+    <div class="container">
+<div class="offerd-service-section" style="padding-top:40px;">
+        <h3>OUR COURSES</h3>
+        <p class="flip"><span class="deg1"></span><span class="deg2"></span><span class="deg3"></span></p>
+        <div class="offerd-service">
+          {% for course in courses %}
+          <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% if course.image %}{{course.image.url}}{% else %}{% static 'images/Company-Registration-India.svg' %}{% endif %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                      <h5>{{course.name}}</h5>
+                      <span>{{course.program.name}}</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+          {% comment %} <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                      <h5>Automation Training in India</h5>
+                      <span>Brest Accociat 2</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                      <h5>Automation Training in India</h5>
+                      <span>Brest Accociat 3</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                      <h5>Automation Training in India</h5>
+                      <span>Brest Accociat 4</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                      <h5>Automation Training in India</h5>
+                      <span>Brest Accociat 6</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                      <h5>Automation Training in India</h5>
+                      <span>Brest Accociat 6</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                      <h5>Automation Training in India</h5>
+                      <span>Brest Accociat 7</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div class="offerd-service_padd">
+            <div>
+              <a href="#">
+                <div class="offerd-service-section-clm-cntnt">
+                  <div>
+                    <div class="offerd-srvs-clm-icon">
+                      <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
+                    </div>
+                    <div class="offerd-srvs-clm-text">
+                      <h5>Automation Training in India</h5>
+                      <span>Brest Accociat 8</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div> {% endcomment %}
+ 
+  
+        </div>
+      </div>
+   </div>
+ 
+  
+    <div class="container">
+      <div class="offerd-service-section" style="padding-top:0px;">
+   <h3>ONLINE SERVICES IN INDIA</h3>
+    <p class="flip"><span class="deg1"></span><span class="deg2"></span><span class="deg3"></span></p>
+   
+        <div class="offerd-service" style="padding-bottom: 30px;">
+
+          {% for service in services %}
+          <div style="padding: 5px;">
+            <div class="position_relative img-scale max_size">
+              <figure class="picher_doc">
+                <img src="{% if service.image %}{{service.image.url}}{% else %}{% static 'images/Automation-Training-Institute-in-India.webp' %}{% endif %}" alt="" height="360.5">
+                <div class="opacity-medium bg-extra-black"></div>
+                {% if service.duration %}
+                <div class="date_top">
+                  <span><a href="#" tabindex="0">Duration: {{service.duration.days}} days</a></span>
+                </div>
+                {% endif %}
+                <div class="inner_text">
+                  <h3 class="show_tital">{{service.name}}</h3>
+
+                  <p class="display_block">
+                    {{service.category.name}}
+                  </p>
+                
+                  <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+                </div>
+              </figure>
+            </div>
+          </div>
+          {% endfor %}
+
+  {% comment %} <div style="padding: 5px;">
+  <div class="position_relative img-scale max_size">
+    <figure class="picher_doc">
+      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+      <div class="opacity-medium bg-extra-black"></div>
+      <div class="date_top">
+<span><a href="#" tabindex="0">Office Building</a></span>
+</div>
+      <div class="inner_text">
+        <h3 class="show_tital">AC Repair and Services in India</h3>
+
+        <p class="display_block">
+          A Rich Heritage &amp; Brand History
+        </p>
       
-        {% for service in services %}
-        <div style="padding: 5px;">
-          <div class="position_relative img-scale max_size">
-            <figure class="picher_doc">
-              <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
-              <div class="opacity-medium bg-extra-black"></div>
-              <div class="date_top">
-                <span>{{service.company}}</span>
-              </div>
-              <div class="inner_text">
-                <h3 class="show_tital">{{service.name}}</h3>
+        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+      </div>
+    </figure>
+  </div></div>
 
-                <p class="display_block">
-                  {{service.sub_category.name}}
-                </p>
-              
-                <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+  <div style="padding: 5px;">
+  <div class="position_relative img-scale max_size">
+    <figure class="picher_doc">
+      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+      <div class="opacity-medium bg-extra-black"></div>
+      <div class="date_top">
+<span><a href="#" tabindex="0">Office Building</a></span>
+</div>
+      <div class="inner_text">
+        <h3 class="show_tital">AC Repair and Services in India</h3>
+
+        <p class="display_block">
+          A Rich Heritage &amp; Brand History
+        </p>
+      
+        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+      </div>
+    </figure>
+  </div></div>
+
+  <div style="padding: 5px;">
+  <div class="position_relative img-scale max_size">
+    <figure class="picher_doc">
+      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+      <div class="opacity-medium bg-extra-black"></div>
+      <div class="date_top">
+<span><a href="#" tabindex="0">Office Building</a></span>
+</div>
+      <div class="inner_text">
+        <h3 class="show_tital">AC Repair and Services in India</h3>
+
+        <p class="display_block">
+          A Rich Heritage &amp; Brand History
+        </p>
+      
+        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+      </div>
+    </figure>
+  </div></div>
+
+  <div style="padding: 5px;">
+  <div class="position_relative img-scale max_size">
+    <figure class="picher_doc">
+      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+      <div class="opacity-medium bg-extra-black"></div>
+      <div class="date_top">
+<span><a href="#" tabindex="0">Office Building</a></span>
+</div>
+      <div class="inner_text">
+        <h3 class="show_tital">AC Repair and Services in India</h3>
+
+        <p class="display_block">
+          A Rich Heritage &amp; Brand History
+        </p>
+      
+        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+      </div>
+    </figure>
+  </div></div>
+
+  <div style="padding: 5px;">
+  <div class="position_relative img-scale max_size">
+    <figure class="picher_doc">
+      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+      <div class="opacity-medium bg-extra-black"></div>
+      <div class="date_top">
+<span><a href="#" tabindex="0">Office Building</a></span>
+</div>
+      <div class="inner_text">
+        <h3 class="show_tital">AC Repair and Services in India</h3>
+
+        <p class="display_block">
+          A Rich Heritage &amp; Brand History
+        </p>
+      
+        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+      </div>
+    </figure>
+  </div></div> {% endcomment %}
+ 
+ 
+        </div>
+        <a href="#" class="primary_button" style="margin: 0 auto;">View More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- what-we-do section end -->
+
+  <!-- offered-service section start -->
+
+
+  <section style="background: #f1f1f1; margin-bottom: 20px; padding: 0px 0px 50px 0px;">
+    <div class="container">
+      <div class="row">
+        
+<div class="row" style="padding: 40px 0 0px 0;text-align: center;">
+  <div class="offerd-service-section" style="margin: 0; ">
+      <h3>TOP PRODUCTS</h3>
+      <p class="flip"><span class="deg1"></span><span class="deg2"></span><span class="deg3"></span></p>
+      <div class="offerd-service">
+        
+        {% for product in products|slice:":4" %}
+        <div style="padding: 5px;">
+          <div class="product-grid">
+              <div class="product-image" style="height: 263px;">
+                  <a href="#" class="image">
+                      <img class="pic-1" src="{% if product.image %}{{product.image.url}}{% else %}{% static 'images/img-3.jpg' %}{% endif %}" alt="">
+                      <img class="pic-2" src="{% if product.image %}{{product.image.url}}{% else %}{% static 'images/img-4.jpg' %}{% endif %}" alt="">
+                  </a>
+                  <span class="product-sale-label">sale!</span>
+                  <ul class="social">
+                      <li><a href="#" data-tip="Quick View"><i class="fa fa-eye"></i></a></li>
+                      <li><a href="#" data-tip="Add to wishlist"><i class="fa fa-heart"></i></a></li>
+                  </ul>
+                  <div class="product-rating">
+                    <ul class="client_review">
+                      <span class="fa fa-star checked" aria-hidden="true"></span>
+                      <span class="fa fa-star checked" aria-hidden="true"></span>
+                      <span class="fa fa-star checked" aria-hidden="true"></span>
+                      <span class="fa fa-star" aria-hidden="true"></span>
+                      <span class="fa fa-star" aria-hidden="true"></span>
+                    
+                </ul>
+                      <a class="add-to-cart" href="#"> BUY NOW </a>
+                  </div>
               </div>
-            </figure>
+              <div class="product-content">
+                  <h3 class="title"><a href="#" title="{{product.name}}">{{product.name|slice:"50"}}{% if product.name|length > 50 %}...{% endif %}</a></h3>
+                  <div class="price">&#8377;{{product.price}}</div>
+              </div>
           </div>
         </div>
         {% endfor %}
 
+
 {% comment %} <div style="padding: 5px;">
-<div class="position_relative img-scale max_size">
-  <figure class="picher_doc">
-    <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
-    <div class="opacity-medium bg-extra-black"></div>
-    <div class="date_top">
-      <span>Office Building</span>
-    </div>
-    <div class="inner_text">
-      <h3 class="show_tital">Big bugets for startup</h3>
-
-      <p class="display_block">
-        A Rich Heritage &amp; Brand History
-      </p>
-    
-      <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
-    </div>
-  </figure>
-</div></div>
-
-<div style="padding: 5px;">
-<div class="position_relative img-scale max_size">
-  <figure class="picher_doc">
-    <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
-    <div class="opacity-medium bg-extra-black"></div>
-    <div class="date_top">
-      <span>Office Building</span>
-    </div>
-    <div class="inner_text">
-      <h3 class="show_tital">Big bugets for startup</h3>
-
-      <p class="display_block">
-        A Rich Heritage &amp; Brand History
-      </p>
-    
-      <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
-    </div>
-  </figure>
-</div></div>
-
-<div style="padding: 5px;">
-<div class="position_relative img-scale max_size">
-  <figure class="picher_doc">
-    <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
-    <div class="opacity-medium bg-extra-black"></div>
-    <div class="date_top">
-      <span>Office Building</span>
-    </div>
-    <div class="inner_text">
-      <h3 class="show_tital">Big bugets for startup</h3>
-
-      <p class="display_block">
-        A Rich Heritage &amp; Brand History
-      </p>
-    
-      <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
-    </div>
-  </figure>
-</div></div>
-
-<div style="padding: 5px;">
-<div class="position_relative img-scale max_size">
-  <figure class="picher_doc">
-    <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
-    <div class="opacity-medium bg-extra-black"></div>
-    <div class="date_top">
-      <span>Office Building</span>
-    </div>
-    <div class="inner_text">
-      <h3 class="show_tital">Big bugets for startup</h3>
-
-      <p class="display_block">
-        A Rich Heritage &amp; Brand History
-      </p>
-    
-      <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
-    </div>
-  </figure>
-</div></div>
-
-<div style="padding: 5px;">
-<div class="position_relative img-scale max_size">
-  <figure class="picher_doc">
-    <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
-    <div class="opacity-medium bg-extra-black"></div>
-    <div class="date_top">
-      <span>Office Building</span>
-    </div>
-    <div class="inner_text">
-      <h3 class="show_tital">Big bugets for startup</h3>
-
-      <p class="display_block">
-        A Rich Heritage &amp; Brand History
-      </p>
-    
-      <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
-    </div>
-  </figure>
-</div></div> {% endcomment %}
-
-
-      </div>
-      <a href="#" class="primary_button" style="margin: 0 auto;">View More</a>
-    </div>
-  </div>
-</section>
-<!-- what-we-do section end -->
-
-
-<!-- offered-service section start -->
-
-
-<section style="background: #f1f1f1; margin-bottom: 20px; padding: 0px 0px 50px 0px;">
-  <div class="container">
-    <div class="row">
-      
-<div class="row" style="padding: 40px 0 0px 0;text-align: center;">
-<div class="offerd-service-section" style="margin: 0; ">
-    <h2>TOP PRODUCTS</h2>
-    <span class="line"></span>
-    <div class="offerd-service">
-    
-  {% for product in products %}
-  <div style="padding: 5px;">
   <div class="product-grid">
       <div class="product-image">
           <a href="#" class="image">
-              <img class="pic-1" src="{% if product.image %}{{product.image.url}}{% else %}{% static 'images/img-3.jpg' %}{% endif %}">
-              <img class="pic-2" src="{% if product.image %}{{product.image.url}}{% else %}{% static 'images/img-4.jpg' %}{% endif %}">
+              <img class="pic-1" src="{% static 'images/img-3.jpg' %}" alt="">
+              <img class="pic-2" src="{% static 'images/img-4.jpg' %}" alt="">
           </a>
           <span class="product-sale-label">sale!</span>
           <ul class="social">
@@ -374,59 +694,26 @@
               <span class="fa fa-star checked" aria-hidden="true"></span>
               <span class="fa fa-star" aria-hidden="true"></span>
               <span class="fa fa-star" aria-hidden="true"></span>
-            
+             
         </ul>
-              <a class="add-to-cart" href="#"> ADD TO CART </a>
+              <a class="add-to-cart" href="#"> BUY NOW </a>
           </div>
       </div>
       <div class="product-content">
-          <h3 class="title"><a href="#">{{product.name}}</a></h3>
-          <div class="price">&#8377;{{product.price}}</div>
-      </div>
-  </div>
-  </div>
-  {% endfor %}
-
-
-  {% comment %} <div style="padding: 5px;">
-  <div class="product-grid">
-      <div class="product-image">
-          <a href="#" class="image">
-            <img class="pic-1" src="{% static 'images/img-3.jpg' %}">
-            <img class="pic-2" src="{% static 'images/img-4.jpg' %}">
-          </a>
-          <span class="product-sale-label">sale!</span>
-          <ul class="social">
-              <li><a href="#" data-tip="Quick View"><i class="fa fa-eye"></i></a></li>
-              <li><a href="#" data-tip="Add to wishlist"><i class="fa fa-heart"></i></a></li>
-          </ul>
-          <div class="product-rating">
-            <ul class="client_review">
-              <span class="fa fa-star checked" aria-hidden="true"></span>
-              <span class="fa fa-star checked" aria-hidden="true"></span>
-              <span class="fa fa-star checked" aria-hidden="true"></span>
-              <span class="fa fa-star" aria-hidden="true"></span>
-              <span class="fa fa-star" aria-hidden="true"></span>
-            
-        </ul>
-              <a class="add-to-cart" href="#"> ADD TO CART </a>
-          </div>
-      </div>
-      <div class="product-content">
-          <h3 class="title"><a href="#">Women's Tshirt</a></h3>
+           <h3 class="title"><a href="#">Women's Tshirt online delivery in india</a></h3>
           <div class="price">$19.00</div>
       </div>
   </div>
-  </div>
+</div>
 
 
 
-  <div style="padding: 5px;">
+<div style="padding: 5px;">
   <div class="product-grid">
       <div class="product-image">
           <a href="#" class="image">
-            <img class="pic-1" src="{% static 'images/img-3.jpg' %}">
-            <img class="pic-2" src="{% static 'images/img-4.jpg' %}">
+              <img class="pic-1" src="{% static 'images/img-3.jpg' %}" alt="">
+              <img class="pic-2" src="{% static 'images/img-4.jpg' %}" alt="">
           </a>
           <span class="product-sold-label">Sold!</span>
           <ul class="social">
@@ -440,25 +727,25 @@
               <span class="fa fa-star checked" aria-hidden="true"></span>
               <span class="fa fa-star" aria-hidden="true"></span>
               <span class="fa fa-star" aria-hidden="true"></span>
-            
+             
         </ul>
-              <a class="add-to-cart" href="#"> ADD TO CART </a>
+              <a class="add-to-cart" href="#"> BUY NOW </a>
           </div>
       </div>
       <div class="product-content">
-          <h3 class="title"><a href="#">Women's Tshirt</a></h3>
+           <h3 class="title"><a href="#">Women's Tshirt online delivery in india</a></h3>
           <div class="price">$19.00</div>
       </div>
   </div>
-  </div>
+</div>
 
 
-  <div style="padding: 5px;">
+<div style="padding: 5px;">
   <div class="product-grid">
       <div class="product-image">
           <a href="#" class="image">
-              <img class="pic-1" src="{% static 'images/img-3.jpg' %}">
-            <img class="pic-2" src="{% static 'images/img-4.jpg' %}">
+              <img class="pic-1" src="{% static 'images/img-3.jpg' %}" alt="">
+              <img class="pic-2" src="{% static 'images/img-4.jpg' %}" alt="">
           </a>
           <span class="product-sale-label">sale!</span>
           <ul class="social">
@@ -472,26 +759,26 @@
               <span class="fa fa-star checked" aria-hidden="true"></span>
               <span class="fa fa-star" aria-hidden="true"></span>
               <span class="fa fa-star" aria-hidden="true"></span>
-            
+             
         </ul>
-              <a class="add-to-cart" href="#"> ADD TO CART </a>
+              <a class="add-to-cart" href="#"> BUY NOW </a>
           </div>
       </div>
       <div class="product-content">
-          <h3 class="title"><a href="#">Women's Tshirt</a></h3>
+           <h3 class="title"><a href="#">Women's Tshirt online delivery in india</a></h3>
           <div class="price">$19.00</div>
       </div>
   </div>
-  </div>
+</div>
 
 
 
-  <div style="padding: 5px;">
+<div style="padding: 5px;">
   <div class="product-grid">
       <div class="product-image">
           <a href="#" class="image">
-              <img class="pic-1" src="{% static 'images/img-3.jpg' %}">
-            <img class="pic-2" src="{% static 'images/img-4.jpg' %}">
+              <img class="pic-1" src="{% static 'images/img-3.jpg' %}" alt="">
+              <img class="pic-2" src="{% static 'images/img-4.jpg' %}" alt="">
           </a>
           <span class="product-sale-label">sale!</span>
           <ul class="social">
@@ -505,25 +792,25 @@
               <span class="fa fa-star checked" aria-hidden="true"></span>
               <span class="fa fa-star" aria-hidden="true"></span>
               <span class="fa fa-star" aria-hidden="true"></span>
-            
+             
         </ul>
-              <a class="add-to-cart" href="#"> ADD TO CART </a>
+              <a class="add-to-cart" href="#"> BUY NOW </a>
           </div>
       </div>
       <div class="product-content">
-          <h3 class="title"><a href="#">Women's Tshirt</a></h3>
+           <h3 class="title"><a href="#">Women's Tshirt online delivery in india</a></h3>
           <div class="price">$19.00</div>
       </div>
   </div>
-  </div>
+</div>
 
 
-  <div style="padding: 5px;">
+<div style="padding: 5px;">
   <div class="product-grid">
       <div class="product-image">
           <a href="#" class="image">
-              <img class="pic-1" src="{% static 'images/img-3.jpg' %}">
-            <img class="pic-2" src="{% static 'images/img-4.jpg' %}">
+              <img class="pic-1" src="{% static 'images/img-3.jpg' %}" alt="">
+              <img class="pic-2" src="{% static 'images/img-4.jpg' %}" alt="">
           </a>
           <span class="product-sale-label">sale!</span>
           <ul class="social">
@@ -537,418 +824,312 @@
               <span class="fa fa-star checked" aria-hidden="true"></span>
               <span class="fa fa-star" aria-hidden="true"></span>
               <span class="fa fa-star" aria-hidden="true"></span>
-            
+             
         </ul>
-              <a class="add-to-cart" href="#"> ADD TO CART </a>
+              <a class="add-to-cart" href="#"> BUY NOW </a>
           </div>
       </div>
       <div class="product-content">
-          <h3 class="title"><a href="#">Women's Tshirt</a></h3>
+           <h3 class="title"><a href="#">Women's Tshirt online delivery in india</a></h3>
           <div class="price">$19.00</div>
       </div>
   </div>
-  </div> {% endcomment %}
+</div> {% endcomment %}
 
 </div>
-  </div>
-  <a href="{% url 'product:products' %}" class="primary_button" style="margin: 0 auto;">Buy More</a>
+    </div>
+    <a href="#" class="primary_button" style="margin: 0 auto;">Buy More</a>
 </div>   
 
+      </div>
+      
     </div>
-    
-  </div>
-</section>
+  </section>
 
 
-<!-- what-we-do section start -->
-<section class="content_area001">
-  <div class="container">
-
-    <div class="row">
-      <div class="col-md-12 col-sm-12 col-xs-12">
-          <h3>Documents For GST Registration</h3>
-          <span class="line"></span>
   
-      <p>
-        Goods and Services Tax or GST is a simplified tax payment system that emerged on July 1, 2017. It is levied on everyone who is dealing with the supply of goods and services all over in India. It has been emerged to bring uniformity in the indirect tax structure by replacing all taxes which is existed before the introduction of GST such as service tax, excise duty, etc. In the shot, GST has the concept "One Nation One Tax."
+  <!-- what-we-do section start -->
+  <section class="content_area001">
+    <div class="container">
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+            <h3>Documents For GST Registration</h3>
+            <p class="flip"><span class="deg1"></span><span class="deg2"></span><span class="deg3"></span></p>
+    
+        <p>
+          Goods and Services Tax or GST is a simplified tax payment system that emerged on July 1, 2017. It is levied on everyone who is dealing with the supply of goods and services all over in India. It has been emerged to bring uniformity in the indirect tax structure by replacing all taxes which is existed before the introduction of GST such as service tax, excise duty, etc. In the shot, GST has the concept "One Nation One Tax."
 
 For every goods and product, everyone has to pay the tax and the main fundamental one is the goods and services tax (GST), this is the process of collecting the tax on behalf of the government. GST was established as one nation – one tax by the government. GST Registration will provide as the main fundamental branch for every variety of the tax line such as Central Excise, service tax, and luxury tax, etc… Only after registering under GST anyone can claim for the credit of the tax paid. GST reduces the number of indirect taxes which has to be paid. For registered retailers, there will be no hidden tax to be paid other than the GST. It is levied on every goods and service sold for domestic consumptions. Even though GST is paid by the consumers it is given to the government by the business of selling goods and services. GST reduces the complications in the tax payment and the tax administrators also make a unique tax payment system for every business domain in our nation. Since GST is a unique tax system competition among the states for the tax and revenue will be reduced at a high rate. GST mainly aims to make a simplified and single tax system. The establishment of the GST increases the efficiency in the business and reduces every unnecessary tax. GST not only simplifying the tax system but also increases the revenue and reduces the tax outflow from the competing stream of the consumers and the exporters. GST increases the growth of our nation and replaces every indirect tax on goods and services which is provided by the state and the central.
-      </p>
-    </div>
-    </div>
-
-
-
-
-
-
-<h3>Tags Cloud</h3>
-<span class="line"></span>
-<div class="row">
-  <div class="col-md-12 col-sm-12 col-xs-12">
-<div class="tags_cloud">
-<a href="https://admissionbangalore.co.in/tag/alliance/" title="Alliance">Alliance</a>
-      <a href="https://admissionbangalore.co.in/tag/alliance-college/" title="Alliance College">Alliance College</a>
-      <a href="https://admissionbangalore.co.in/tag/alliance-college-of-liberal-arts/" title="Alliance College of Liberal Arts">Alliance College of Liberal Arts</a>
-      <a href="https://admissionbangalore.co.in/tag/alliance-school-of-business/" title="Alliance School of Business">Alliance School of Business</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-science-colleges-in-bangalore/" title="Allied Health &amp; Science Colleges in Bangalore">Allied Health &amp; Science Colleges in Bangalore</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-science-colleges-in-karnataka/" title="Allied Health &amp; Science Colleges in Karnataka">Allied Health &amp; Science Colleges in Karnataka</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-and-sciences/" title="Allied Health And Sciences">Allied Health And Sciences</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-and-sciences-bangalore/" title="Allied Health And Sciences Bangalore">Allied Health And Sciences Bangalore</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-and-sciences-colleges-in-bangalore/" title="Allied Health And Sciences Colleges in Bangalore">Allied Health And Sciences Colleges in Bangalore</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-and-sciences-colleges-in-karnataka/" title="Allied Health And Sciences Colleges in Karnataka">Allied Health And Sciences Colleges in Karnataka</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-and-sciences-karnataka/" title="Allied Health And Sciences Karnataka">Allied Health And Sciences Karnataka</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-science/" title="Allied Health Science">Allied Health Science</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences/" title="Allied Health Sciences">Allied Health Sciences</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences-colleges/" title="Allied Health Sciences Colleges">Allied Health Sciences Colleges</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences-colleges-in-bangalore/" title="Allied Health Sciences Colleges in Bangalore">Allied Health Sciences Colleges in Bangalore</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences-colleges-in-india/" title="Allied Health Sciences Colleges in India">Allied Health Sciences Colleges in India</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences-colleges-in-karnataka/" title="Allied Health Sciences Colleges in Karnataka">Allied Health Sciences Colleges in Karnataka</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences-colleges-in-mangalore/" title="Allied Health Sciences Colleges in Mangalore">Allied Health Sciences Colleges in Mangalore</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences-colleges-in-mysore/" title="Allied Health Sciences Colleges in Mysore">Allied Health Sciences Colleges in Mysore</a>
-      <a href="https://admissionbangalore.co.in/tag/allied-health-sciences-colleges-karnataka/" title="Allied Health Sciences Colleges Karnataka">Allied Health Sciences Colleges Karnataka</a>
-
-</div>
-</div>
-</div>
-
-</div>
-</section>
-
-<section>
-  <div class="container">
-    <div class="offerd-service-section">
-      <h2>OFFERED SERVICES IN INDIA</h2>
-      <div class="offerd-service">
-        <div class="offerd-service_padd">
-          <div>
-            <a href="#">
-              <div class="offerd-service-section-clm-cntnt">
-                <div>
-                  <div class="offerd-srvs-clm-icon">
-                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
-                  </div>
-                  <div class="offerd-srvs-clm-text">
-                    <h5>OET Coaching</h5>
-                    <span>Brest Accociatnjnhfd 1</span>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-        </div>
-        <div class="offerd-service_padd">
-          <div>
-            <a href="#">
-              <div class="offerd-service-section-clm-cntnt">
-                <div>
-                  <div class="offerd-srvs-clm-icon">
-                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
-                  </div>
-                  <div class="offerd-srvs-clm-text">
-                    <h5>OET Coaching</h5>
-                    <span>Brest Accociat 2</span>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-        </div>
-        <div class="offerd-service_padd">
-          <div>
-            <a href="#">
-              <div class="offerd-service-section-clm-cntnt">
-                <div>
-                  <div class="offerd-srvs-clm-icon">
-                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
-                  </div>
-                  <div class="offerd-srvs-clm-text">
-                    <h5>OET Coaching</h5>
-                    <span>Brest Accociat 3</span>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-        </div>
-        <div class="offerd-service_padd">
-          <div>
-            <a href="#">
-              <div class="offerd-service-section-clm-cntnt">
-                <div>
-                  <div class="offerd-srvs-clm-icon">
-                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
-                  </div>
-                  <div class="offerd-srvs-clm-text">
-                    <h5>OET Coaching</h5>
-                    <span>Brest Accociat 4</span>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-        </div>
-        <div class="offerd-service_padd">
-          <div>
-            <div class="offerd-service-section-clm-cntnt">
-              <div>
-                <a href="#">
-                  <div class="offerd-srvs-clm-icon">
-                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
-                  </div>
-                  <div class="offerd-srvs-clm-text">
-                    <h5>OET Coaching</h5>
-                    <span>Brest Accociat 5</span>
-                  </div>
-              </div>
-            </div>
-            </a>
-          </div>
-        </div>
-        <div class="offerd-service_padd">
-          <div>
-            <a href="#">
-              <div class="offerd-service-section-clm-cntnt">
-                <div>
-                  <div class="offerd-srvs-clm-icon">
-                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
-                  </div>
-                  <div class="offerd-srvs-clm-text">
-                    <h5>OET Coaching</h5>
-                    <span>Brest Accociat 6</span>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-        </div>
-        <div class="offerd-service_padd">
-          <div>
-            <a href="#">
-              <div class="offerd-service-section-clm-cntnt">
-                <div>
-                  <div class="offerd-srvs-clm-icon">
-                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
-                  </div>
-                  <div class="offerd-srvs-clm-text">
-                    <h5>OET Coaching</h5>
-                    <span>Brest Accociat 7</span>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-        </div>
-        <div class="offerd-service_padd">
-          <div>
-            <a href="#">
-              <div class="offerd-service-section-clm-cntnt">
-                <div>
-                  <div class="offerd-srvs-clm-icon">
-                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
-                  </div>
-                  <div class="offerd-srvs-clm-text">
-                    <h5>OET Coaching</h5>
-                    <span>Brest Accociat 8</span>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-        </div>
-        <div class="offerd-service_padd">
-          <div>
-            <a href="#">
-              <div class="offerd-service-section-clm-cntnt">
-                <div>
-                  <div class="offerd-srvs-clm-icon">
-                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
-                  </div>
-                  <div class="offerd-srvs-clm-text">
-                    <h5>OET Coaching</h5>
-                    <span>Brest Accociat 8</span>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-        </div>
-        <div class="offerd-service_padd">
-          <div>
-            <a href="#">
-              <div class="offerd-service-section-clm-cntnt">
-                <div>
-                  <div class="offerd-srvs-clm-icon">
-                    <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
-                  </div>
-                  <div class="offerd-srvs-clm-text">
-                    <h5>OET Coaching</h5>
-                    <span>Brest Accociat 8</span>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-        </div>
+        </p>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- offered-service section end -->
-
-
-<!-- recent artical-section start -->
-
-<section>
-  <div class="recent-artical-secton">
-    <h2>RECENT ARTICLES</h2>
-    <div class="recent-artical-cntnt-clm">
-      <div class="recent-artical">
-        <div class="recent-artical_padd">
-          <div class="team-slider-pad-cntnt">
-            <div>
-              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
-            </div>
-          </div>
-        </div>
-        <div class="recent-artical_padd">
-          <div class="team-slider-pad-cntnt">
-            <div>
-              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
-            </div>
-          </div>
-        </div>
-        <div class="recent-artical_padd">
-          <div class="team-slider-pad-cntnt">
-            <div>
-              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
-            </div>
-          </div>
-        </div>
-        <div class="recent-artical_padd">
-          <div class="team-slider-pad-cntnt">
-            <div>
-              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
-            </div>
-          </div>
-        </div>
-        <div class="recent-artical_padd">
-          <div class="team-slider-pad-cntnt">
-            <div>
-              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
-            </div>
-          </div>
-        </div>
-        <div class="recent-artical_padd">
-          <div class="team-slider-pad-cntnt">
-            <div>
-              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
-            </div>
-          </div>
-        </div>
-        <div class="recent-artical_padd">
-          <div class="team-slider-pad-cntnt">
-            <div>
-              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
-            </div>
-          </div>
-        </div>
-        <div class="recent-artical_padd">
-          <div class="team-slider-pad-cntnt">
-            <div>
-              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
-            </div>
-          </div>
-        </div>
-        <div class="recent-artical_padd">
-          <div class="team-slider-pad-cntnt">
-            <div>
-              <a href="#"> <span>ISO Certification Consultants in Kuzhithura</span> </a>
-            </div>
-          </div>
-        </div>
       </div>
-    </div>
-  </div>
-</section>
 
-<!-- recent artical-section end -->
-
-
-<section class="blog_section">
   
-  <div class="container">
 
+
+  
+
+  <h3>Tags Cloud</h3>
+  <p class="flip"><span class="deg1"></span><span class="deg2"></span><span class="deg3"></span></p>
+  <div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+  <div class="tags_cloud">
+<a href="#" title="Alliance">Alliance</a>
+<a href="#" title="Alliance College">Alliance College</a>
+<a href="#" title="Alliance College of Liberal Arts">Alliance College of Liberal Arts</a>
+<a href="#" title="Alliance School of Business">Alliance School of Business</a>
+<a href="#" title="Allied Health &amp; Science Colleges in Bangalore">Allied Health &amp; Science Colleges in Bangalore</a>
+<a href="#" title="Allied Health &amp; Science Colleges in Karnataka">Allied Health &amp; Science Colleges in Karnataka</a>
+<a href="#" title="Allied Health And Sciences">Allied Health And Sciences</a>
+<a href="#" title="Allied Health And Sciences Bangalore">Allied Health And Sciences Bangalore</a>
+<a href="#" title="Allied Health And Sciences Colleges in Bangalore">Allied Health And Sciences Colleges in Bangalore</a>
+<a href="#" title="Allied Health And Sciences Colleges in Karnataka">Allied Health And Sciences Colleges in Karnataka</a>
+<a href="#" title="Allied Health And Sciences Karnataka">Allied Health And Sciences Karnataka</a>
+<a href="#" title="Allied Health Science">Allied Health Science</a>
+<a href="#" title="Allied Health Sciences">Allied Health Sciences</a>
+<a href="#" title="Allied Health Sciences Colleges">Allied Health Sciences Colleges</a>
+<a href="#" title="Allied Health Sciences Colleges in Bangalore">Allied Health Sciences Colleges in Bangalore</a>
+<a href="#" title="Allied Health Sciences Colleges in India">Allied Health Sciences Colleges in India</a>
+<a href="#" title="Allied Health Sciences Colleges in Karnataka">Allied Health Sciences Colleges in Karnataka</a>
+<a href="#" title="Allied Health Sciences Colleges in Mangalore">Allied Health Sciences Colleges in Mangalore</a>
+<a href="#" title="Allied Health Sciences Colleges in Mysore">Allied Health Sciences Colleges in Mysore</a>
+<a href="#" title="Allied Health Sciences Colleges Karnataka">Allied Health Sciences Colleges Karnataka</a>
+</div>
+</div>
+</div>
+
+</div>
+
+
+ 
+
+
+ 
+
+  </section>
+
+
+
+  <section>
+    <div class="container">
+<div class="row" style="margin:50px 0 50px 0;" >
+      <div class="offerd-service-section" style="margin-bottom:0;">
+        <h3>FIND NEARBY</h3>
+         <p class="flip"><span class="deg1"></span><span class="deg2"></span><span class="deg3"></span></p>
+        <div class="nearby_govt_off">
+        
+          <div class="services-block-two">
+			<div class="inner-box">
+<div class="nearby_img">
+				<img src="{% static 'images/Nearby-Police-Stations.jpeg' %}" alt="Find Nearby Police Station">
+					</div>
+<h3 class="nearby_head"><a href="DDDDDD">Nearby Police Station</a>
+<a href="DDDDDD" class="simple_menu_stle" title="Find Nearby Police Station"><i class="fa fa-crosshairs" aria-hidden="true"></i> Find Nearby</a></h3>
+					</div>
+					</div>
+                    
+                    
+           <div class="services-block-two">
+			<div class="inner-box">
+<div class="nearby_img">
+				<img src="{% static 'images/nearby-post-office.jpeg' %}" alt="Find Nearby Post Office">
+					</div>
+<h3 class="nearby_head"><a href="DDDDDD">Nearby Post Office & Pincode</a>
+<a href="DDDDDD" class="simple_menu_stle" title="Find Nearby Post Office"><i class="fa fa-crosshairs" aria-hidden="true"></i> Find Nearby</a></h3>
+					</div>
+					</div>
+                    
+                    
+           <div class="services-block-two">
+			<div class="inner-box">
+ <div class="nearby_img">
+				<img src="{% static 'images/Nearby-Courts.jpeg' %}" alt="Find Nearby Judicial Courts">
+					</div>
+<h3 class="nearby_head"><a href="DDDDDD">Nearby Judicial Courts</a>
+<a href="DDDDDD" class="simple_menu_stle" title="Find Nearby Judicial Courts"><i class="fa fa-crosshairs" aria-hidden="true"></i> Find Nearby</a></h3>
+					</div>
+					</div>
+                    
+                    
+           <div class="services-block-two">
+			<div class="inner-box">
+			  <div class="nearby_img">
+				<img src="{% static 'images/Nearby-CSC-Centers.jpeg' %}" alt="Find Nearby CSC Centers">
+					</div>
+<h3 class="nearby_head"><a href="DDDDDD">Nearby CSC Centers</a>
+<a href="DDDDDD" class="simple_menu_stle" title="Find Nearby CSC Centers"><i class="fa fa-crosshairs" aria-hidden="true"></i> Find Nearby</a></h3>
+					</div>
+					</div>
+                    
+                    
+            <div class="services-block-two">
+			<div class="inner-box">
+			<div class="nearby_img">
+				<img src="{% static 'images/Nearby-Bank-and-ifsc.jpeg' %}" alt="Find Nearby Police Station">
+					</div>
+  <h3 class="nearby_head"><a href="DDDDDD">Nearby Bank &amp; IFSC</a>
+<a href="DDDDDD" class="simple_menu_stle" title="Find Nearby Police Station"><i class="fa fa-crosshairs" aria-hidden="true"></i> Find Nearby</a></h3>
+					</div>
+					</div>
+                    
+                    
+                    
+           
+        </div>
+      </div>
       
-   <h3>LATEST ARTICLES</h3>
-   <span class="line"></span>
-   <div class="blog-slider">
-   
-     <article>
-     <p class="date_cat_blog">
- <a href="#" style="left: 10px;">Registration</a>
- <a href="#" style="right: 80px; ">January 30, 2024</a>
-     </p>
-<figure class="featured-media">
-<a href="#"><img src="{% static 'images/food-887348_640.jpg' %}" alt=""></a>
-</figure>
-<h4 class="blog_slider_article_h2"><a href="#">What is the difference between Copyright and Trademark Registration</a></h4>
-<p style="text-align:left;">What is the difference between Copyright and Trademark Registration</p>
-<a href="#" class="primary_button" style="visibility: visible; ">Read More</a>
-     </article>
-     
-     
-     <article>
-     <p class="date_cat_blog">
- <a href="#" style="left: 10px;">Registration</a>
- <a href="#" style="right: 80px; ">January 30, 2024</a>
-     </p>
-<figure class="featured-media">
-<a href="#"><img src="{% static 'images/food-887348_640.jpg' %}" alt=""></a>
-</figure>
-<h4 class="blog_slider_article_h2"><a href="#">What is the difference between Copyright and Trademark Registration</a></h4>
-<p style="text-align:left;">What is the difference between Copyright and Trademark Registration</p>
-<a href="#" class="primary_button" style="visibility: visible; ">Read More</a>
-     </article>
-     
-     
-     
-     <article>
-     <p class="date_cat_blog">
- <a href="#" style="left: 10px;">Registration</a>
- <a href="#" style="right: 80px; ">January 30, 2024</a>
-     </p>
-<figure class="featured-media">
-<a href="#"><img src="{% static 'images/food-887348_640.jpg' %}" alt=""></a>
-</figure>
-<h4 class="blog_slider_article_h2"><a href="#">What is the difference between Copyright and Trademark Registration</a></h4>
-<p style="text-align:left;">What is the difference between Copyright and Trademark Registration</p>
-<a href="#" class="primary_button" style="visibility: visible; ">Read More</a>
-     </article>
-     
-     
-     
-     <article>
-     <p class="date_cat_blog">
- <a href="#" style="left: 10px;">Registration</a>
- <a href="#" style="right: 80px; ">January 30, 2024</a>
-     </p>
-<figure class="featured-media">
-<a href="#"><img src="{% static 'images/food-887348_640.jpg' %}" alt=""></a>
-</figure>
-<h4 class="blog_slider_article_h2"><a href="#">What is the difference between Copyright and Trademark Registration</a></h4>
-<p style="text-align:left;">What is the difference between Copyright and Trademark Registration</p>
-<a href="#" class="primary_button" style="visibility: visible; ">Read More</a>
-     </article>
-   
-   </div>
- </div>
+      <a href="#" class="primary_button" style="margin: 0 auto;">FIND MORE</a>
+          </div>
+    </div>
+    
+  </section>
 
-</section>  
+
+<section class="destination_main">
+<div class="destination_sub_bx">
+
+
+    <div class="container">
+     <h2 style="text-align:center;">FIND NEARBY DESTINATION</h2>
+         <p class="flip"><span class="deg1"></span><span class="deg2"></span><span class="deg3"></span></p>
+<div class="row">
+
+
+      <div class="nearby-destinations" style="padding-bottom: 30px;">
+       
+        {% for attraction in attractions %}
+        <div style="padding: 5px;">
+          <div class="position_relative img-scale max_size">
+            <figure class="picher_doc">
+              <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+              <div class="opacity-medium bg-extra-black"></div>
+              <div class="date_top">
+                <span><a href="#" tabindex="0">{{attraction.attraction_type}}</a></span>
+              </div>
+              <div class="inner_text">
+                <h3 class="show_tital">{{attraction.name}}</h3>
+                
+                <p class="display_block">
+                  A Rich Heritage &amp; Brand History
+                </p>
+              
+                <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+              </div>
+            </figure>
+          </div>
+        </div>
+        {% endfor %}
+
+  {% comment %} <div style="padding: 5px;">
+  <div class="position_relative img-scale max_size">
+    <figure class="picher_doc">
+      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+      <div class="opacity-medium bg-extra-black"></div>
+      <div class="date_top">
+<span><a href="#" tabindex="0">Waterfalls</a></span>
+</div>
+      <div class="inner_text">
+        <h3 class="show_tital">Big bugets for startup</h3>
+
+        <p class="display_block">
+          A Rich Heritage &amp; Brand History
+        </p>
+      
+        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+      </div>
+    </figure>
+  </div></div>
+
+  <div style="padding: 5px;">
+  <div class="position_relative img-scale max_size">
+    <figure class="picher_doc">
+      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+      <div class="opacity-medium bg-extra-black"></div>
+      <div class="date_top">
+<span><a href="#" tabindex="0">Waterfalls</a></span>
+</div>
+      <div class="inner_text">
+        <h3 class="show_tital">Big bugets for startup</h3>
+
+        <p class="display_block">
+          A Rich Heritage &amp; Brand History
+        </p>
+      
+        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+      </div>
+    </figure>
+  </div></div>
+
+  <div style="padding: 5px;">
+  <div class="position_relative img-scale max_size">
+    <figure class="picher_doc">
+      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+      <div class="opacity-medium bg-extra-black"></div>
+      <div class="date_top">
+<span><a href="#" tabindex="0">Waterfalls</a></span>
+</div>
+      <div class="inner_text">
+        <h3 class="show_tital">Big bugets for startup</h3>
+
+        <p class="display_block">
+          A Rich Heritage &amp; Brand History
+        </p>
+      
+        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+      </div>
+    </figure>
+  </div></div>
+
+  <div style="padding: 5px;">
+  <div class="position_relative img-scale max_size">
+    <figure class="picher_doc">
+      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+      <div class="opacity-medium bg-extra-black"></div>
+      <div class="date_top">
+<span><a href="#" tabindex="0">Waterfalls</a></span>
+</div>
+      <div class="inner_text">
+        <h3 class="show_tital">Big bugets for startup</h3>
+
+        <p class="display_block">
+          A Rich Heritage &amp; Brand History
+        </p>
+      
+        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+      </div>
+    </figure>
+  </div></div>
+
+  <div style="padding: 5px;">
+  <div class="position_relative img-scale max_size">
+    <figure class="picher_doc">
+      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
+      <div class="opacity-medium bg-extra-black"></div>
+      <div class="date_top">
+<span><a href="#" tabindex="0">Waterfalls</a></span>
+</div>
+      <div class="inner_text">
+        <h3 class="show_tital">Big bugets for startup</h3>
+
+        <p class="display_block">
+          A Rich Heritage &amp; Brand History
+        </p>
+      
+        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
+      </div>
+    </figure>
+  </div></div> {% endcomment %}
+ 
+ 
+        </div>
+        <a href="#" class="primary_button" style="margin: 0 auto;">VIEW MORE</a>
+          </div>
+    </div>
+    </div>
+  </section>
+
+
+  {% include "blog_slider.html" %}
 
 {% endblock content %}
-
-{% block scripts %}
-
-{% endblock scripts %}

@@ -1,0 +1,648 @@
+
+{% extends "admin_base/base.html" %}
+{% load static %}
+
+{% block title %}Update Blog{% endblock title %}
+
+{% block content %}  
+<!-- Page Content -->
+<div class="content container-fluid">
+	
+	<!-- Page Header -->
+	<div class="crms-title row bg-white mb-4">
+		<div class="col  p-0">
+			<h3 class="page-title">
+			<span class="page-title-icon bg-gradient-primary text-white me-2">
+				<i class="feather-edit"></i>
+			</span> Update Blog </h3>
+		</div>
+		<div class="col p-0 text-end">
+			<ul class="breadcrumb bg-white float-end m-0 ps-0 pe-0">
+				<li class="breadcrumb-item"><a href="index.html">Blog</a></li>
+				<li class="breadcrumb-item active">Update Blog</li>
+			</ul>
+		</div>
+	</div>
+	<!-- /Page Header -->
+
+	<!-- Content Starts -->
+    <div class="row">
+        {% include "base/message.html" %}
+        <div class="col-lg-12">
+            <form method="post" action="{% url 'superadmin:update_blog' blog.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-multipage-form">
+                {% csrf_token %}
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title mb-0" >Update Blog</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-6 mb-3">
+                                <label for="title-input">Title <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="title-input" name="title" placeholder="Title of the blog" value="{{blog.title}}" required>
+                            </div>    
+                            <div class="col-sm-6 mb-3">
+                                <label for="image-input">Image <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" id="image-input" name="image">
+                                {% if blog.image %}
+                                <small><span>Current Image: <a href="{{blog.image.url}}" target="_blank">{{blog.get_image_name}}</a></span></small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6 mb-3">
+                                <label for="type-dropdown">Type <span class="text-danger">*</span></label>
+                                <select name="type" id="type-dropdown" class="form-control" required>
+                                    <option value="" selected disabled hidden>Select Type</option>
+                                    {% for type in types %}
+                                    <option value="{{type}}" {% if type == blog.blog_type %}selected{% endif %}>{{type}}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-sm-6 mb-3" id="company-div"></div>
+                        </div>
+                        <div id="dynamic-content">
+                            
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <label for="meta-tag-input">Meta Tags <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="meta-tag-input" name="meta_tags" placeholder="Meta Tags (Sperate with comma for multiple tags)" value="{{blog.meta_tags}}" required>
+                                <div class="invalid-feedback">
+                                    Please provide the meta tags.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>    
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <label for="meta-description-input">Meta Description <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="meta_description" id="meta-description-input" placeholder="Meta Description" required>{% if blog.meta_description %}{{blog.meta_description}}{% endif %}</textarea>
+                                <div class="invalid-feedback">
+                                    Please provide the meta description.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>    
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <label for="summary-input">Summary <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="summary" id="summary-input" placeholder="Summary" required>{% if blog.summary %}{{blog.summary}}{% endif %}</textarea>
+                                <div class="invalid-feedback">
+                                    Please provide the summary.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>    
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <label for="content-input">Content <span class="text-danger">*</span></label>
+                                <textarea class="froala-editor" name="content" id="content-input" placeholder="Content" required>{% if blog.content %}{{blog.content|safe}}{% endif %}</textarea>
+                                <div class="invalid-feedback">
+                                    Please provide the content.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>    
+                        </div>
+
+                    </div>
+                </div>     
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary" id="submit-button">Save</button>
+                </div>
+            </form>
+                
+        </div>
+	<!-- /Content End -->
+	</div>
+</div>
+<!-- /Page Content -->
+				
+{% endblock content %}
+
+{% block scripts %}
+<script>
+
+    $(document).ready(() => {
+        function renderEducationContent() {
+            $('#dynamic-content').html(`
+                <div class="row">
+                    <div class="col-sm-6 mb-3">
+                        <label for="program-dropdown">Program <span class="text-danger">*</span></label>
+                        <select name="program" id="program-dropdown" class="form-control" required>
+                            <option value="" selected disabled hidden>Select Program</option>
+                            {% for program in programs %}
+                            <option value="{{program.slug}}" {% if program.slug == blog.course.program.slug %}selected{% endif %}>{{program.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>                
+                    <div class="col-sm-6 mb-3">
+                        <label for="course-dropdown">Course <span class="text-danger">*</span></label>
+                        <select name="course" id="course-dropdown" class="form-control" required>
+                            <option value="" selected disabled hidden>Select Course</option>
+                            {% for course in courses %}
+                            <option value="{{course.slug}}" {% if course.slug == blog.course.slug %}selected{% endif %}>{{course.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            `);
+        };
+
+        function renderProductContent() {
+            $('#dynamic-content').html(`
+                <div class="row">
+                    <div class="col-sm-4 mb-3">
+                        <label for="product-category-dropdown">Product Category <span class="text-danger">*</span></label>
+                        <select name="category" id="product-category-dropdown" class="form-control" required>
+                            <option value="" selected disabled hidden>Select Product Category</option>
+                            {% for category in product_categories %}
+                            <option value="{{category.slug}}" {% if category.slug == blog.product.category.slug %}selected{% endif %}>{{category.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-4 mb-3">
+                        <label for="product-sub-category-dropdown">Product Sub Category <span class="text-danger">*</span></label>
+                        <select name="sub_category" id="product-sub-category-dropdown" class="form-control" required>
+                            <option value="" selected disabled hidden>Select Product Sub Category</option>
+                            {% for sub_category in product_sub_categories %}
+                            <option value="{{sub_category.slug}}" {% if sub_category.slug == blog.product.sub_category.slug %}selected{% endif %}>{{sub_category.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>                
+                    <div class="col-sm-4 mb-3">
+                        <label for="product-dropdown">Product <span class="text-danger">*</span></label>
+                        <select name="product" id="product-dropdown" class="form-control" required>
+                            <option value="" selected disabled hidden>Select Product</option>
+                            {% for product in products %}
+                            <option value="{{product.slug}}" {% if product.slug == blog.product.slug %}selected{% endif %}>{{product.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            `);
+        };
+
+        function renderRegistrationContent() {
+            $('#dynamic-content').html(`
+                <div class="row">
+                    <div class="col-sm-6 mb-3">
+                        <label for="registration-type-dropdown">Registration Type <span class="text-danger">*</span></label>
+                        <select name="registration_type" id="registration-type-dropdown" class="form-control" required>
+                            <option value="" selected disabled hidden>Select Registration Type</option>
+                            {% for registration_type in registration_types %}
+                            <option value="{{registration_type.slug}}" {% if registration_type.slug == blog.registration_sub_type.type.slug %}selected{% endif %}>{{registration_type.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>                
+                    <div class="col-sm-6 mb-3">
+                        <label for="registration-sub-type-dropdown">Registration Sub Type <span class="text-danger">*</span></label>
+                        <select name="registration_sub_type" id="registration-sub-type-dropdown" class="form-control" required>
+                            <option value="" selected disabled hidden>Select Registration Sub Type</option>
+                            {% for registration_sub_type in registration_sub_types %}
+                            <option value="{{registration_sub_type.slug}}" {% if registration_sub_type.slug == blog.registration_sub_type.slug %}selected{% endif %}>{{registration_sub_type.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            `);
+        };
+
+        function renderServiceContent() {
+            $('#dynamic-content').html(`
+                <div class="row">
+                    <div class="col-sm-4 mb-3">
+                        <label for="service-category-dropdown">Service Category <span class="text-danger">*</span></label>
+                        <select name="category" id="service-category-dropdown" class="form-control" required>
+                            <option value="" selected disabled hidden>Select Service Category</option>
+                            {% for category in service_categories %}
+                            <option value="{{category.slug}}" {% if category.slug == blog.service.category.slug %}selected{% endif %}>{{category.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-4 mb-3">
+                        <label for="service-sub-category-dropdown">Service Sub Category <span class="text-danger">*</span></label>
+                        <select name="sub_category" id="service-sub-category-dropdown" class="form-control" required>
+                            <option value="" selected disabled hidden>Select Service Sub Category</option>
+                            {% for sub_category in service_sub_categories %}
+                            <option value="{{sub_category.slug}}" {% if sub_category.slug == blog.service.sub_category.slug %}selected{% endif %}>{{sub_category.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-4 mb-3">
+                        <label for="service-dropdown">Service <span class="text-danger">*</span></label>
+                        <select name="service" id="service-dropdown" class="form-control" required>
+                            <option value="" selected disabled hidden>Select Service</option>
+                            {% for service in services %}
+                            <option value="{{service.slug}}" {% if service.slug == blog.service.slug %}selected{% endif %}>{{service.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+            `);
+        };
+
+        function checkType(typeValue) {
+            $('#dynamic-content').empty();
+
+            if (typeValue === "Education") {
+                renderEducationContent();
+            } else if (typeValue === "Product") {
+                renderProductContent();
+            } else if (typeValue === "Registration") {
+                renderRegistrationContent();
+            } else if (typeValue === "Service") {
+                renderServiceContent();
+            }
+
+            if (typeValue != "General") {
+                $('#company-div').html(`
+                    <label for="company-dropdown">Company <span class="text-danger">*</span></label>
+                    <select name="company" id="company-dropdown" class="form-control" required>
+                        <option value="" selected disabled hidden>Select Company</option>
+                        {% for company in companies %}
+                        <option value="{{company.slug}}" {% if company.slug == blog.company.slug %}selected{% endif %}>{{company.name}}</option>
+                        {% endfor %}
+                    </select>
+                `)
+
+                const companyType = typeValue;
+                const currentBlogCompany = `{{blog.company.slug}}`;
+
+                $.ajax({
+                    type: 'GET',
+                    url: `{% url 'company:get_filtered_companies' %}`,
+                    dataType: 'json',
+                    data: {'company_type': companyType},
+                    success: response => {
+                        if (response.companies) {
+                            $('#company-dropdown').html(`<option value="" selected disabled hidden>Select Company</option>`);                            
+
+                            response.companies.forEach(company => {
+                                $('#company-dropdown').append(`<option value="${company.slug}" ${company.slug == currentBlogCompany && 'selected'}>${company.name}</option>`);
+                            })
+
+                        }
+
+                        if (response.status === "failed" && response.message) {
+                            console.error("Error: ", error);
+                        }
+                    },
+                    error: error => console.error("Error: ", error),
+                });                
+            };
+        }
+
+        $('#type-dropdown').on('change', function () {
+            const typeValue = $(this).val();
+            checkType(typeValue);            
+        });
+
+        if ($('#type-dropdown').val()) {
+            const typeValue = $('#type-dropdown').val();
+            checkType(typeValue);            
+        };
+
+        function getPrograms(selectedCompany) {
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'education:get_programs' %}`,
+                dataType: 'json',
+                data: {'company': selectedCompany},
+                success: response => {
+                    if (response.programs) {
+                        $('#program-dropdown').html(`<option value="" selected disabled hidden>Select Program</option>`);
+                        $('#course-dropdown').html(`<option value="" selected disabled hidden>Select Course</option>`);
+
+                        response.programs.forEach(program => {
+                            $('#program-dropdown').append(`<option value="${program.slug}">${program.name}</option>`);
+                        })
+
+                    }
+
+                    if (response.status === "failed" && response.message) {
+                        console.error("Error: ", error);
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            });
+        };
+
+        function getCourses(selectedProgram, selectedCompany) {
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'education:get_courses' %}`,
+                dataType: 'json',
+                data: {
+                    'program': selectedProgram,
+                    'company': selectedCompany
+                },
+                success: response => {
+                    if (response.courses) {
+                        $('#course-dropdown').html(`<option value="" selected disabled hidden>Select Course</option>`);                            
+
+                        response.courses.forEach(course => {
+                            $('#course-dropdown').append(`<option value="${course.slug}">${course.name}</option>`);
+                        })
+
+                    }
+
+                    if (response.status === "failed" && response.message) {
+                        console.error("Error: ", error);
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            });
+        }
+
+        function getProductCategories(selectedCompany) {
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'product:get_categories' %}`,
+                dataType: 'json',
+                data: {
+                    'company_slug': selectedCompany
+                },
+                success: response => {
+                    if (response.categories) {
+                        $('#product-category-dropdown').html(`<option value="" selected disabled hidden>Select Category</option>`);
+                        $('#product-sub-category-dropdown').html(`<option value="" selected disabled hidden>Select Sub Category</option>`);
+                        $('#product-dropdown').html(`<option value="" selected disabled hidden>Select Product</option>`);
+
+                        response.categories.forEach(category => {
+                            $('#product-category-dropdown').append(`<option value="${category.slug}">${category.name}</option>`);
+                        })
+
+                    }
+
+                    if (response.status === "failed" && response.message) {
+                        console.error("Error: ", error);
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            });
+        };
+
+        function getProductSubCategories(selectedCompany, selectedCategory) {
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'product:get_sub_categories' %}`,
+                dataType: 'json',
+                data: {
+                    'company_slug': selectedCompany,
+                    'category_slug': selectedCategory
+                },
+                success: response => {
+                    if (response.sub_categories) {
+                        $('#product-sub-category-dropdown').html(`<option value="" selected disabled hidden>Select Sub Category</option>`);
+                        $('#product-dropdown').html(`<option value="" selected disabled hidden>Select Product</option>`);
+
+                        response.sub_categories.forEach(sub_category => {
+                            $('#product-sub-category-dropdown').append(`<option value="${sub_category.slug}">${sub_category.name}</option>`);
+                        })
+                    }
+
+                    if (response.status === "failed" && response.message) {
+                        console.error("Error: ", error);
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            });
+        };
+
+        function getProducts(selectedCompany, selectedSubCategory) {
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'product:get_products' %}`,
+                dataType: 'json',
+                data: {
+                    'company_slug': selectedCompany,
+                    'sub_category_slug': selectedSubCategory
+                },
+                success: response => {
+                    if (response.products) {
+                        $('#product-dropdown').html(`<option value="" selected disabled hidden>Select Products</option>`);                            
+
+                        response.products.forEach(product => {
+                            $('#product-dropdown').append(`<option value="${product.slug}">${product.name}</option>`);
+                        })
+                    }
+
+                    if (response.status === "failed" && response.message) {
+                        console.error("Error: ", error);
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            });
+        };
+
+        function getRegistrationTypes(selectedCompany) {
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'registration:get_types' %}`,
+                dataType: 'json',
+                data: {
+                    'company_slug': selectedCompany
+                },
+                success: response => {
+                    if (response.types) {
+                        $('#registration-type-dropdown').html(`<option value="" selected disabled hidden>Select Type</option>`);
+                        $('#registration-sub-type-dropdown').html(`<option value="" selected disabled hidden>Select Sub Type</option>`);
+
+                        response.types.forEach(type => {
+                            $('#registration-type-dropdown').append(`<option value="${type.slug}">${type.name}</option>`);
+                        })
+
+                    }
+
+                    if (response.status === "failed" && response.message) {
+                        console.error("Error: ", error);
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            });
+        };
+
+        function getRegistrationSubTypes(selectedCompany, selectedType) {
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'registration:get_registration_sub_types' %}`,
+                dataType: 'json',
+                data: {
+                    'company_slug': selectedCompany,
+                    'type_slug': selectedType                
+                },
+                success: response => {
+                    if (response.sub_types) {
+                        $('#registration-sub-type-dropdown').html(`<option value="" selected disabled hidden>Select Sub Type</option>`);                            
+
+                        response.sub_types.forEach(sub_type => {
+                            $('#registration-sub-type-dropdown').append(`<option value="${sub_type.slug}">${sub_type.name}</option>`);
+                        })
+
+                    }
+
+                    if (response.status === "failed" && response.message) {
+                        console.error("Error: ", error);
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            });
+        };
+
+        function getServiceCategories(selectedCompany) {
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'service:get_categories' %}`,
+                dataType: 'json',
+                data: {
+                    'company_slug': selectedCompany
+                },
+                success: response => {
+                    if (response.categories) {
+                        $('#service-category-dropdown').html(`<option value="" selected disabled hidden>Select Category</option>`);
+                        $('#service-sub-category-dropdown').html(`<option value="" selected disabled hidden>Select Sub Category</option>`);
+                        $('#service-dropdown').html(`<option value="" selected disabled hidden>Select Service</option>`);
+
+                        response.categories.forEach(category => {
+                            $('#service-category-dropdown').append(`<option value="${category.slug}">${category.name}</option>`);
+                        })
+
+                    }
+
+                    if (response.status === "failed" && response.message) {
+                        console.error("Error: ", error);
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            });
+        };
+
+        function getServiceSubCategories(selectedCompany, selectedCategory) {
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'service:get_sub_categories' %}`,
+                dataType: 'json',
+                data: {
+                    'company_slug': selectedCompany,
+                    'category_slug': selectedCategory
+                },
+                success: response => {
+                    if (response.sub_categories) {
+                        $('#service-sub-category-dropdown').html(`<option value="" selected disabled hidden>Select Sub Category</option>`);
+                        $('#service-dropdown').html(`<option value="" selected disabled hidden>Select Service</option>`);
+
+                        response.sub_categories.forEach(sub_category => {
+                            $('#service-sub-category-dropdown').append(`<option value="${sub_category.slug}">${sub_category.name}</option>`);
+                        })
+
+                    }
+
+                    if (response.status === "failed" && response.message) {
+                        console.error("Error: ", error);
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            });
+        };
+
+        function getServices(selectedCompany, selectedSubCategory) {
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'service:get_services' %}`,
+                dataType: 'json',
+                data: {
+                    'company_slug': selectedCompany,
+                    'sub_category_slug': selectedSubCategory
+                },
+                success: response => {
+                    if (response.services) {
+                        $('#service-dropdown').html(`<option value="" selected disabled hidden>Select Service</option>`);                            
+
+                        response.services.forEach(service => {
+                            $('#service-dropdown').append(`<option value="${service.slug}">${service.name}</option>`);
+                        })
+                    }
+
+                    if (response.status === "failed" && response.message) {
+                        console.error("Error: ", error);
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            });
+        };
+
+        // Company Dropdown Selection
+        $(document).on('change', '#company-dropdown', function () {
+            const selectedCompany = $(this).val();
+            const blogType = $('#type-dropdown').val();
+
+            if (blogType === "Education") {
+                getPrograms(selectedCompany);
+            } else if (blogType == "Product") {
+                getProductCategories(selectedCompany);
+            } else if (blogType == "Registration") {
+                getRegistrationTypes(selectedCompany);
+            } else if (blogType == "Service") {
+                getServiceCategories(selectedCompany);
+            }
+        });
+
+        $(document).on('change', '#program-dropdown', function () {
+            const selectedProgram = $(this).val();
+            const selectedCompany = $('#company-dropdown').val();
+
+            getCourses(selectedProgram, selectedCompany);
+        });
+
+        $(document).on('change', '#product-category-dropdown', function () {
+            const selectedCategory = $(this).val();
+            const selectedCompany = $('#company-dropdown').val();
+
+            getProductSubCategories(selectedCompany, selectedCategory);
+        });
+
+        $(document).on('change', '#product-sub-category-dropdown', function () {
+            const selectedSubCategory = $(this).val();
+            const selectedCompany = $('#company-dropdown').val();
+
+            getProducts(selectedCompany, selectedSubCategory);
+        });
+
+        $(document).on('change', '#registration-type-dropdown', function () {
+            const selectedType = $(this).val();
+            const selectedCompany = $('#company-dropdown').val();
+
+            getRegistrationSubTypes(selectedCompany, selectedType);
+        });
+
+        $(document).on('change', '#service-category-dropdown', function () {
+            const selectedCategory = $(this).val();
+            const selectedCompany = $('#company-dropdown').val();
+
+            getServiceSubCategories(selectedCompany, selectedCategory);
+        });
+
+        $(document).on('change', '#service-sub-category-dropdown', function () {
+            const selectedSubCategory = $(this).val();
+            const selectedCompany = $('#company-dropdown').val();
+
+            getServices(selectedCompany, selectedSubCategory);
+        });
+
+        intializeFroala();
+    });
+</script>
+{% endblock scripts %}

@@ -212,3 +212,53 @@ class UniquePlace(models.Model):
     class Meta:
         db_table = "unique_places"
         ordering = ["name"]
+
+
+class UaeCoordinates(models.Model):
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+    def __str__(self):
+        return f"UAE ({self.latitude}-{self.longitude})"
+    
+
+class KsaCoordinates(models.Model):
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+    def __str__(self):
+        return f"KSA ({self.latitude}-{self.longitude})"
+    
+
+class UaeLocationData(models.Model):
+    json_data = models.JSONField()
+
+    address = models.CharField(max_length=500)
+
+    requested_latitude = models.FloatField()
+    requested_longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "uae_location_data"
+        ordering = ["created"]
+
+
+class KsaLocationData(models.Model):
+    json_data = models.JSONField()
+
+    address = models.CharField(max_length=500)
+
+    requested_latitude = models.FloatField()
+    requested_longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "ksa_location_data"
+        ordering = ["created"]

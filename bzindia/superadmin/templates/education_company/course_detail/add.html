@@ -1,6 +1,7 @@
 
 {% extends "admin_company/base/base.html" %}
 {% load static %}
+{% load crispy_forms_tags %}
 
 {% block title %}Add {{current_company.name}} Course Detail{% endblock title %}
 
@@ -74,12 +75,24 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6 mb-3">
+                                <label for="program-dropdown" >Program <span class="text-danger">*</span></label>
+                                <select class="form-control" id="program-dropdown" name="program" required>
+                                    <option value="" hidden disabled selected>Select Program</option>
+                                    {% for program in programs %}
+                                    <option value="{{program.slug}}">{{program.name}}</option>
+                                    {% endfor %}                                    
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please provide the program.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
                                 <label for="course-dropdown" >Course <span class="text-danger">*</span></label>
                                 <select class="form-control" id="course-dropdown" name="course" required>
-                                    <option value="" hidden disabled selected>Select Course</option>
-                                    {% for course in courses %}
-                                    <option value="{{course.slug}}">{{course.name}}</option>
-                                    {% endfor %}                                    
+                                    <option value="" hidden disabled selected>Select Course</option>                                                                      
                                 </select>
                                 <div class="invalid-feedback">
                                     Please provide the course.
@@ -87,7 +100,7 @@
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
-                            </div>                 
+                            </div>
                             
                         </div>             
 
@@ -100,8 +113,22 @@
 
                         <div class="form-group row">
                             <div class="col-sm-12">
-                                <label class="col-form-label">Description </label>
-                                <textarea class="froala-editor" rows="3" id="description-input" name="description" placeholder="Description"></textarea>
+                                {{form.media}}
+                                {{form.description|as_crispy_field}}
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-sm-12">
+                                <label class="col-form-label">Meta Tags</label>
+                                <input class="form-control"  type="text" id="meta-tags-input" name="meta_tags" placeholder="Meta Tags" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-sm-12">
+                                <label class="col-form-label">Meta Description</label>
+                                <textarea class="form-control" rows="3" id="meta-description-input" name="meta_description" placeholder="Meta Description" required></textarea>
                             </div>
                         </div>
 
@@ -113,6 +140,13 @@
                                         <div class="accordion-header js-accordion-header">Features</div> 
                                           <div class="accordion-body js-accordion-body">
                                             <div class="accordion-body__contents">
+                                                <div class="row">
+                                                    <div class="col-md-12 mb-3 d-flex align-items-start justify-content-end">                                                    
+                                                        <label for="hide-features">
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-features" name="hide_features" {% if multipage.hide_features %}checked{% endif %}>&nbsp;Hide Features
+                                                        </label>
+                                                    </div>
+                                                </div>
                                                 <div style="display: flex; flex-direction: row;">
                                                     <input type="text" class="form-control" id="feature-input" placeholder="Feature" required>
                                                     <button class="add-button" type="button" id="add-feature-btn">ADD</button>
@@ -128,10 +162,15 @@
                                       <div class="accordion-body js-accordion-body">
                                         <div class="accordion-body__contents" id="vertical-tab-main-div">
                                             <div class="row">
-                                                <div class="col-md-12 mb-3">
+                                                <div class="col-md-6 mb-3">
                                                     <label for="main-title-input" >Main Title <span class="text-danger">*</span></label>
                                                     <input type="text" class="form-control" id="main-title-input" placeholder="Main Title" name="vertical_title" required>
-                                                </div>            
+                                                </div>
+                                                <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
+                                                    <label for="hide-vertical-tab">
+                                                        <input type="checkbox" class="form-control-checkbox" id="hide-vertical-tab" name="hide_vertical_tab" {% if multipage.hide_vertical_tab %}checked{% endif %}>&nbsp;Hide Vertical Tab
+                                                    </label>
+                                                </div>         
                                             </div>
                                             <hr>
                                             <br>
@@ -174,10 +213,15 @@
                                       <div class="accordion-body js-accordion-body">
                                         <div class="accordion-body__contents" id="horizontal-tab-main-div">
                                             <div class="row">
-                                                <div class="col-md-12 mb-3">
+                                                <div class="col-md-6 mb-3">
                                                     <label for="main-title-input" >Main Title <span class="text-danger">*</span></label>
                                                     <input type="text" class="form-control" id="main-title-input" placeholder="Main Title" name="horizontal_title" required>
-                                                </div>            
+                                                </div>
+                                                <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
+                                                    <label for="hide-horizontal-tab">
+                                                        <input type="checkbox" class="form-control-checkbox" id="hide-horizontal-tab" name="hide_horizontal_tab" {% if multipage.hide_horizontal_tab %}checked{% endif %}>&nbsp;Hide Horizontal Tab
+                                                    </label>
+                                                </div>
                                             </div>
                                             <hr>
                                             <br>
@@ -216,10 +260,15 @@
                                         <div class="accordion-body js-accordion-body">
                                             <div class="accordion-body__contents">
                                                 <div class="row">
-                                                    <div class="col-md-12 mb-3">
+                                                    <div class="col-md-6 mb-3">
                                                         <label>Table Title <span class="text-danger">*</span></label>
                                                         <input type="text" class="form-control" placeholder="Title of Table" name="table_title" required>
-                                                    </div>    
+                                                    </div>
+                                                    <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
+                                                        <label for="hide-table">
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-table" name="hide_table" {% if multipage.hide_table %}checked{% endif %}>&nbsp;Hide Table
+                                                        </label>
+                                                    </div>
                                                 </div>
                                                 <table class="table">
                                                     <thead>
@@ -243,10 +292,15 @@
                                         <div class="accordion-body js-accordion-body">
                                             <div class="accordion-body__contents">
                                                 <div class="row">
-                                                    <div class="col-md-12 mb-3">
+                                                    <div class="col-md-6 mb-3">
                                                         <label>Title <span class="text-danger">*</span></label>
                                                         <input type="text" class="form-control" placeholder="Title of Bullet Points" name="bullet_title" required>
-                                                    </div>    
+                                                    </div>
+                                                    <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
+                                                        <label for="hide-bullets">
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-bullets" name="hide_bullets" {% if multipage.hide_bullets %}checked{% endif %}>&nbsp;Hide Bullet Points
+                                                        </label>
+                                                    </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="col-md-12">
@@ -266,16 +320,20 @@
                                         <div class="accordion-body js-accordion-body">
                                             <div class="accordion-body__contents">
                                                 <div class="row">
-                                                    <div class="col-md-12 mb-3">
+                                                    <div class="col-md-6 mb-3">
                                                         <label>Title <span class="text-danger">*</span></label>
                                                         <input type="text" class="form-control" placeholder="Title of Tags" name="tag_title" required>
-                                                    </div>    
+                                                    </div>
+                                                    <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
+                                                        <label for="hide-tags">
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-tags" name="hide_tags" {% if multipage.hide_tags %}checked{% endif %}>&nbsp;Hide Tags
+                                                        </label>
+                                                    </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="col-md-12">
                                                         <div style="display: flex; flex-direction: row;">
                                                             <input type="text" class="form-control" id="tag-input" placeholder="Tag Name" required>
-                                                            <input type="text" class="form-control" id="tag-link-input" placeholder="Link of Tag" required>
                                                             <button class="add-button" type="button" id="add-tag-btn">ADD</button>
                                                         </div>
                                                         <br>
@@ -290,10 +348,15 @@
                                           <div class="accordion-body js-accordion-body">
                                             <div class="accordion-body__contents" id="horizontal-tab-main-div">
                                                 <div class="row">
-                                                    <div class="col-md-12 mb-3">
+                                                    <div class="col-md-6 mb-3">
                                                         <label for="main-title-input" >Title <span class="text-danger">*</span></label>
                                                         <input type="text" class="form-control" id="timeline-title-input" placeholder="Title of Timeline" name="timeline_title" required>
-                                                    </div>            
+                                                    </div>
+                                                    <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
+                                                        <label for="hide-timeline">
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-timeline" name="hide_timeline" {% if multipage.hide_timeline %}checked{% endif %}>&nbsp;Hide Timeline
+                                                        </label>
+                                                    </div>
                                                 </div>
                                                 <hr>
                                                 <br>
@@ -538,8 +601,6 @@
             getSpecializations(program);
         });
         
-        intializeFroala();
-
         // Add Multiple Feature 
         $('#add-feature-btn').click(function () {
             const feature = $('#feature-input').val();
@@ -828,15 +889,14 @@
         // Adding tag for tags section
         $(document).on('click', '#add-tag-btn', function () {
             const tag = $('#tag-input').val();
-            const tagLink = $('#tag-link-input').val();
 
-            if (tag.trim() && tagLink.trim()) {
+            if (tag.trim()) {
                 $('#tag-div').append(
-                    `<div class="col-md-2"><a href="${tagLink}" class="tag" target="_blank">${tag}</a><input type="text" name="tag" value="${tag}" hidden><input type="text" name="tag_link" value="${tagLink}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>`
+                    `<div class="col-lg-4 col-md-12 mt-3"><a href="#" class="tag" target="_blank">${tag}</a><input type="text" name="tag" value="${tag}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>`
                 );
             }
 
-            $('#tag-input, #tag-link-input').val('');
+            $('#tag-input').val('');
         });
 
         // Remove bullet points
@@ -908,6 +968,8 @@
                 $('#remove-timeline-btn').hide();
             }
         });
+
+        $('#program-dropdown').on('change', () => getCourses());
     });
 </script>
 {% endblock scripts %}

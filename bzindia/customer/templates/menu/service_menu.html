@@ -38,3 +38,13 @@
 <li>
     <a href="{% url 'customer:service_enquiries' %}" {% if service_enquiry_page %}class="active subdrop"{% endif %}><i class="feather-file"></i> <span> Enquiries</span></a>
 </li>
+
+<li class="submenu">
+    <a href="#" {% if testimonial_page %}class="active subdrop"{% endif %}><i class="fa fa-quote-left"></i> <span> Testimonials</span>
+        <span class="menu-arrow"></span>
+    </a>
+    <ul class="sub-menus {% if testimonial_page %}d-block{% endif %}">
+        <li><a href="{% url 'customer:testimonials' %}" {% if list_testimonials %}class="active"{% endif %}>All Testimonials</a></li>
+        <li><a href="{% url 'customer:add_testimonials' %}" {% if add_testimonial_page %}class="active"{% endif %} >Add Testimonial</a></li>									
+    </ul>
+</li>

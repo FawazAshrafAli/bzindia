@@ -189,7 +189,7 @@ class TouristAttraction(models.Model):
 
     building_height = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True) #height
 
-    waterway_type = models.CharField(max_length=150, null=True, blank=True) #waterway
+    waterway_type = models.CharField(max_length=150, null=True, blank=True) #waterway 
     waterbody_type = models.CharField(max_length=150, null=True, blank=True) #water
     castle_type = models.CharField(max_length=150, null=True, blank=True) #castle
     attraction = models.CharField(max_length=150, null=True, blank=True)
@@ -228,33 +228,16 @@ class TouristAttraction(models.Model):
         db_table = "attractions"
         ordering = ["created"]
 
-# languages_in_india = [
-#     "hi",      # Hindi
-#     "en",      # English
-#     "bn",      # Bengali
-#     "te",      # Telugu
-#     "mr",      # Marathi
-#     "ta",      # Tamil
-#     "ur",      # Urdu
-#     "gu",      # Gujarati
-#     "ml",      # Malayalam
-#     "kn",      # Kannada
-#     "or",      # Odia (Oriya)
-#     "pa",      # Punjabi
-#     "as",      # Assamese
-#     "mai",     # Maithili
-#     "sa",      # Sanskrit
-#     "kok",     # Konkani
-#     "sd",      # Sindhi
-#     "dgo",     # Dogri
-#     "mni",     # Manipuri
-#     "brx",     # Bodo
-#     "sat",     # Santali
-#     "ks",      # Kashmiri
-#     "ne",      # Nepali
-#     "lus",     # Mizo
-#     "ar",      # Arabic (spoken by some communities)
-# ]
+    @property
+    def attraction_type(self):        
+        if self.historic_type and self.historic_type!= "yes":
+            return str(self.historic_type).title()
+        elif self.waterway_type and self.waterway_type!= "yes":
+            return str(self.waterway_type).title()
+        elif self.waterbody_type and self.waterbody_type!= "yes":
+            return str(self.waterbody_type).title()
+        return None
+
 
 
 class Court(models.Model):

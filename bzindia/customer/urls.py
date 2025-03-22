@@ -28,6 +28,13 @@ from .views import (CustomerHomeView,
                     ListCourseProgramView, ListCourseSpecializationView,
                     AddCourseFaqView, ListCourseFaqView, UpdateCourseFaqView, DeleteCourseFaqView,
                     ListCourseEnquiryView, DeleteCourseEnquiryView,
+                    AddStudentTestimonialView, StudentTestimonialListView, UpdateStudentTestimonialView, DeleteStudentTestimonialView,
+
+                    # Clients
+                    AddClientView, ClientListView, UpdateClientView, DeleteClientView,
+
+                    # General Testimonials
+                    AddTestimonialView, TestimonialListView, UpdateTestimonialView, DeleteTestimonialView,
                     )
 
 app_name = "customer"
@@ -134,4 +141,21 @@ urlpatterns = [
 
     path('course_enquiries/', ListCourseEnquiryView.as_view(), name="course_enquiries"),
     path('delete_course_enquiry/<str:slug>', DeleteCourseEnquiryView.as_view(), name="delete_course_enquiry"),
+
+    path('add_student_testimonials/', AddStudentTestimonialView.as_view(), name="add_student_testimonials"),
+    path('student_testimonials/', StudentTestimonialListView.as_view(), name="student_testimonials"),
+    path('update_student_testimonial/<str:slug>', UpdateStudentTestimonialView.as_view(), name="update_student_testimonial"),
+    path('delete_student_testimonial/<str:slug>', DeleteStudentTestimonialView.as_view(), name="delete_student_testimonial"),
+
+    # Clients
+    path('clients/', ClientListView.as_view(), name="clients"),
+    path('add_clients/', AddClientView.as_view(), name="add_clients"),
+    path('update_client/<str:slug>', UpdateClientView.as_view(), name="update_client"),
+    path('delete_client/<str:slug>', DeleteClientView.as_view(), name="delete_client"),
+
+    # General Testimonial
+    path('testimonials/', TestimonialListView.as_view(), name="testimonials"),
+    path('add_testimonials/', AddTestimonialView.as_view(), name="add_testimonials"),
+    path('update_testimonial/<str:slug>', UpdateTestimonialView.as_view(), name="update_testimonial"),
+    path('delete_testimonial/<str:slug>', DeleteTestimonialView.as_view(), name="delete_testimonial"),
 ]
