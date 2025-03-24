@@ -17,6 +17,8 @@ from .views import (
 
     ListProductEnquiryView, DeleteProductEnquiryView,
 
+    AddProductMultiPageView, ProductMultiPageListView, ProductMultiPageDetailView, UpdateProductMultiPageView,
+
     # Educational Company
     AddCourseView, CourseListView, RemoveCourseView, UpdateCourseView,
     CourseProgramListView, AddCourseProgramView, RemoveCourseProgramView, UpdateCourseProgramView,
@@ -36,14 +38,20 @@ from .views import (
     ListServiceEnquiryView, DeleteServiceEnquiryView,
     AddServiceDetailView, ServiceDetailsListView, ServiceDetailView, UpdateServiceDetailView,
 
+    AddServiceMultiPageView, ServiceMultiPageListView, ServiceMultiPageDetailView, UpdateServiceMultiPageView,
+
     # Registration Company
     ListRegistrationView, AddRegistrationView, RemoveRegistrationView, UpdateRegistrationView,
     ListRegistrationTypeView, AddRegistrationTypeView, RemoveRegistrationTypeView, UpdateRegistrationTypeView,
     ListRegistrationSubTypeView, AddRegistrationSubTypeView, RemoveRegistrationSubTypeView, UpdateRegistrationSubTypeView,
 
-    AddRegistrationFaqView, ListRegistrationFaqView, UpdateRegistrationFaqView, DeleteRegistrationFaqView,
+    AddRegistrationDetailPageView, RegistrationDetailPageListView, RegistrationDetailPageView, UpdateRegistrationDetailPageView,
+
+    AddRegistrationFaqView, ListRegistrationFaqView, UpdateRegistrationFaqView, DeleteRegistrationFaqView,    
 
     ListRegistrationEnquiryView, DeleteRegistrationEnquiryView,
+
+    AddRegistrationMultiPageView, RegistrationMultiPageListView, RegistrationMultiPageDetailView, UpdateRegistrationMultiPageView,
 
     # Directory
     BaseDirectoryView,
@@ -125,6 +133,11 @@ urlpatterns = [
     path('product_enquiries/<str:slug>', ListProductEnquiryView.as_view(), name="product_enquiries"),
     path('delete_product_enquiry/<str:slug>/<str:enquiry_slug>/', DeleteProductEnquiryView.as_view(), name="delete_product_enquiry"),
 
+    path('add_product_multipage/<str:slug>', AddProductMultiPageView.as_view(), name="add_product_multipage"),
+    path('update_product_multipage/<str:slug>/<str:multipage_slug>', UpdateProductMultiPageView.as_view(), name="update_product_multipage"),
+    path('product_multipages/<str:slug>', ProductMultiPageListView.as_view(), name="product_multipages"),
+    path('product_multipage/<str:slug>/<str:product_slug>', ProductMultiPageDetailView.as_view(), name="product_multipage"),
+
     # Education Company
     path('add_course/<str:slug>', AddCourseView.as_view(), name="add_course"),
     path('courses/<str:slug>', CourseListView.as_view(), name="courses"),
@@ -189,6 +202,11 @@ urlpatterns = [
     path('service_detail/<str:slug>/<str:service_slug>', ServiceDetailView.as_view(), name="service_detail"),
     path('update_service_details/<str:slug>/<str:service_slug>', UpdateServiceDetailView.as_view(), name="update_service_details"),
 
+    path('add_service_multipage/<str:slug>', AddServiceMultiPageView.as_view(), name="add_service_multipage"),
+    path('update_service_multipage/<str:slug>/<str:multipage_slug>', UpdateServiceMultiPageView.as_view(), name="update_service_multipage"),
+    path('service_multipages/<str:slug>', ServiceMultiPageListView.as_view(), name="service_multipages"),
+    path('service_multipage/<str:slug>/<str:service_slug>', ServiceMultiPageDetailView.as_view(), name="service_multipage"),
+
     # Registration Company
     path('companies/registrations/<str:slug>', ListRegistrationView.as_view(), name="registrations"),
     path('companies/add_registration/<str:slug>', AddRegistrationView.as_view(), name="add_registration"),
@@ -212,6 +230,16 @@ urlpatterns = [
 
     path('registration_enquiries/<str:slug>', ListRegistrationEnquiryView.as_view(), name="registration_enquiries"),
     path('delete_registration_enquiry/<str:slug>/<str:enquiry_slug>/', DeleteRegistrationEnquiryView.as_view(), name="delete_registration_enquiry"),
+
+    path('add_registration_detail_page/<str:slug>', AddRegistrationDetailPageView.as_view(), name="add_registration_detail_page"),
+    path('registration_detail_pages/<str:slug>', RegistrationDetailPageListView.as_view(), name="registration_detail_pages"),
+    path('registration_detail_page/<str:slug>/<str:registration_sub_type_slug>', RegistrationDetailPageView.as_view(), name="registration_detail_page"),
+    path('update_registration_detail_page/<str:slug>/<str:registration_sub_type_slug>', UpdateRegistrationDetailPageView.as_view(), name="update_registration_detail_page"),
+
+    path('add_registration_multipage/<str:slug>', AddRegistrationMultiPageView.as_view(), name="add_registration_multipage"),
+    path('update_registration_multipage/<str:slug>/<str:multipage_slug>', UpdateRegistrationMultiPageView.as_view(), name="update_registration_multipage"),
+    path('registration_multipages/<str:slug>', RegistrationMultiPageListView.as_view(), name="registration_multipages"),
+    path('registration_multipage/<str:slug>/<str:registration_sub_type_slug>', RegistrationMultiPageDetailView.as_view(), name="registration_multipage"),
 
     # Directory
 

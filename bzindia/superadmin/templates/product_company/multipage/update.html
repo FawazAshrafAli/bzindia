@@ -3,7 +3,7 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}Update {{current_company.name}} Course Detail{% endblock title %}
+{% block title %}Update {{current_company.name}} Product Multipage{% endblock title %}
 
 {% block styles %}
 <style>
@@ -66,39 +66,54 @@
 	<!-- Content Starts -->
     <div class="row">
         <div class="col-lg-12">
-            <form method="post" action="{% url 'superadmin:update_course_details' current_company.slug course_detail.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-course-form" novalidate>
+            <form method="post" action="{% url 'superadmin:update_product_multipage' current_company.slug multipage.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-product-form" novalidate>
                 {% csrf_token %}
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title mb-0" >Update Course Name</h4>
+                        <h4 class="card-title mb-0" >Update Product Name</h4>
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="program-dropdown" >Program <span class="text-danger">*</span></label>
-                                <select class="form-control" id="program-dropdown" name="program" required>
-                                    <option value="" hidden disabled selected>Select Program</option>
-                                    {% for program in programs %}
-                                    <option value="{{program.slug}}" {% if course_detail.course.program.slug == program.slug %}selected{% endif %}>{{program.name}}</option>
+                            <div class="col-md-4 mb-3">
+                                <label for="category-dropdown" >Category <span class="text-danger">*</span></label>
+                                <select class="form-control" id="category-dropdown" name="category" required>
+                                    <option value="" hidden disabled selected>Select Category</option>
+                                    {% for category in categories %}
+                                    <option value="{{category.slug}}" {% if multipage.product.category.slug == category.slug %}selected{% endif %}>{{category.name}}</option>
                                     {% endfor %}                                    
                                 </select>
                                 <div class="invalid-feedback">
-                                    Please provide the program.
+                                    Please provide the category.
                                 </div>
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="course-dropdown" >Course <span class="text-danger">*</span></label>
-                                <select class="form-control" id="course-dropdown" name="course" required>
-                                    <option value="" hidden disabled selected>Select Course</option>
-                                    {% for course in courses %}
-                                    <option value="{{course.slug}}" {% if course_detail.course.slug == course.slug %}selected{% endif %}>{{course.name}}</option>
+                            <div class="col-md-4 mb-3">
+                                <label for="sub-category-dropdown" >Sub Category <span class="text-danger">*</span></label>
+                                <select class="form-control" id="sub-category-dropdown" name="sub_category" required>
+                                    <option value="" hidden disabled selected>Select Sub Category</option>
+                                    {% for sub_category in sub_categories %}
+                                    <option value="{{sub_category.slug}}" {% if multipage.product.sub_category.slug == sub_category.slug %}selected{% endif %}>{{sub_category.name}}</option>
+                                    {% endfor %}        
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please provide the sub category.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="product-dropdown" >Product <span class="text-danger">*</span></label>
+                                <select class="form-control" id="product-dropdown" name="product" required>
+                                    <option value="" hidden disabled selected>Select Product</option>
+                                    {% for product in products %}
+                                    <option value="{{product.slug}}" {% if multipage.product.slug == product.slug %}selected{% endif %}>{{product.name}}</option>
                                     {% endfor %}                                    
                                 </select>
                                 <div class="invalid-feedback">
-                                    Please provide the course.
+                                    Please provide the product.
                                 </div>
                                 <div class="valid-feedback">
                                     Looks good!
@@ -109,8 +124,8 @@
 
                         <div class="form-group row">
                             <div class="col-sm-12">
-                                <label class="col-form-label">Summary </label>
-                                <textarea class="form-control" rows="3" id="summary-input" name="summary" placeholder="Summary">{% if course_detail.summary %}{{course_detail.summary}}{% endif %}</textarea>
+                                <label class="col-form-label">Summary<span>*</span></label>
+                                <textarea class="form-control" rows="3" id="summary-input" name="summary" placeholder="Summary">{% if multipage.summary %}{{multipage.summary}}{% endif %}</textarea>
                             </div>
                         </div>
 
@@ -124,14 +139,14 @@
                         <div class="form-group row">
                             <div class="col-sm-12">
                                 <label class="col-form-label">Meta Tags</label>
-                                <input class="form-control"  type="text" id="meta-tags-input" name="meta_tags" placeholder="Meta Tags" value="{% if course_detail.meta_tags %}{{course_detail.get_meta_tags}}{% endif %}" required>
+                                <input class="form-control"  type="text" id="meta-tags-input" name="meta_tags" placeholder="Meta Tags" value="{% if multipage.meta_tags %}{{multipage.get_meta_tags}}{% endif %}" required>
                             </div>
                         </div>
 
                         <div class="form-group row">
                             <div class="col-sm-12">
                                 <label class="col-form-label">Meta Description</label>
-                                <textarea class="form-control" rows="3" id="meta-description-input" name="meta_description" placeholder="Meta Description" required>{% if course_detail.meta_description %}{{course_detail.meta_description}}{% endif %}</textarea>
+                                <textarea class="form-control" rows="3" id="meta-description-input" name="meta_description" placeholder="Meta Description" required>{% if multipage.meta_description %}{{multipage.meta_description}}{% endif %}</textarea>
                             </div>
                         </div>
 
@@ -146,7 +161,7 @@
                                                 <div class="row">
                                                     <div class="col-md-12 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                         <label for="hide-features">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-features" name="hide_features" {% if course_detail.hide_features %}checked{% endif %}>&nbsp;Hide Features
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-features" name="hide_features" {% if multipage.hide_features %}checked{% endif %}>&nbsp;Hide Features
                                                         </label>
                                                     </div>
                                                 </div>
@@ -156,7 +171,7 @@
                                                 </div>
                                                 <br>
                                                 <ol class="row" id="feature-div">
-                                                    {% for feature_obj in course_detail.features.all %}
+                                                    {% for feature_obj in multipage.features.all %}
                                                     <li class="col-md-6">{{feature_obj.feature}}<input type="text" name="feature" value="{{feature_obj.feature}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-feature-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${feature}'"><i class="fa fa-close" style="padding: 0;"></i></button></li>
                                                     {% endfor %}
                                                 </ol>
@@ -171,19 +186,19 @@
                                             <div class="row">
                                                 <div class="col-md-6 mb-3">
                                                     <label for="main-title-input" >Main Title <span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" id="main-title-input" placeholder="Main Title" name="vertical_title" value="{{course_detail.vertical_title}}" required>
-                                                </div> 
+                                                    <input type="text" class="form-control" id="main-title-input" placeholder="Main Title" name="vertical_title" value="{% if multipage.vertical_title %}{{multipage.vertical_title}}{% endif %}" required>
+                                                </div>   
                                                 <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                     <label for="hide-vertical-tab">
-                                                        <input type="checkbox" class="form-control-checkbox" id="hide-vertical-tab" name="hide_vertical_tab" {% if course_detail.hide_vertical_tab %}checked{% endif %}>&nbsp;Hide Vertical Tab
+                                                        <input type="checkbox" class="form-control-checkbox" id="hide-vertical-tab" name="hide_vertical_tab" {% if multipage.hide_vertical_tab %}checked{% endif %}>&nbsp;Hide Vertical Tab
                                                     </label>
                                                 </div>
                                             </div>
                                             <hr>
                                             <br>
                                             <div class="vertical-tab-div" id="vertical-tab-div">
-                                                {% if course_detail.vertical_tabs.all|length > 0 %}
-                                                {% for tab in course_detail.vertical_tabs.all %}
+                                                {% if multipage.vertical_tabs.all|length > 0 %}
+                                                {% for tab in multipage.vertical_tabs.all %}
                                                 {% if forloop.counter > 1 %}<hr><br>{% endif %}
                                                 <div class="vertical-tab-inner-div">
                                                     <div class="row">
@@ -259,19 +274,19 @@
                                             <div class="row">
                                                 <div class="col-md-6 mb-3">
                                                     <label for="main-title-input" >Main Title <span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" id="main-title-input" placeholder="Main Title" name="horizontal_title" value="{{course_detail.horizontal_title}}" required>
-                                                </div> 
+                                                    <input type="text" class="form-control" id="main-title-input" placeholder="Main Title" name="horizontal_title" value="{% if multipage.horizontal_title %}{{multipage.horizontal_title}}{% endif %}" required>
+                                                </div>
                                                 <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                     <label for="hide-horizontal-tab">
-                                                        <input type="checkbox" class="form-control-checkbox" id="hide-horizontal-tab" name="hide_horizontal_tab" {% if course_detail.hide_horizontal_tab %}checked{% endif %}>&nbsp;Hide Horizontal Tab
+                                                        <input type="checkbox" class="form-control-checkbox" id="hide-horizontal-tab" name="hide_horizontal_tab" {% if multipage.hide_horizontal_tab %}checked{% endif %}>&nbsp;Hide Horizontal Tab
                                                     </label>
-                                                </div>           
+                                                </div>
                                             </div>
                                             <hr>
                                             <br>
                                             <div class="horizontal-tab-div" id="horizontal-tab-div">
-                                                {% if course_detail.horizontal_tabs.all|length > 0 %}
-                                                {% for tab in course_detail.horizontal_tabs.all %}
+                                                {% if multipage.horizontal_tabs.all|length > 0 %}
+                                                {% for tab in multipage.horizontal_tabs.all %}
                                                 {% if forloop.counter > 1 %}<hr><br>{% endif %}
                                                 <div class="horizontal-tab-inner-div">
                                                     <div class="row">
@@ -339,19 +354,19 @@
                                                 <div class="row">
                                                     <div class="col-md-6 mb-3">
                                                         <label>Table Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Table" name="table_title" value="{{course_detail.table_title}}" required>
+                                                        <input type="text" class="form-control" placeholder="Title of Table" name="table_title" value="{% if multipage.table_title %}{{multipage.table_title}}{% endif %}" required>
                                                     </div>
                                                     <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                         <label for="hide-table">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-table" name="hide_table" {% if course_detail.hide_table %}checked{% endif %}>&nbsp;Hide Table
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-table" name="hide_table" {% if multipage.hide_table %}checked{% endif %}>&nbsp;Hide Table
                                                         </label>
                                                     </div>
                                                 </div>
                                                 <table class="table">
                                                     <thead>
                                                         <tr id="table-header">
-                                                            {% if course_detail.tables.all|length > 0 %}
-                                                            {% for table in course_detail.tables.all %}
+                                                            {% if multipage.tables.all|length > 0 %}
+                                                            {% for table in multipage.tables.all %}
                                                             <th><input type="text" class="form-control" placeholder="Heading of Column{{forloop.counter}}" name="table_heading" title="Heading of Column{{forloop.counter}}" value="{{table.heading}}"></th>
                                                             {% endfor %}
                                                             {% else %}
@@ -361,8 +376,8 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody id="table-body">
-                                                        {% if course_detail.tables.all|length > 0 %}
-                                                        {% for row in course_detail.get_data %}
+                                                        {% if multipage.tables.all|length > 0 %}
+                                                        {% for row in multipage.get_data %}
                                                         <tr id="row-{{forloop.counter}}">
                                                             {% for item in row %}
                                                             <td><input type="text" class="form-control" placeholder="Data of Column{{forloop.counter}}" name="table_data" value="{{item}}"></td>
@@ -387,11 +402,11 @@
                                                 <div class="row">
                                                     <div class="col-md-6 mb-3">
                                                         <label>Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Bullet Points" name="bullet_title" value="{{course_detail.bullet_title}}" required>
+                                                        <input type="text" class="form-control" placeholder="Title of Bullet Points" name="bullet_title" value="{% if multipage.bullet_title %}{{multipage.bullet_title}}{% endif %}" required>
                                                     </div>
                                                     <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                         <label for="hide-bullets">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-bullets" name="hide_bullets" {% if course_detail.hide_bullets %}checked{% endif %}>&nbsp;Hide Bullet Points
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-bullets" name="hide_bullets" {% if multipage.hide_bullets %}checked{% endif %}>&nbsp;Hide Bullet Points
                                                         </label>
                                                     </div>
                                                 </div>
@@ -403,8 +418,8 @@
                                                         </div>
                                                         <br>
                                                         <ol class="row" id="bullet-div">
-                                                            {% if course_detail.bullet_points.all|length > 0 %}
-                                                            {% for bullet_obj in course_detail.bullet_points.all %}
+                                                            {% if multipage.bullet_points.all|length > 0 %}
+                                                            {% for bullet_obj in multipage.bullet_points.all %}
                                                             <li class="col-md-6">{{bullet_obj.bullet_point}}<input type="text" name="bullet" value="{{bullet_obj.bullet_point}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-bullet-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${bulletPoint}'"><i class="fa fa-close" style="padding: 0;"></i></button></li>
                                                             {% endfor %}
                                                             {% endif %}
@@ -421,24 +436,24 @@
                                                 <div class="row">
                                                     <div class="col-md-6 mb-3">
                                                         <label>Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Tags" name="tag_title" value="{{course_detail.tag_title}}" required>
+                                                        <input type="text" class="form-control" placeholder="Title of Tags" name="tag_title" value="{% if multipage.tag_title %}{{multipage.tag_title}}{% endif %}" required>
                                                     </div>
                                                     <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                         <label for="hide-tags">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-tags" name="hide_tags" {% if course_detail.hide_tags %}checked{% endif %}>&nbsp;Hide Tags
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-tags" name="hide_tags" {% if multipage.hide_tags %}checked{% endif %}>&nbsp;Hide Tags
                                                         </label>
                                                     </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="col-md-12">
                                                         <div style="display: flex; flex-direction: row;">
-                                                            <input type="text" class="form-control" id="tag-input" placeholder="Tag Name" required>                                                            
+                                                            <input type="text" class="form-control" id="tag-input" placeholder="Tag Name" required>
                                                             <button class="add-button" type="button" id="add-tag-btn">ADD</button>
                                                         </div>
                                                         <br>
                                                         <div class="row" id="tag-div">
-                                                            {% if course_detail.tags.all|length > 0 %}
-                                                            {% for tag_obj in course_detail.tags.all %}
+                                                            {% if multipage.tags.all|length > 0 %}
+                                                            {% for tag_obj in multipage.tags.all %}
                                                             <div class="col-lg-4 col-md-12 mt-3"><a href="{{tag_obj.link}}" class="tag" target="_blank">{{tag_obj.tag}}</a><input type="text" name="tag" value="{{tag_obj.tag}}" hidden><input type="text" name="tag_link" value="{{tag_obj.link}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>
                                                             {% endfor %}
                                                             {% endif %}
@@ -455,19 +470,19 @@
                                                 <div class="row">
                                                     <div class="col-md-6 mb-3">
                                                         <label for="main-title-input" >Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" id="timeline-title-input" placeholder="Title of Timeline" name="timeline_title" value="{{course_detail.timeline_title}}" required>
+                                                        <input type="text" class="form-control" id="timeline-title-input" placeholder="Title of Timeline" name="timeline_title" value="{% if multipage.timeline_title %}{{multipage.timeline_title}}{% endif %}" required>
                                                     </div>
                                                     <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                         <label for="hide-timeline">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-timeline" name="hide_timeline" {% if course_detail.hide_timeline %}checked{% endif %}>&nbsp;Hide Timeline
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-timeline" name="hide_timeline" {% if multipage.hide_timeline %}checked{% endif %}>&nbsp;Hide Timeline
                                                         </label>
                                                     </div>
                                                 </div>
                                                 <hr>
                                                 <br>
                                                 <div class="timeline-div" id="timeline-div">
-                                                    {% if course_detail.timelines.all|length > 1 %}
-                                                    {% for timeline in course_detail.timelines.all %}
+                                                    {% if multipage.timelines.all|length > 1 %}
+                                                    {% for timeline in multipage.timelines.all %}
                                                     {% if forloop.counter > 1 %}<hr><br>{% endif %}
                                                     <div class="timeline-inner-div">
                                                         <div class="row">
@@ -485,7 +500,7 @@
                                                     </div>
                                                     {% endfor %}
                                                     {% else %}
-                                                    <div class="timeline-inner-div">
+                                                    <div class="timeline-inner-div">                                                        
                                                         <div class="row">
                                                             <div class="col-md-12 mb-3">
                                                                 <label>Timeline 1 <span class="text-danger">*</span></label>
@@ -504,6 +519,61 @@
                                                 <div class="d-flex justify-content-between align-items-center" id="timeline-btn-div">
                                                     <button class="add-button" id="add-timeline-btn" type="button" style="width: fit-content;">Add Another Timeline</button>
                                                     <button class="remove-button" id="remove-timeline-btn" type="button" style="width: fit-content;">Remove Timeline</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                      </div>
+
+                                      <div class="tasks__item crms-task-item active">
+                                        <div class="accordion-header js-accordion-header">FAQs</div> 
+                                          <div class="accordion-body js-accordion-body">
+                                            <div class="accordion-body__contents" id="faq-main-div">                                                
+                                                <div class="row">
+                                                    <div class="col-md-12 mb-3 d-flex align-items-start justify-content-end">                                                    
+                                                        <label for="hide-faqs">
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-faqs" name="hide_faqs" {% if multipage.hide_faqs %}checked{% endif %}>&nbsp;Hide FAQs
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="faq-div" id="faq-div">
+                                                    {% if multipage.faqs.all|length > 1 %}
+                                                    {% for faq in multipage.faqs.all %}
+                                                    {% if forloop.counter > 1 %}<hr><br>{% endif %}
+                                                    <div class="faq-inner-div">
+                                                        <div class="row">
+                                                            <div class="col-md-12 mb-3">
+                                                                <label>Question of FAQ {{forloop.counter}} <span class="text-danger">*</span></label>
+                                                                <input type="text" class="form-control" placeholder="Question of FAQ {{forloop.counter}}" name="faq_question" required value="{% if faq.question %}{{faq.question}}{% endif %}">
+                                                            </div>    
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-12 mb-3">
+                                                                <label >Answer of FAQ {{forloop.counter}} <span class="text-danger">*</span></label>
+                                                                <textarea type="text" class="form-control" placeholder="Answer of FAQ {{forloop.counter}}" name="faq_answer" required>{% if faq.answer %}{{faq.answer}}{% endif %}</textarea>
+                                                            </div>            
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                    {% else %}
+                                                    <div class="faq-inner-div">
+                                                        <div class="row">
+                                                            <div class="col-md-12 mb-3">
+                                                                <label>Question of FAQ 1 <span class="text-danger">*</span></label>
+                                                                <input type="text" class="form-control" placeholder="Question of FAQ 1" name="faq_question" required>
+                                                            </div>    
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-12 mb-3">
+                                                                <label >Answer of FAQ 1 <span class="text-danger">*</span></label>
+                                                                <textarea type="text" class="form-control" placeholder="Answer of FAQ 1" name="faq_answer" required></textarea>
+                                                            </div>            
+                                                        </div>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="d-flex justify-content-between align-items-center" id="faq-btn-div">
+                                                    <button class="add-button" id="add-faq-btn" type="button" style="width: fit-content;">Add Another Timeline</button>
+                                                    <button class="remove-button" id="remove-faq-btn" type="button" style="width: fit-content;">Remove Timeline</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -623,7 +693,7 @@
             }
             
             if (formValid == true) {
-                $('#add-course-form').submit()
+                $('#add-product-form').submit()
             }
 
         }
@@ -726,7 +796,6 @@
             getSpecializations(program);
         });
         
-
         // Add Multiple Feature 
         $('#add-feature-btn').click(function () {
             const feature = $('#feature-input').val();
@@ -744,12 +813,6 @@
             const feature = $(this).parent();
 
             feature.remove();
-        });
-
-        $('#feature-input').on('keypress', function (e) {
-            if (e.which == 13) {
-                $('#add-feature-btn').click();
-            }
         });
 
         //  Add Multiple Vertical Bullet Point
@@ -1022,7 +1085,7 @@
                 );
             }
 
-            $('#tag-input').val('');
+            $('#tag-input, #tag-link-input').val('');
         });
 
         // Remove bullet points
@@ -1030,14 +1093,6 @@
             const parentElement = $(this).parent();
 
             parentElement.remove();
-        });
-
-        // Press enter for adding bullet points
-        $('#bullet-input').on('keypress', function(e) {
-            if (e.which == 13) {
-                e.preventDefault();
-                $('#add-bullet-btn').click();
-            }
         });
 
         // Remove bullet points
@@ -1094,8 +1149,66 @@
                 $('#remove-timeline-btn').hide();
             }
         });
+
+        // Add New FAQ
+        $('#add-faq-btn').click(function () {
+            let faqCount = $('.faq-inner-div').length;
+
+            faqCount++;
+            
+            $('#faq-div').append(`
+                <div class="faq-inner-div">
+                    <hr>
+                    <br>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label>Question of FAQ ${faqCount} <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" placeholder="Question of FAQ ${faqCount}" name="faq_question" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label >Answer of FAQ ${faqCount} <span class="text-danger">*</span></label>
+                            <textarea type="text" class="form-control" placeholder="Answer of FAQ ${faqCount}" name="faq_answer" required></textarea>
+                        </div>            
+                    </div>                                                        
+                </div>
+            `);            
+        });
+
+        // Remove FAQ
+        $(document).on('click', '#remove-faq-btn', function () {
+            const faqCount = $('.faq-inner-div').length;
+            
+            if (faqCount > 1) {
+                const faq = $('.faq-inner-div').last();
+                faq.remove();
+            }
+        });
         
-        $('#program-dropdown').on('change', () => getCourses());
+        // Visibility of faq's remove faq btn
+        $(document).on('click', '#add-faq-btn, #remove-faq-btn', function () {
+            const faqCount = $('.faq-inner-div').length;
+
+            if (faqCount > 1) {
+                $('#remove-faq-btn').show();                
+            } else {
+                $('#remove-faq-btn').hide();
+            }
+        });
+
+        // Prevent form submission on pressing enter key
+        $(document).on("keydown", "form", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+            }
+        });
+
+        // Get Products
+        $('#category-dropdown').on('change', () => getSubCategories(isProduct = true));
+        
+        $('#sub-category-dropdown').on('change', () => getProducts());
+        
     });
 </script>
 {% endblock scripts %}

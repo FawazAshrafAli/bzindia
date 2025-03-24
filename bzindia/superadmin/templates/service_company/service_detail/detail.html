@@ -47,7 +47,18 @@
                 <div>{{service_detail.description|safe}}</div>
             </div>
         </div>
-		{% if service_detail.features.all %}
+
+		<div class="card">
+            <div class="card-body">
+                <h4>Meta Tags</h4>
+                <div>{% if service_detail.get_meta_tags %}{{service_detail.get_meta_tags}}{% else %}Not Provided{% endif %}</div>
+				<br>
+				<h4>Meta Description</h4>
+                <div>{% if service_detail.meta_description %}{{service_detail.meta_description}}{% else %}Not Provided{% endif %}</div>
+            </div>
+        </div>
+
+		{% if not service_detail.hide_features %}
 		<div class="card">
             <div class="card-body">
 				<h4>Features</h4>
@@ -60,6 +71,8 @@
 			</div>
 		</div>
 		{% endif %}
+
+		{% if not service_detail.hide_vertical_tab %}
 		<div class="card">
 			<div class="card-body">
 				<h4>Vertical Tab</h4>
@@ -109,6 +122,9 @@
 				{% endif %}
 			</div>
 		</div>
+		{% endif %}
+
+		{% if not service_detail.hide_horizontal_tab %}
 		<div class="card">
 			<div class="card-body">
 				<h4>Horizontal Tab</h4>
@@ -154,6 +170,9 @@
 				{% endif %}
 			</div>
 		</div>
+		{% endif %}
+
+		{% if not service_detail.hide_table %}
 		<div class="card">
 			<div class="card-body">
 				<h4>Table</h4>
@@ -184,6 +203,9 @@
 				{% endif %}
 			</div>
 		</div>
+		{% endif %}
+
+		{% if not service_detail.hide_bullets %}
 		<div class="card">
             <div class="card-body">
 				<h4>Bullet Points</h4>
@@ -201,6 +223,9 @@
 				{% endif %}
 			</div>
 		</div>
+		{% endif %}
+
+		{% if not service_detail.hide_tags %}
 		<div class="card">
             <div class="card-body">
 				<h4>Tags</h4>
@@ -218,9 +243,12 @@
 				{% endif %}
 			</div>
 		</div>
+		{% endif %}
+
+		{% if not service_detail.hide_timeline %}
 		<div class="card">
             <div class="card-body">
-				<h4>Timline</h4>
+				<h4>Timeline</h4>
 				<hr>
 				{% if service_detail.timeline_title or service_detail.timelines.all %}
 				<h5>Title: {{service_detail.timeline_title}}</h5>
@@ -240,6 +268,7 @@
 				{% endif %}
 			</div>
 		</div>
+		{% endif %}
 	</div>
 	
 

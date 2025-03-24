@@ -95,69 +95,9 @@
 
 {% block scripts %}
 <script>
-    $(document).ready(() => {
-        // Get Sub Categories
-        function getSubCategories() {
-            const category = $('#category-dropdown').val();
-            const company = `{{current_company.slug}}`;
-
-            $.ajax({
-                type: 'GET',
-                url: `{% url 'service:get_sub_categories' %}`,
-                dataType: 'json',
-                data: {
-                    "category_slug": category,
-                    "company_slug": company
-                },
-                success: response => {
-                    $('#sub-category-dropdown').html(`<option value="" hidden disabled selected>Select Sub Category</option>`);
-                    
-                    if (response.sub_categories && response.sub_categories.length > 0) {
-                        response.sub_categories.forEach(sub_category => {
-                            $('#sub-category-dropdown').append(`<option value="${sub_category.slug}">${sub_category.name}</option>`)
-                        })
-                    }
-                    
-                    if (response.error) {
-                        console.error("Error: ", response.error)
-                    }
-                },
-                error: error => console.error("Error: ", error),
-            });            
-        };
-
+    $(document).ready(() => {        
         $('#category-dropdown').on('change', () => getSubCategories());
-
-        // Get Services
-        function getServices() {
-            const sub_category = $('#sub-category-dropdown').val();
-            const company = `{{current_company.slug}}`;
-
-            $.ajax({
-                type: 'GET',
-                url: `{% url 'service:get_services' %}`,
-                dataType: 'json',
-                data: {
-                    "sub_category_slug": sub_category,
-                    "company_slug": company
-                },
-                success: response => {
-                    $('#service-dropdown').html(`<option value="" hidden disabled selected>Select Service</option>`);
-                    
-                    if (response.services && response.services.length > 0) {
-                        response.services.forEach(service => {
-                            $('#service-dropdown').append(`<option value="${service.slug}">${service.name}</option>`)
-                        })
-                    }
-                    
-                    if (response.error) {
-                        console.error("Error: ", response.error)
-                    }
-                },
-                error: error => console.error("Error: ", error),
-            });            
-        };
-
+        
         $('#sub-category-dropdown').on('change', () => getServices());
     })
 </script>

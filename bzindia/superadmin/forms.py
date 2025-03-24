@@ -2,6 +2,9 @@ from django import forms
 from ckeditor.widgets import CKEditorWidget
 
 from educational.models import MultiPage as CourseMultiPage, CourseDetail
+from service.models import MultiPage as ServiceMultiPage, ServiceDetail
+from product.models import MultiPage as ProductMultiPage
+from registration.models import MultiPage as RegistrationMultiPage, RegistrationDetailPage
 
 class CourseMultiPageDescriptionForm(forms.ModelForm):
     description = forms.CharField(widget=CKEditorWidget())
@@ -11,9 +14,57 @@ class CourseMultiPageDescriptionForm(forms.ModelForm):
         fields = ["description"]
 
 
+class ServiceMultiPageDescriptionForm(forms.ModelForm):
+    description = forms.CharField(widget=CKEditorWidget())
+
+    class Meta:
+        model = ServiceMultiPage
+        fields = ["description"]
+
+
+class ProductMultiPageDescriptionForm(forms.ModelForm):
+    description = forms.CharField(widget=CKEditorWidget())
+
+    class Meta:
+        model = ProductMultiPage
+        fields = ["description"]
+
+
+class RegistrationMultiPageDescriptionForm(forms.ModelForm):
+    description = forms.CharField(widget=CKEditorWidget())
+
+    class Meta:
+        model = RegistrationMultiPage
+        fields = ["description"]
+
+
 class CourseDetailDescriptionForm(forms.ModelForm):
     description = forms.CharField(widget=CKEditorWidget())
 
     class Meta:
         model = CourseDetail
+        fields = ["description"]
+
+
+class ServiceDetailDescriptionForm(forms.ModelForm):
+    description = forms.CharField(widget=CKEditorWidget())
+
+    class Meta:
+        model = ServiceDetail
+        fields = ["description"]
+
+
+# class ProductDetailDescriptionForm(forms.ModelForm):
+#     description = forms.CharField(widget=CKEditorWidget())
+
+#     class Meta:
+#         model = ProductDetail
+#         fields = ["description"]
+
+
+class RegistrationDetailPageDescriptionForm(forms.ModelForm):
+    description = forms.CharField(widget=CKEditorWidget())
+
+    class Meta:
+        model = RegistrationDetailPage
         fields = ["description"]

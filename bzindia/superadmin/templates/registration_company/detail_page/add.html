@@ -3,10 +3,10 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}Update {{current_company.name}} Course Detail{% endblock title %}
+{% block title %}Add {{current_company.name}} Detail Page{% endblock title %}
 
 {% block styles %}
-<style>
+<style>    
     .add-button {
         color: green;
         background: #fff;
@@ -61,56 +61,52 @@
 </style>
 {% endblock styles %}
 
-{% block company_content %} 
+{% block company_content %}  
 
 	<!-- Content Starts -->
     <div class="row">
         <div class="col-lg-12">
-            <form method="post" action="{% url 'superadmin:update_course_details' current_company.slug course_detail.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-course-form" novalidate>
+            <form method="post" action="{% url 'superadmin:add_registration_detail_page' current_company.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-registration-form" novalidate>
                 {% csrf_token %}
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title mb-0" >Update Course Name</h4>
+                        <h4 class="card-title mb-0" >Registration Name</h4>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="program-dropdown" >Program <span class="text-danger">*</span></label>
-                                <select class="form-control" id="program-dropdown" name="program" required>
-                                    <option value="" hidden disabled selected>Select Program</option>
-                                    {% for program in programs %}
-                                    <option value="{{program.slug}}" {% if course_detail.course.program.slug == program.slug %}selected{% endif %}>{{program.name}}</option>
+                                <label for="type-dropdown" >Registration Type <span class="text-danger">*</span></label>
+                                <select class="form-control" id="type-dropdown" name="type" required>
+                                    <option value="" hidden disabled selected>Select Registration Type</option>
+                                    {% for type in types %}
+                                    <option value="{{type.slug}}">{{type.name}}</option>
                                     {% endfor %}                                    
                                 </select>
                                 <div class="invalid-feedback">
-                                    Please provide the program.
+                                    Please provide the registration type.
                                 </div>
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="course-dropdown" >Course <span class="text-danger">*</span></label>
-                                <select class="form-control" id="course-dropdown" name="course" required>
-                                    <option value="" hidden disabled selected>Select Course</option>
-                                    {% for course in courses %}
-                                    <option value="{{course.slug}}" {% if course_detail.course.slug == course.slug %}selected{% endif %}>{{course.name}}</option>
-                                    {% endfor %}                                    
+                                <label for="sub-type-dropdown" >Registration Sub Type <span class="text-danger">*</span></label>
+                                <select class="form-control" id="sub-type-dropdown" name="sub_type" required>
+                                    <option value="" hidden disabled selected>Select Registration Sub Type</option>                                                                 
                                 </select>
                                 <div class="invalid-feedback">
-                                    Please provide the course.
+                                    Please provide the sub registration type.
                                 </div>
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
-                            </div>                 
-                            
+                            </div>                                                        
                         </div>             
 
                         <div class="form-group row">
                             <div class="col-sm-12">
                                 <label class="col-form-label">Summary </label>
-                                <textarea class="form-control" rows="3" id="summary-input" name="summary" placeholder="Summary">{% if course_detail.summary %}{{course_detail.summary}}{% endif %}</textarea>
+                                <textarea class="form-control" rows="3" id="summary-input" name="summary" placeholder="Summary"></textarea>
                             </div>
                         </div>
 
@@ -124,14 +120,14 @@
                         <div class="form-group row">
                             <div class="col-sm-12">
                                 <label class="col-form-label">Meta Tags</label>
-                                <input class="form-control"  type="text" id="meta-tags-input" name="meta_tags" placeholder="Meta Tags" value="{% if course_detail.meta_tags %}{{course_detail.get_meta_tags}}{% endif %}" required>
+                                <input class="form-control"  type="text" id="meta-tags-input" name="meta_tags" placeholder="Meta Tags" required>
                             </div>
                         </div>
 
                         <div class="form-group row">
                             <div class="col-sm-12">
                                 <label class="col-form-label">Meta Description</label>
-                                <textarea class="form-control" rows="3" id="meta-description-input" name="meta_description" placeholder="Meta Description" required>{% if course_detail.meta_description %}{{course_detail.meta_description}}{% endif %}</textarea>
+                                <textarea class="form-control" rows="3" id="meta-description-input" name="meta_description" placeholder="Meta Description" required></textarea>
                             </div>
                         </div>
 
@@ -146,7 +142,7 @@
                                                 <div class="row">
                                                     <div class="col-md-12 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                         <label for="hide-features">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-features" name="hide_features" {% if course_detail.hide_features %}checked{% endif %}>&nbsp;Hide Features
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-features" name="hide_features" {% if detail_page.hide_features %}checked{% endif %}>&nbsp;Hide Features
                                                         </label>
                                                     </div>
                                                 </div>
@@ -155,11 +151,7 @@
                                                     <button class="add-button" type="button" id="add-feature-btn">ADD</button>
                                                 </div>
                                                 <br>
-                                                <ol class="row" id="feature-div">
-                                                    {% for feature_obj in course_detail.features.all %}
-                                                    <li class="col-md-6">{{feature_obj.feature}}<input type="text" name="feature" value="{{feature_obj.feature}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-feature-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${feature}'"><i class="fa fa-close" style="padding: 0;"></i></button></li>
-                                                    {% endfor %}
-                                                </ol>
+                                                <ol class="row" id="feature-div"></ol>
 
                                             </div>
                                         </div>
@@ -167,57 +159,21 @@
                                   <div class="tasks__item crms-task-item active">
                                     <div class="accordion-header js-accordion-header">Vertical Tab</div> 
                                       <div class="accordion-body js-accordion-body">
-                                        <div class="accordion-body__contents" id="vertical-tab-main-div">                                
+                                        <div class="accordion-body__contents" id="vertical-tab-main-div">
                                             <div class="row">
                                                 <div class="col-md-6 mb-3">
                                                     <label for="main-title-input" >Main Title <span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" id="main-title-input" placeholder="Main Title" name="vertical_title" value="{{course_detail.vertical_title}}" required>
-                                                </div> 
+                                                    <input type="text" class="form-control" id="main-title-input" placeholder="Main Title" name="vertical_title" required>
+                                                </div>
                                                 <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                     <label for="hide-vertical-tab">
-                                                        <input type="checkbox" class="form-control-checkbox" id="hide-vertical-tab" name="hide_vertical_tab" {% if course_detail.hide_vertical_tab %}checked{% endif %}>&nbsp;Hide Vertical Tab
+                                                        <input type="checkbox" class="form-control-checkbox" id="hide-vertical-tab" name="hide_vertical_tab" {% if detail_page.hide_vertical_tab %}checked{% endif %}>&nbsp;Hide Vertical Tab
                                                     </label>
                                                 </div>
                                             </div>
                                             <hr>
                                             <br>
                                             <div class="vertical-tab-div" id="vertical-tab-div">
-                                                {% if course_detail.vertical_tabs.all|length > 0 %}
-                                                {% for tab in course_detail.vertical_tabs.all %}
-                                                {% if forloop.counter > 1 %}<hr><br>{% endif %}
-                                                <div class="vertical-tab-inner-div">
-                                                    <div class="row">
-                                                        <div class="col-md-6 mb-3">
-                                                            <label>Heading of Tab{{forloop.counter}} <span class="text-danger">*</span></label>
-                                                            <input type="text" class="form-control" placeholder="Heading of Tab{{forloop.counter}}" name="vertical_heading" value="{{tab.heading}}" required>
-                                                        </div>
-                                                        <div class="col-md-6 mb-3">
-                                                            <label  >Sub Heading of Tab{{forloop.counter}} <span class="text-danger">*</span></label>
-                                                            <input type="text" class="form-control" placeholder="Sub Heading of Tab{{forloop.counter}}" name="vertical_sub_heading" value="{{tab.sub_heading}}" required>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row">
-                                                        <div class="col-md-12 mb-3">
-                                                            <label >Summary of Tab{{forloop.counter}} <span class="text-danger">*</span></label>
-                                                            <textarea type="text" class="form-control" placeholder="Summary of Tab{{forloop.counter}}" name="vertical_summary" required>{% if tab.summary %}{{tab.summary}}{% endif %}</textarea>
-                                                        </div>            
-                                                    </div>
-                                                    <div style="display: flex; flex-direction: row;">
-                                                        <input type="text" class="form-control tab-bullet-input" placeholder="Bullet Points of Tab{{forloop.counter}}" required>
-                                                        <button class="add-button" type="button">ADD</button>
-                                                    </div>
-                                                    <br>
-                                                    <ol class="row tab-bullet-div">
-                                                        {% if tab.bullets.all|length > 1 %}
-                                                        {% for bullet_obj in tab.bullets.all %}
-                                                        <li class="col-md-6">{{bullet_obj.bullet}}<input type="text" name="vertical_bullet" value="{{bullet_obj.bullet}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-vertical-bullet-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${bulletPoint}'"><i class="fa fa-close" style="padding: 0;"></i></button></li>
-                                                        {% endfor %}
-                                                        {% endif %}
-                                                    </ol>
-                                                    <input class="vertical-bullet-count" type="number" name="vertical_bullet_count" value="{{tab.bullets.all|length}}" hidden>
-                                                </div>
-                                                {% endfor %}
-                                                {% else %}                                                
                                                 <div class="vertical-tab-inner-div">
                                                     <div class="row">
                                                         <div class="col-md-6 mb-3">
@@ -236,14 +192,13 @@
                                                         </div>            
                                                     </div>
                                                     <div style="display: flex; flex-direction: row;">
-                                                        <input type="text" class="form-control tab-bullet-input" placeholder="Bullet Points of Tab1" required>
-                                                        <button class="add-button" type="button">ADD</button>
+                                                        <input type="text" class="form-control vertical-tab-bullet-input" placeholder="Bullet Points of Tab1" required>
+                                                        <button class="add-button add-vertical-tab-bullet" type="button">ADD</button>
                                                     </div>
                                                     <br>
                                                     <ol class="row tab-bullet-div"></ol>
                                                     <input class="vertical-bullet-count" type="number" name="vertical_bullet_count" hidden>
                                                 </div>
-                                                {% endif %}
                                             </div>
                                             <div class="d-flex justify-content-between align-items-center" id="vertical-tab-btn-div">
                                                 <button class="add-button" id="add-vertical-tab-btn" type="button" style="width: fit-content;">Add Another Tab</button>
@@ -259,49 +214,17 @@
                                             <div class="row">
                                                 <div class="col-md-6 mb-3">
                                                     <label for="main-title-input" >Main Title <span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" id="main-title-input" placeholder="Main Title" name="horizontal_title" value="{{course_detail.horizontal_title}}" required>
-                                                </div> 
+                                                    <input type="text" class="form-control" id="main-title-input" placeholder="Main Title" name="horizontal_title" required>
+                                                </div>
                                                 <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                     <label for="hide-horizontal-tab">
-                                                        <input type="checkbox" class="form-control-checkbox" id="hide-horizontal-tab" name="hide_horizontal_tab" {% if course_detail.hide_horizontal_tab %}checked{% endif %}>&nbsp;Hide Horizontal Tab
+                                                        <input type="checkbox" class="form-control-checkbox" id="hide-horizontal-tab" name="hide_horizontal_tab" {% if detail_page.hide_horizontal_tab %}checked{% endif %}>&nbsp;Hide Horizontal Tab
                                                     </label>
-                                                </div>           
+                                                </div>
                                             </div>
                                             <hr>
                                             <br>
                                             <div class="horizontal-tab-div" id="horizontal-tab-div">
-                                                {% if course_detail.horizontal_tabs.all|length > 0 %}
-                                                {% for tab in course_detail.horizontal_tabs.all %}
-                                                {% if forloop.counter > 1 %}<hr><br>{% endif %}
-                                                <div class="horizontal-tab-inner-div">
-                                                    <div class="row">
-                                                        <div class="col-md-12 mb-3">
-                                                            <label>Heading of Tab{{forloop.counter}} <span class="text-danger">*</span></label>
-                                                            <input type="text" class="form-control" placeholder="Heading of Tab{{forloop.counter}}" name="horizontal_heading" value="{{tab.heading}}" required>
-                                                        </div>    
-                                                    </div>
-                                                    <div class="row">
-                                                        <div class="col-md-12 mb-3">
-                                                            <label >Summary of Tab{{forloop.counter}} <span class="text-danger">*</span></label>
-                                                            <textarea type="text" class="form-control" placeholder="Summary of Tab{{forloop.counter}}" name="horizontal_summary" required>{% if tab.summary %}{{tab.summary}}{% endif %}</textarea>
-                                                        </div>            
-                                                    </div>
-                                                    <div style="display: flex; flex-direction: row;">
-                                                        <input type="text" class="form-control tab-bullet-input" placeholder="Bullet Points of Tab{{forloop.counter}}" required>
-                                                        <button class="add-button" type="button">ADD</button>
-                                                    </div>
-                                                    <br>
-                                                    <ol class="row tab-bullet-div">
-                                                        {% if tab.bullets.all|length > 0 %}
-                                                        {% for bullet_obj in tab.bullets.all %}
-                                                        <li class="col-md-6">{{bullet_obj.bullet}}<input type="text" name="horizontal_bullet" value="{{bullet_obj.bullet}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-horizontal-bullet-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${bulletPoint}'"><i class="fa fa-close" style="padding: 0;"></i></button></li>
-                                                        {% endfor %}
-                                                        {% endif %}
-                                                    </ol>
-                                                    <input class="horizontal-bullet-count" type="number" name="horizontal_bullet_count" value="{{tab.bullets.all|length}}" hidden>
-                                                </div>
-                                                {% endfor %}
-                                                {% else %}
                                                 <div class="horizontal-tab-inner-div">
                                                     <div class="row">
                                                         <div class="col-md-12 mb-3">
@@ -316,14 +239,13 @@
                                                         </div>            
                                                     </div>
                                                     <div style="display: flex; flex-direction: row;">
-                                                        <input type="text" class="form-control tab-bullet-input" placeholder="Bullet Points of Tab1" required>
-                                                        <button class="add-button" type="button">ADD</button>
+                                                        <input type="text" class="form-control horizontal-tab-bullet-input" placeholder="Bullet Points of Tab1" required>
+                                                        <button class="add-button add-horizontal-tab-bullet" type="button">ADD</button>
                                                     </div>
                                                     <br>
                                                     <ol class="row tab-bullet-div"></ol>
                                                     <input class="horizontal-bullet-count" type="number" name="horizontal_bullet_count" hidden>
                                                 </div>
-                                                {% endif %}
                                             </div>
                                             <div class="d-flex justify-content-between align-items-center" id="horizontal-tab-btn-div">
                                                 <button class="add-button" id="add-horizontal-tab-btn" type="button" style="width: fit-content;">Add Another Tab</button>
@@ -339,41 +261,25 @@
                                                 <div class="row">
                                                     <div class="col-md-6 mb-3">
                                                         <label>Table Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Table" name="table_title" value="{{course_detail.table_title}}" required>
+                                                        <input type="text" class="form-control" placeholder="Title of Table" name="table_title" required>
                                                     </div>
                                                     <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                         <label for="hide-table">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-table" name="hide_table" {% if course_detail.hide_table %}checked{% endif %}>&nbsp;Hide Table
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-table" name="hide_table" {% if detail_page.hide_table %}checked{% endif %}>&nbsp;Hide Table
                                                         </label>
                                                     </div>
                                                 </div>
                                                 <table class="table">
                                                     <thead>
                                                         <tr id="table-header">
-                                                            {% if course_detail.tables.all|length > 0 %}
-                                                            {% for table in course_detail.tables.all %}
-                                                            <th><input type="text" class="form-control" placeholder="Heading of Column{{forloop.counter}}" name="table_heading" title="Heading of Column{{forloop.counter}}" value="{{table.heading}}"></th>
-                                                            {% endfor %}
-                                                            {% else %}
                                                             <th><input type="text" class="form-control" placeholder="Heading of Column1" name="table_heading" title="Heading of Column1"></th>
-                                                            {% endif %}
                                                             <th><button class="add-button" id="add-column-btn" type="button" style="width: fit-content;">Add Column</button><br><button class="remove-button" id="remove-column-btn" type="button" style="width: fit-content;">Remove Column</button></th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="table-body">
-                                                        {% if course_detail.tables.all|length > 0 %}
-                                                        {% for row in course_detail.get_data %}
-                                                        <tr id="row-{{forloop.counter}}">
-                                                            {% for item in row %}
-                                                            <td><input type="text" class="form-control" placeholder="Data of Column{{forloop.counter}}" name="table_data" value="{{item}}"></td>
-                                                            {% endfor %}							
-                                                        </tr>
-                                                        {% endfor %}
-                                                        {% else %}
                                                         <tr id="row-1">
                                                             <td><input type="text" class="form-control" placeholder="Data of Column1" name="table_data"></td>
                                                         </tr>
-                                                        {% endif %}
                                                         <tr><td><button class="add-button" id="add-row-btn" type="button" style="width: fit-content;">Add Row</button>&nbsp;<button class="remove-button" id="remove-row-btn" type="button" style="width: fit-content;">Remove Row</button></td></tr>
                                                     </tbody>
                                                 </table>
@@ -387,11 +293,11 @@
                                                 <div class="row">
                                                     <div class="col-md-6 mb-3">
                                                         <label>Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Bullet Points" name="bullet_title" value="{{course_detail.bullet_title}}" required>
+                                                        <input type="text" class="form-control" placeholder="Title of Bullet Points" name="bullet_title" required>
                                                     </div>
                                                     <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                         <label for="hide-bullets">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-bullets" name="hide_bullets" {% if course_detail.hide_bullets %}checked{% endif %}>&nbsp;Hide Bullet Points
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-bullets" name="hide_bullets" {% if detail_page.hide_bullets %}checked{% endif %}>&nbsp;Hide Bullet Points
                                                         </label>
                                                     </div>
                                                 </div>
@@ -402,13 +308,7 @@
                                                             <button class="add-button" type="button" id="add-bullet-btn">ADD</button>
                                                         </div>
                                                         <br>
-                                                        <ol class="row" id="bullet-div">
-                                                            {% if course_detail.bullet_points.all|length > 0 %}
-                                                            {% for bullet_obj in course_detail.bullet_points.all %}
-                                                            <li class="col-md-6">{{bullet_obj.bullet_point}}<input type="text" name="bullet" value="{{bullet_obj.bullet_point}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-bullet-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${bulletPoint}'"><i class="fa fa-close" style="padding: 0;"></i></button></li>
-                                                            {% endfor %}
-                                                            {% endif %}
-                                                        </ol>
+                                                        <ol class="row" id="bullet-div"></ol>
                                                     </div>
                                                 </div>
                                             </div>
@@ -421,28 +321,22 @@
                                                 <div class="row">
                                                     <div class="col-md-6 mb-3">
                                                         <label>Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Tags" name="tag_title" value="{{course_detail.tag_title}}" required>
+                                                        <input type="text" class="form-control" placeholder="Title of Tags" name="tag_title" required>
                                                     </div>
                                                     <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                         <label for="hide-tags">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-tags" name="hide_tags" {% if course_detail.hide_tags %}checked{% endif %}>&nbsp;Hide Tags
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-tags" name="hide_tags" {% if detail_page.hide_tags %}checked{% endif %}>&nbsp;Hide Tags
                                                         </label>
                                                     </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="col-md-12">
                                                         <div style="display: flex; flex-direction: row;">
-                                                            <input type="text" class="form-control" id="tag-input" placeholder="Tag Name" required>                                                            
+                                                            <input type="text" class="form-control" id="tag-input" placeholder="Tag Name" required>
                                                             <button class="add-button" type="button" id="add-tag-btn">ADD</button>
                                                         </div>
                                                         <br>
-                                                        <div class="row" id="tag-div">
-                                                            {% if course_detail.tags.all|length > 0 %}
-                                                            {% for tag_obj in course_detail.tags.all %}
-                                                            <div class="col-lg-4 col-md-12 mt-3"><a href="{{tag_obj.link}}" class="tag" target="_blank">{{tag_obj.tag}}</a><input type="text" name="tag" value="{{tag_obj.tag}}" hidden><input type="text" name="tag_link" value="{{tag_obj.link}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>
-                                                            {% endfor %}
-                                                            {% endif %}
-                                                        </div>
+                                                        <div class="row" id="tag-div"></div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -455,36 +349,17 @@
                                                 <div class="row">
                                                     <div class="col-md-6 mb-3">
                                                         <label for="main-title-input" >Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" id="timeline-title-input" placeholder="Title of Timeline" name="timeline_title" value="{{course_detail.timeline_title}}" required>
+                                                        <input type="text" class="form-control" id="timeline-title-input" placeholder="Title of Timeline" name="timeline_title" required>
                                                     </div>
                                                     <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                         <label for="hide-timeline">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-timeline" name="hide_timeline" {% if course_detail.hide_timeline %}checked{% endif %}>&nbsp;Hide Timeline
+                                                            <input type="checkbox" class="form-control-checkbox" id="hide-timeline" name="hide_timeline" {% if detail_page.hide_timeline %}checked{% endif %}>&nbsp;Hide Timeline
                                                         </label>
                                                     </div>
                                                 </div>
                                                 <hr>
                                                 <br>
                                                 <div class="timeline-div" id="timeline-div">
-                                                    {% if course_detail.timelines.all|length > 1 %}
-                                                    {% for timeline in course_detail.timelines.all %}
-                                                    {% if forloop.counter > 1 %}<hr><br>{% endif %}
-                                                    <div class="timeline-inner-div">
-                                                        <div class="row">
-                                                            <div class="col-md-12 mb-3">
-                                                                <label>Timeline {{forloop.counter}} <span class="text-danger">*</span></label>
-                                                                <input type="text" class="form-control" placeholder="Heading of Timeline {{forloop.counter}}" name="timeline_heading" value="{{timeline.heading}}" required>
-                                                            </div>    
-                                                        </div>
-                                                        <div class="row">
-                                                            <div class="col-md-12 mb-3">
-                                                                <label >Summary of Timeline {{forloop.counter}} <span class="text-danger">*</span></label>
-                                                                <textarea type="text" class="form-control" placeholder="Summary of Timeline {{forloop.counter}}" name="timeline_summary" required>{% if timeline.summary %}{{timeline.summary}}{% endif %}</textarea>
-                                                            </div>            
-                                                        </div>
-                                                    </div>
-                                                    {% endfor %}
-                                                    {% else %}
                                                     <div class="timeline-inner-div">
                                                         <div class="row">
                                                             <div class="col-md-12 mb-3">
@@ -499,7 +374,6 @@
                                                             </div>            
                                                         </div>
                                                     </div>
-                                                    {% endif %}
                                                 </div>
                                                 <div class="d-flex justify-content-between align-items-center" id="timeline-btn-div">
                                                     <button class="add-button" id="add-timeline-btn" type="button" style="width: fit-content;">Add Another Timeline</button>
@@ -507,7 +381,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                      </div>
+                                    </div>                                    
                                 </div>
                                 </div>                                
                             </div>
@@ -521,7 +395,7 @@
                 </div>
             </form>
                 
-    </div>
+        </div>
 	<!-- /Content End -->
 	
 </div>
@@ -544,8 +418,7 @@
                 name = name.trim();
             }
 
-            const programDropdown = $('#program-dropdown').val();
-            const specializationDropdown = $('#specialization-dropdown').val();
+            const programDropdown = $('#registration-type-dropdown').val();
 
             const modeDropdown = $('#mode-dropdown').val();                                  
             
@@ -571,22 +444,12 @@
             }            
 
             if (!programDropdown) {
-                $('#program-dropdown').addClass('is-invalid');
-                $('#program-dropdown').focus();
+                $('#registration-type-dropdown').addClass('is-invalid');
+                $('#registration-type-dropdown').focus();
                 formValid = false;
             } else {
-                $('#program-dropdown').addClass('is-valid');
-                $('#program-dropdown').blur();
-                
-            }
-
-            if (!specializationDropdown) {
-                $('#specialization-dropdown').addClass('is-invalid');
-                $('#specialization-dropdown').focus();
-                formValid = false;
-            } else {
-                $('#specialization-dropdown').addClass('is-valid');
-                $('#specialization-dropdown').blur();
+                $('#registration-type-dropdown').addClass('is-valid');
+                $('#registration-type-dropdown').blur();
                 
             }
 
@@ -623,7 +486,7 @@
             }
             
             if (formValid == true) {
-                $('#add-course-form').submit()
+                $('#add-registration-form').submit()
             }
 
         }
@@ -667,8 +530,8 @@
 
         // changing
 
-        $('#program-dropdown, #specialization-dropdown, #mode-dropdown, #unit-dropdown, #image-input').on('change', function () {
-            if (($(this).prop('id') == 'program-dropdown' || $(this).prop('id') == 'sub-category-dropdown' || $(this).prop('id') == 'brand-dropdown') && !$(this).val()) {
+        $('#registration-type-dropdown, #mode-dropdown, #unit-dropdown, #image-input').on('change', function () {
+            if (($(this).prop('id') == 'registration-type-dropdown' || $(this).prop('id') == 'registration-sub-type-dropdown' || $(this).prop('id') == 'brand-dropdown') && !$(this).val()) {
                 $(this).removeClass('is-valid').addClass('is-invalid');
 
             } else {
@@ -685,48 +548,8 @@
                 }
             }
                         
-        })        
+        })                        
         
-
-        // Get Specialization
-        function getSpecializations(program) {
-            const company = `{{current_company.slug}}`
-            
-            $.ajax({
-                type: 'GET',
-                url: '/education/get_specializations/',
-                dataType: 'json',
-                data: {
-                    "program": program,
-                    "company": company
-                },
-                success: response => {
-                    let specializations = response.specializations;
-
-                    $('#specialization-dropdown').html(`<option value="" hidden disabled selected>Select Specialization</option>`);
-                    if (specializations && specializations.length) {
-                        specializations.forEach(specialization => {
-                            if (specialization.standard) {
-                                $('#specialization-dropdown').append(`<option value="${specialization.slug}">${specialization.name}&nbsp;&nbsp;&nbsp; ${specialization.standard}</option>`)
-                            } else {
-                                $('#specialization-dropdown').append(`<option value="${specialization.slug}">${specialization.name}</option>`)
-                            }
-                        })
-                    } else {
-                        $('#specialization-dropdown').html(`<option value="" disabled selected>No specialization for the selected program</option>`);
-                    }                    
-                },
-                error: error => console.error("Error: ", error),
-            })
-        }
-
-        $('#program-dropdown').on('change', function () {
-            const program = $(this).val();
-
-            getSpecializations(program);
-        });
-        
-
         // Add Multiple Feature 
         $('#add-feature-btn').click(function () {
             const feature = $('#feature-input').val();
@@ -745,19 +568,14 @@
 
             feature.remove();
         });
-
-        $('#feature-input').on('keypress', function (e) {
-            if (e.which == 13) {
-                $('#add-feature-btn').click();
-            }
-        });
+        
 
         //  Add Multiple Vertical Bullet Point
         $(document).on('click', '.vertical-tab-div .add-button', function () {
             const parentDiv = $(this).parent().parent();            
 
             const olTag = parentDiv.find('ol');
-            const bulletInput = parentDiv.find('.tab-bullet-input')
+            const bulletInput = parentDiv.find('.vertical-tab-bullet-input')
             const bulletPoint = bulletInput.val();
 
             if (bulletPoint.trim()) {
@@ -812,8 +630,8 @@
                         </div>            
                     </div>
                     <div style="display: flex; flex-direction: row;">
-                        <input type="text" class="form-control tab-bullet-input" placeholder="Bullet Points of Tab${currentVerticalTabNumber}" required>
-                        <button class="add-button" type="button">ADD</button>
+                        <input type="text" class="form-control vertical-tab-bullet-input" placeholder="Bullet Points of Tab${currentVerticalTabNumber}" required>
+                        <button class="add-button add-vertical-tab-bullet" type="button">ADD</button>
                     </div>
                     <br>
                     <ol class="row tab-bullet-div"></ol>
@@ -868,8 +686,8 @@
                         </div>            
                     </div>
                     <div style="display: flex; flex-direction: row;">
-                        <input type="text" class="form-control tab-bullet-input" placeholder="Bullet Points of Tab${currentHorizontalTabNumber}" required>
-                        <button class="add-button" type="button">ADD</button>
+                        <input type="text" class="form-control horizontal-tab-bullet-input" placeholder="Bullet Points of Tab${currentHorizontalTabNumber}" required>
+                        <button class="add-button add-horizontal-tab-bullet" type="button">ADD</button>
                     </div>
                     <br>
                     <ol class="row tab-bullet-div"></ol>
@@ -884,7 +702,7 @@
             const parentDiv = $(this).parent().parent();            
 
             const olTag = parentDiv.find('ol');
-            const bulletInput = parentDiv.find('.tab-bullet-input')
+            const bulletInput = parentDiv.find('.horizontal-tab-bullet-input')
             const bulletPoint = bulletInput.val();
 
             if (bulletPoint.trim()) {
@@ -1032,14 +850,6 @@
             parentElement.remove();
         });
 
-        // Press enter for adding bullet points
-        $('#bullet-input').on('keypress', function(e) {
-            if (e.which == 13) {
-                e.preventDefault();
-                $('#add-bullet-btn').click();
-            }
-        });
-
         // Remove bullet points
         $(document).on('click', '#remove-bullet-btn', function () {
             const parentElement = $(this).parent();
@@ -1095,7 +905,16 @@
             }
         });
         
-        $('#program-dropdown').on('change', () => getCourses());
+        // Prevent form submission on pressing enter key
+        $(document).on("keydown", "form", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+            }
+        });
+        
+
+        $('#type-dropdown').on('change', () => getSubTypes());
+        
     });
 </script>
 {% endblock scripts %}

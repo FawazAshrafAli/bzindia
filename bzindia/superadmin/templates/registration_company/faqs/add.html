@@ -84,35 +84,7 @@
 {% block scripts %}
 <script>
     $(document).ready(() => {
-        // Get Sub Categories
-        function getSubTypes() {
-            const type = $('#type-dropdown').val();
-            const company = `{{current_company.slug}}`;
-
-            $.ajax({
-                type: 'GET',
-                url: `{% url 'registration:get_registration_sub_types' %}`,
-                dataType: 'json',
-                data: {
-                    "type_slug": type,
-                    "company_slug": company
-                },
-                success: response => {
-                    $('#sub-type-dropdown').html(`<option value="" hidden disabled selected>Select Sub Type</option>`);
-                    
-                    if (response.sub_types && response.sub_types.length > 0) {
-                        response.sub_types.forEach(sub_type => {
-                            $('#sub-type-dropdown').append(`<option value="${sub_type.slug}">${sub_type.name}</option>`)
-                        })
-                    }
-                    
-                    if (response.error) {
-                        console.error("Error: ", response.error)
-                    }
-                },
-                error: error => console.error("Error: ", error),
-            });            
-        };
+        
 
         $('#type-dropdown').on('change', () => getSubTypes());
         

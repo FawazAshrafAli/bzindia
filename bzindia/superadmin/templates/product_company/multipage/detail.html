@@ -30,38 +30,37 @@
 	<div class="col-md-12">
 		<div class="card">
 			<div class="card-header">									
-				<h5 class="card-title">{{course_detail.course.name}} Course Details</h5>
+				<h5 class="card-title">{{multipage.product.name}} Product multipage</h5>
 			</div>            
 		</div>
         <div class="card">
             <div class="card-body">
                 <h4>Summary</h4>
-                <p>{{course_detail.summary}}</p>
+                <p>{{multipage.summary}}</p>
             </div>
         </div>
         <div class="card">
             <div class="card-body">
                 <h4>Description</h4>
-                <div>{{course_detail.description|safe}}</div>
+                <div>{{multipage.description|safe}}</div>
             </div>
         </div>
-
 		<div class="card">
             <div class="card-body">
                 <h4>Meta Tags</h4>
-                <div>{% if course_detail.get_meta_tags %}{{course_detail.get_meta_tags}}{% else %}Not Provided{% endif %}</div>
+                <div>{% if multipage.get_meta_tags %}{{multipage.get_meta_tags}}{% else %}Not Provided{% endif %}</div>
 				<br>
 				<h4>Meta Description</h4>
-                <div>{% if course_detail.meta_description %}{{course_detail.meta_description}}{% else %}Not Provided{% endif %}</div>
+                <div>{% if multipage.meta_description %}{{multipage.meta_description}}{% else %}Not Provided{% endif %}</div>
             </div>
         </div>
 
-		{% if not course_detail.hide_features %}
+		{% if not multipage.hide_features %}
 		<div class="card">
             <div class="card-body">
 				<h4>Features</h4>
 				<ul>
-					{% for feature in course_detail.features.all %}
+					{% for feature in multipage.features.all %}
 					<li>{{feature.feature}}</li>
 					{% endfor %}
 				</ul>
@@ -69,16 +68,16 @@
 		</div>
 		{% endif %}
 
-		{% if not course_detail.hide_vertical_tab %}
+		{% if not multipage.hide_vertical_tab %}
 		<div class="card">
 			<div class="card-body">
 				<h4>Vertical Tab</h4>
 				<table class="table table-borderless">
 					<tr>
 						<th>Title:</th>
-						<td>{{course_detail.vertical_title}}</td>
+						<td>{{multipage.vertical_title}}</td>
 					</tr>
-					{% for vertical_tab in course_detail.vertical_tabs.all %}
+					{% for vertical_tab in multipage.vertical_tabs.all %}
 					<tr>
 						<th>&nbsp;</th>
 						<td>&nbsp;</td>
@@ -116,16 +115,16 @@
 		</div>
 		{% endif %}
 
-		{% if not course_detail.hide_horizontal_tab %}
+		{% if not multipage.hide_horizontal_tab %}
 		<div class="card">
 			<div class="card-body">
 				<h4>Horizontal Tab</h4>
 				<table class="table table-borderless">
 					<tr>
 						<th>Title:</th>
-						<td>{{course_detail.horizontal_title}}</td>
+						<td>{{multipage.horizontal_title}}</td>
 					</tr>
-					{% for horizontal_tab in course_detail.horizontal_tabs.all %}
+					{% for horizontal_tab in multipage.horizontal_tabs.all %}
 					<tr>
 						<th>&nbsp;</th>
 						<td>&nbsp;</td>
@@ -159,23 +158,23 @@
 		</div>
 		{% endif %}
 
-		{% if not course_detail.hide_table %}
+		{% if not multipage.hide_table %}
 		<div class="card">
 			<div class="card-body">
 				<h4>Table</h4>
 				<hr>
-				<h5>Title: {{course_detail.table_title}}</h5>
+				<h5>Title: {{multipage.table_title}}</h5>
 				<br>
 				<table class="table table-borderless">
 					<thead>
 						<tr>
-							{% for table in course_detail.tables.all %}
+							{% for table in multipage.tables.all %}
 							<th>{{table.heading}}</th>
 							{% endfor %}
 						</tr>
 					</thead>
 					<tbody>
-						{% for row in course_detail.get_data %}
+						{% for row in multipage.get_data %}
 						<tr>
 							{% for item in row %}
 							<td>{{item}}</td>
@@ -188,15 +187,15 @@
 		</div>
 		{% endif %}
 
-		{% if not course_detail.hide_bullets %}
+		{% if not multipage.hide_bullets %}
 		<div class="card">
             <div class="card-body">
 				<h4>Bullet Points</h4>
 				<hr>
-				<h5>Title: {{course_detail.bullet_title}}</h5>
+				<h5>Title: {{multipage.bullet_title}}</h5>
 				<br>
 				<ul>
-					{% for bullet in course_detail.bullet_points.all %}
+					{% for bullet in multipage.bullet_points.all %}
 					<li>{{bullet.bullet_point}}</li>
 					{% endfor %}
 				</ul>
@@ -204,15 +203,15 @@
 		</div>
 		{% endif %}
 
-		{% if not course_detail.hide_tags %}
+		{% if not multipage.hide_tags %}
 		<div class="card">
             <div class="card-body">
 				<h4>Tags</h4>
 				<hr>
-				<h5>Title: {{course_detail.tag_title}}</h5>
+				<h5>Title: {{multipage.tag_title}}</h5>
 				<br>
 				<div>
-					{% for tag_obj in course_detail.tags.all %}
+					{% for tag_obj in multipage.tags.all %}
 					<a href="{{tag_obj.link}}" class="tag" target="_blank">{{tag_obj.tag}}</a>
 					{% endfor %}
 				</div>
@@ -220,19 +219,38 @@
 		</div>
 		{% endif %}
 
-		{% if not course_detail.hide_timeline %}
+		{% if not multipage.hide_timeline %}
 		<div class="card">
             <div class="card-body">
-				<h4>Timeline</h4>
+				<h4>Timlines</h4>
 				<hr>
-				<h5>Title: {{course_detail.timeline_title}}</h5>
+				<h5>Title: {{multipage.timeline_title}}</h5>
 				<br>
 				<div>
-					{% for timeline_obj in course_detail.timelines.all %}
+					{% for timeline_obj in multipage.timelines.all %}
 					<ul>
 						<li>
 							<h6>{{timeline_obj.heading}}</h6>
 							<p><small>{{timeline_obj.summary}}</small></p>
+						</li>
+					</ul>					
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+		{% endif %}
+
+		{% if not multipage.hide_faqs %}
+		<div class="card">
+            <div class="card-body">
+				<h4>FAQs</h4>
+				<hr>
+				<div>
+					{% for faq_obj in multipage.faqs.all %}
+					<ul>
+						<li>
+							<h6>{{faq_obj.question}}</h6>
+							<p><small>{{faq_obj.answer}}</small></p>
 						</li>
 					</ul>					
 					{% endfor %}
@@ -254,7 +272,7 @@
 		<div class="modal-content">
 
 			<div class="modal-header">
-				{% comment %} <h4 class="modal-title text-center">Delete Course</h4> {% endcomment %}
+				{% comment %} <h4 class="modal-title text-center">Delete Product</h4> {% endcomment %}
 				<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
 			  </div>
 
@@ -262,11 +280,11 @@
 				<div class="row">
 					<div class="col-md-12">
 						<form id="deletion-form" method="get">
-							<h4><span class="text-danger">Deleting</span> Course. . .</h4>
+							<h4><span class="text-danger">Deleting</span> Product. . .</h4>
 							<div class="form-group row">
 								<div class="col-md-12">
 									<label class="col-form-label">Are you sure?</label> <br>
-									<p><i>Course:</i> <span id="deleting-object"></span></p>
+									<p><i>Product:</i> <span id="deleting-object"></span></p>
 								</div>
 							</div>							
 														

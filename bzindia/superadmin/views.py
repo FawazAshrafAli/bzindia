@@ -15,7 +15,10 @@ import logging
 from .tasks import send_company_created_email
 from django.db import transaction
 
-from .forms import CourseMultiPageDescriptionForm, CourseDetailDescriptionForm
+from .forms import (
+    CourseMultiPageDescriptionForm, CourseDetailDescriptionForm, ServiceMultiPageDescriptionForm, RegistrationMultiPageDescriptionForm,
+    ServiceDetailDescriptionForm, RegistrationDetailPageDescriptionForm, ProductMultiPageDescriptionForm
+    )
 
 from custom_pages.models import (
     AboutUs, ContactUs, FAQ, PrivacyPolicy, TermsAndConditions,
@@ -23,10 +26,18 @@ from custom_pages.models import (
     )
 from company.models import Company, CompanyType, Client, Testimonial, Testimonial
 from locations.models import UniqueState, UniqueDistrict, UniquePlace
+
 from product.models import (
     Product, Category as ProductCategory, SubCategory as ProductSubCategory, Color, Size, Brand,
-    Faq as ProductFaq, Review as ProductReview, Enquiry as ProductEnquiry
+    Faq as ProductFaq, Review as ProductReview, Enquiry as ProductEnquiry,
+
+    MultiPage as ProductMultiPage, MultiPageFeature as ProductMultiPageFeature, MultiPageVerticalTab as ProductMultiPageVerticalTab,
+    MultiPageVerticalBullet as ProductMultiPageVerticalBullet, MultiPageHorizontalTab as ProductMultiPageHorizontalTab,
+    MultiPageHorizontalBullet as ProductMultiPageHorizontalBullet, MultiPageTable as ProductMultiPageTable, 
+    MultiPageTableData as ProductMultiPageTableData, MultiPageBulletPoint as ProductMultiPageBulletPoint,
+    MultiPageTag as ProductMultiPageTag, MultiPageFaq as ProductMultiPageFaq, MultiPageTimeline as ProductMultiPageTimeline
     )
+
 from educational.models import (
     Program, Course, Specialization, Enquiry as CourseEnquiry, CourseDetail, Feature as CourseFeature,
     VerticalTab as CourseVerticalTab, VerticalBullet as CourseVerticalBullet, HorizontalTab as CourseHorizontalTab,
@@ -40,17 +51,37 @@ from educational.models import (
     MultiPageTable as CourseMultiPageTable, MultiPageBulletPoints as CourseMultiPageBulletPoint, 
     MultiPageTag as CourseMultiPageTag, MultiPageTimeline as CourseMultiPageTimeline, MultiPageFaq as CourseMultiPageFaq,
     )
+
 from directory.models import PostOffice, PoliceStation, Bank, Court, TouristAttraction
+
 from service.models import (
     Service, Category as ServiceCategory, SubCategory as ServiceSubCategory, Enquiry as ServiceEnquiry,
     Faq as ServiceFaq, ServiceDetail, Feature as ServiceFeature,
     VerticalTab as ServiceVerticalTab, VerticalBullet as ServiceVerticalBullet, HorizontalTab as ServiceHorizontalTab,
     HorizontalBullet as ServiceHorizontalBullet, TableData as ServiceTableData, Table as ServiceTable,
-    BulletPoints as ServiceBulletPoint, Tag as ServiceTag, Timeline as ServiceTimeline
+    BulletPoints as ServiceBulletPoint, Tag as ServiceTag, Timeline as ServiceTimeline,
+
+    MultiPage as ServiceMultiPage, MultiPageFeature as ServiceMultiPageFeature, MultiPageHorizontalTab as ServiceMultiPageHorizontalTab,
+    MultiPageHorizontalBullet as ServiceMultiPageHorizontalBullet, MultiPageVerticalTab as ServiceMultiPageVerticalTab,
+    MultiPageVerticalBullet as ServiceMultiPageVerticalBullet, MultiPageBulletPoint as ServiceMultiPageBulletPoint,
+    MultiPageTag as ServiceMultiPageTag, MultiPageTimeline as ServiceMultiPageTimeline, MultiPageFaq as ServiceMultiPageFaq,
+    MultiPageTable as ServiceMultiPageTable, MultiPageTableData as ServiceMultiPageTableData,
     )
+
 from registration.models import (
     RegistrationType, RegistrationSubType, RegistrationDetail, Faq as RegistrationFaq,
-    Enquiry as RegistrationEnquiry
+    Enquiry as RegistrationEnquiry,
+
+    RegistrationDetailPage, Feature as RegistrationFeature, HorizontalTab as RegistrationHorizontalTab,
+    HorizontalBullet as RegistrationHorizontalBullet, VerticalTab as RegistrationVerticalTab, VerticalBullet as RegistrationVerticalBullet, 
+    Table as RegistrationTable, BulletPoint as RegistrationBulletPoint, Tag as RegistrationTag, TableData as RegistrationTableData,
+    Timeline as RegistrationTimeline,
+
+    MultiPage as RegistrationMultiPage, MultiPageFeature as RegistrationMultiPageFeature, MultiPageVerticalTab as RegistrationMultiPageVerticalTab,
+    MultiPageVerticalBullet as RegistrationMultiPageVerticalBullet, MultiPageHorizontalTab as RegistrationMultiPageHorizontalTab,
+    MultiPageHorizontalBullet as RegistrationMultiPageHorizontalBullet, MultiPageTable as RegistrationMultiPageTable,
+    MultiPageTableData as RegistrationMultiPageTableData, MultiPageTag as RegistrationMultiPageTag, MultiPageTimeline as RegistrationMultiPageTimeline,
+    MultiPageFaq as RegistrationMultiPageFaq, MultiPageBulletPoint as RegistrationMultiPageBulletPoint
     )
 from blog.models import Blog
 
@@ -1526,6 +1557,696 @@ class DeleteProductEnquiryView(BaseProductEnquiryView, View):
             return redirect(self.get_redirect_url())
 
 
+class BaseProductMultiPageView(BaseProductCompanyView, View):
+    model = ProductMultiPage
+    success_url = redirect_url = reverse_lazy('superadmin:home')        
+        
+    def get_categories(self):
+        return ProductCategory.objects.filter(company = self.current_company)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            context["product_multipage"] = True
+            
+            self.current_company = self.get_current_company()
+            
+            context["current_company"] = self.current_company            
+        except Exception as e:
+            logger.exception(f"Error in getting context data of BaseProductMultiPageView of superadmin: {e}")
+        
+        return context    
+    
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_product_multipage', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of BaseProductMultiPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of BaseProductMultiPageView of superadmin: {e}")
+            return self.redirect_url
+        
+    def get_product(self, product_slug):
+        try:
+            return get_object_or_404(Product, slug = product_slug)
+        except Http404:
+            messages.error(self.request, "Invalid Product")
+            return redirect(self.get_redirect_url())
+        
+    def handle_features(self, request, company, product):
+        try:
+
+            features_list = request.POST.getlist("feature")
+
+            features_list = list({feature.strip() for feature in features_list})
+            if features_list:
+                with transaction.atomic():
+
+                    ProductMultiPageFeature.objects.filter(company = company, product = product).delete()
+
+                    features = [ProductMultiPageFeature(company=company, product=product, feature=feature) for feature in features_list]
+                    ProductMultiPageFeature.objects.bulk_create(features)
+
+                    feature_objs = ProductMultiPageFeature.objects.filter(company = company, product = product)
+
+                    return feature_objs
+        
+        except Exception as e:
+            logger.exception(f"Error in handle_features function of BaseProductMultiPageView: {e}")
+        
+        return []
+
+    def handle_vertical_tabs(self, request, company, product):
+        try:
+            vertical_tab_objects = []
+
+            vertical_heading_list = [heading.strip() for heading in request.POST.getlist("vertical_heading")]
+            vertical_sub_heading_list = [sub_heading.strip() for sub_heading in request.POST.getlist("vertical_sub_heading")]
+            vertical_summary_list = [summary.strip() for summary in request.POST.getlist("vertical_summary")]
+            vertical_bullet_list = [bullet.strip() for bullet in request.POST.getlist("vertical_bullet")]
+            vertical_bullet_count_list = [int(count) if count != '' else 0 for count in request.POST.getlist("vertical_bullet_count")]
+
+            if not (len(vertical_heading_list) == len(vertical_sub_heading_list) == len(vertical_summary_list) == len(vertical_bullet_count_list)):
+                raise ValueError("Mismatch in the number of vertical fields.")            
+            
+            initial = 0
+
+
+            with transaction.atomic():
+                ProductMultiPageVerticalTab.objects.filter(company = company, product = product).delete()
+                ProductMultiPageVerticalBullet.objects.filter(company = company, product = product).delete()
+
+                for i in range(len(vertical_bullet_count_list)):
+                    heading = vertical_heading_list[i]
+                    sub_heading = vertical_sub_heading_list[i]
+
+                    if heading:
+                        vertical_tab_obj = ProductMultiPageVerticalTab.objects.create(
+                            company = company,
+                            product = product,
+                            heading = heading,
+                            sub_heading = sub_heading,
+                            summary = vertical_summary_list[i]
+                        )
+
+                        final = initial + vertical_bullet_count_list[i]
+                        vertical_bullets = vertical_bullet_list[initial:final]
+                        initial = final
+
+                        if vertical_bullet_count_list[i] != 0:
+
+                            creating_vertical_bullets = [ProductMultiPageVerticalBullet(
+                                company = company, product = product, heading = heading,
+                                sub_heading = sub_heading, bullet = bullet
+                            ) for bullet in vertical_bullets if bullet]
+
+                            if creating_vertical_bullets:
+                                ProductMultiPageVerticalBullet.objects.bulk_create(creating_vertical_bullets)  
+
+                            created_vertical_bullets = ProductMultiPageVerticalBullet.objects.filter(company = company, product = product, heading = heading, sub_heading = sub_heading)
+
+                            vertical_tab_obj.bullets.set(created_vertical_bullets)
+
+
+                        vertical_tab_objects.append(vertical_tab_obj)
+
+            return vertical_tab_objects
+
+        except (IntegrityError, IndexError, ValueError) as e:
+            logger.exception(f"Error in handle_vertical_tabs function of BaseProductMultiPageView: {e}")
+
+        return []
+    
+    def handle_horizontal_tabs(self, request, company, product):
+        try:
+            horizontal_tab_objects = []
+
+            horizontal_heading_list = [heading.strip() for heading in request.POST.getlist("horizontal_heading")]
+            horizontal_summary_list = [summary.strip() for summary in request.POST.getlist("horizontal_summary")]
+            horizontal_bullet_list = [bullet.strip() for bullet in request.POST.getlist("horizontal_bullet")]
+            horizontal_bullet_count_list = [int(count) if count != '' else 0 for count in request.POST.getlist("horizontal_bullet_count")] 
+
+            if not (len(horizontal_heading_list) == len(horizontal_summary_list) == len(horizontal_bullet_count_list)):
+                raise ValueError("Mismatch in the number of horizontal fields.")                        
+            
+            initial = 0
+
+
+            with transaction.atomic():
+                ProductMultiPageHorizontalTab.objects.filter(company = company, product = product).delete()
+                ProductMultiPageHorizontalBullet.objects.filter(company = company, product = product).delete()
+
+                for i in range(len(horizontal_bullet_count_list)):
+                    heading = horizontal_heading_list[i]
+
+                    if heading:
+                        horizontal_tab_obj = ProductMultiPageHorizontalTab.objects.create(
+                            company = company,
+                            product = product,
+                            heading = heading,
+                            summary = horizontal_summary_list[i]
+                        )
+
+                        final = initial + horizontal_bullet_count_list[i]
+                        horizontal_bullets = horizontal_bullet_list[initial:final]
+                        initial = final
+                        
+                        if horizontal_bullet_count_list[i] != 0:
+                        
+                            creating_horizontal_bullets = [ProductMultiPageHorizontalBullet(
+                                company = company, product = product, heading = heading,
+                                bullet = bullet
+                            ) for bullet in horizontal_bullets if bullet]
+
+                            if creating_horizontal_bullets:
+                                ProductMultiPageHorizontalBullet.objects.bulk_create(creating_horizontal_bullets)
+
+                            created_horizontal_bullets = ProductMultiPageHorizontalBullet.objects.filter(company = company, product = product, heading = heading)
+
+                            horizontal_tab_obj.bullets.set(created_horizontal_bullets)
+
+                        horizontal_tab_objects.append(horizontal_tab_obj)
+
+            return horizontal_tab_objects
+
+        except (IntegrityError, IndexError, ValueError) as e:
+            logger.exception(f"Error in handle_horizontal_tabs function of BaseProductMultiPageView: {e}")
+
+        return []
+    
+    def handle_tables(self, request, company, product):
+        try:
+            product_tables = []
+
+            heading_list = [heading.strip() for heading in request.POST.getlist("table_heading")]
+            data_list = [data.strip() for data in request.POST.getlist("table_data")]
+
+            heading_length = len(heading_list)
+            data_length = len(data_list)
+
+
+            with transaction.atomic():
+                ProductMultiPageTableData.objects.filter(company = company, product = product).delete()
+                ProductMultiPageTable.objects.filter(company = company, product = product).delete()
+
+                for index, heading in enumerate(heading_list):
+                    product_table = ProductMultiPageTable.objects.create(
+                        company = company, product = product, heading = heading
+                    )
+
+                    data_positions  = list(range(index, data_length, heading_length))
+                    data_list_of_heading = [data_list[i] for i in data_positions ]
+
+                    table_data_objs  = [ProductMultiPageTableData(
+                            company = company, product = product,
+                            heading = heading, data = data
+                            ) for data in data_list_of_heading if data]
+
+                    ProductMultiPageTableData.objects.bulk_create(table_data_objs )
+
+                    product_table_data_objs = ProductMultiPageTableData.objects.filter(company = company, product = product, heading = heading)
+
+                    product_table.datas.set(product_table_data_objs)
+                    product_tables.append(product_table)
+
+            return product_tables
+        
+        except Exception as e:
+            logger.exception(f"Error in handle_tables function of BaseProductMultiPageView: {e}")
+
+        return []
+    
+    def handle_bullet_points(self, request, company, product):
+        try:
+            bullet_point_list = [bullet_point.strip() for bullet_point in request.POST.getlist("bullet")]
+
+            with transaction.atomic():
+                ProductMultiPageBulletPoint.objects.filter(company = company, product = product).delete()
+
+                if bullet_point_list:
+                    bullet_point_objects = [ProductMultiPageBulletPoint(
+                        company = company, product = product,
+                        bullet_point = bullet_point
+                    ) for bullet_point in bullet_point_list if bullet_point]
+
+                    ProductMultiPageBulletPoint.objects.bulk_create(bullet_point_objects)
+
+                    bullet_points = ProductMultiPageBulletPoint.objects.filter(company = company, product = product)                
+
+                    return bullet_points
+
+        except Exception as e:
+            logger.exception(f"Error in handle_bullet_points function of BaseProductMultiPageView: {e}")
+
+        return []
+
+    def handle_tags(self, request, company, product):
+        try:
+            tag_list = [tag.strip() for tag in request.POST.getlist("tag")]            
+
+            with transaction.atomic():
+                ProductMultiPageTag.objects.filter(company = company, product = product).delete()
+
+                if tag_list:                
+                    creating_tags = [ProductMultiPageTag(
+                        company = company, product = product,
+                        tag = tag
+                        ) for tag in tag_list if tag]
+
+                    ProductMultiPageTag.objects.bulk_create(creating_tags)
+
+                    product_tags = ProductMultiPageTag.objects.filter(company = company, product = product)                
+
+                    return product_tags
+
+        except Exception as e:
+            logger.exception(f"Error in handle_tags function of BaseProductMultiPageView: {e}")
+
+        return []
+
+    def handle_timelines(self, request, company, product):
+        try:
+            heading_list = [heading.strip() for heading in request.POST.getlist("timeline_heading")]
+            summary_list = [summary.strip() for summary in request.POST.getlist("timeline_summary")]                        
+
+            if len(heading_list) != len(summary_list):
+                raise ValueError("The number of headings does not match the number of summaries.")
+
+            with transaction.atomic():
+                ProductMultiPageTimeline.objects.filter(company = company, product = product).delete()
+                
+                if heading_list and summary_list:
+                    creating_timelines = [ProductMultiPageTimeline(
+                        company = company, product = product,
+                        heading = heading, summary = summary
+                        ) for heading, summary in zip(heading_list, summary_list)]
+
+                    ProductMultiPageTimeline.objects.bulk_create(creating_timelines)
+
+                    product_timelines = ProductMultiPageTimeline.objects.filter(company = company, product = product)                
+                                            
+                    return product_timelines
+        except Exception as e:
+            logger.exception(f"Error in handle_timelines function of BaseProductMultiPageView: {e}")
+
+        return []
+
+    def handle_faqs(self, request, company, product):
+        try:
+            question_list = [question.strip() for question in request.POST.getlist("faq_question")]
+            answer_list = [answer.strip() for answer in request.POST.getlist("faq_answer")]                        
+
+            if len(question_list) != len(answer_list):
+                raise ValueError("The number of questions does not match the number of summaries.")
+
+            with transaction.atomic():
+                ProductMultiPageFaq.objects.filter(company = company, product = product).delete()
+                
+                if question_list and answer_list:
+                    creating_faqs = [ProductMultiPageFaq(
+                        company = company, product = product,
+                        question = question, answer = answer
+                        ) for question, answer in zip(question_list, answer_list) if question and answer]
+
+                    ProductMultiPageFaq.objects.bulk_create(creating_faqs)
+
+                    product_faqs = ProductMultiPageFaq.objects.filter(company = company, product = product)                
+                                            
+                    return product_faqs
+        except Exception as e:
+            logger.exception(f"Error in handle_faqs function of BaseProductMultiPageView: {e}")
+
+        return []
+
+
+class AddProductMultiPageView(BaseProductMultiPageView, CreateView):
+    form_class = ProductMultiPageDescriptionForm
+    template_name = "product_company/multipage/add.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["categories"] = self.get_categories()
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        try:
+            current_company = self.get_current_company()
+
+            form = self.get_form()
+
+            product_slug = request.POST.get('product')
+
+            summary = request.POST.get("summary")
+
+            meta_tags = request.POST.get("meta_tags")
+            meta_description = request.POST.get("meta_description")
+
+            vertical_title = request.POST.get("vertical_title")
+            horizontal_title = request.POST.get("horizontal_title")
+            table_title = request.POST.get("table_title")
+            bullet_title = request.POST.get("bullet_title")
+            tag_title = request.POST.get("tag_title")
+            timeline_title = request.POST.get("timeline_title")
+
+            hide_features = request.POST.get("hide_features")
+            hide_vertical_tab = request.POST.get("hide_vertical_tab")
+            hide_horizontal_tab = request.POST.get("hide_horizontal_tab")
+            hide_table = request.POST.get("hide_table")
+            hide_bullets = request.POST.get("hide_bullets")
+            hide_tags = request.POST.get("hide_tags")
+            hide_timeline = request.POST.get("hide_timeline")
+            hide_faqs = request.POST.get("hide_faqs")
+
+            summary = summary.strip() if summary else None
+
+            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_description = meta_description.strip() if meta_description else None
+
+            vertical_title = vertical_title.strip() if vertical_title else None
+            horizontal_title = horizontal_title.strip() if horizontal_title else None
+            table_title = table_title.strip() if table_title else None
+            bullet_title = bullet_title.strip() if bullet_title else None
+            tag_title = tag_title.strip() if tag_title else None
+            timeline_title = timeline_title.strip() if timeline_title else None
+
+            # Fetch current company
+            company = current_company
+
+            if not company:
+                messages.error(request, "Invalid company")
+                return redirect(self.redirect_url)
+            
+            required_fields = {
+                "Product": product_slug,
+                "summary": summary,
+                "Meta Tags": meta_tags,
+                "Meta Description": meta_description
+                }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            checkbox_fields = {
+                "hide_features": hide_features,
+                "hide_vertical_tab": hide_vertical_tab,
+                "hide_horizontal_tab": hide_horizontal_tab,
+                "hide_table": hide_table,
+                "hide_bullets": hide_bullets,
+                "hide_tags": hide_tags,
+                "hide_timeline": hide_timeline,
+                "hide_faqs": hide_faqs
+                }
+
+            product = self.get_product(product_slug)
+
+            with transaction.atomic():
+                if self.model.objects.filter(company = company, product = product).exists():
+                    messages.error(request, "Multipage for this product already exists")
+                    return redirect(self.get_redirect_url())
+                
+                if not form.is_valid():                    
+                    messages.error(request, "Description is required")
+                    return redirect(self.get_redirect_url())
+                
+                cleaned_form = form.cleaned_data
+                description = cleaned_form.get("description")
+
+                product_multi_page = self.model.objects.create(
+                    company = company, product = product, summary = summary, description = description,
+                    meta_tags = meta_tags, meta_description = meta_description,
+                    vertical_title = vertical_title, horizontal_title = horizontal_title,
+                    table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
+                    timeline_title = timeline_title
+                )
+
+                for key, value in checkbox_fields.items():
+                    if value:
+                        setattr(product_multi_page, key, True)
+                
+                product_multi_page.save()
+
+                relationship_handlers = {
+                    "features": self.handle_features,
+                    "vertical_tabs": self.handle_vertical_tabs,
+                    "horizontal_tabs": self.handle_horizontal_tabs,
+                    "tables": self.handle_tables,
+                    "bullet_points": self.handle_bullet_points,
+                    "tags": self.handle_tags,
+                    "timelines": self.handle_timelines,
+                    "faqs": self.handle_faqs,
+                }
+
+                for field, handler in relationship_handlers.items():
+                    objects = handler(request, company, product)
+                    getattr(product_multi_page, field).set(objects)
+
+                messages.success(request, "Success! Created product multipage")
+                return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddProductMultiPageView of superadmin: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class ProductMultiPageListView(BaseProductMultiPageView, ListView):
+    template_name = "product_company/multipage/list.html"
+    queryset = ProductMultiPage.objects.none()
+    context_object_name = "multipages"    
+    
+    def get_queryset(self):
+        try:
+            current_company = self.get_current_company()
+            return self.model.objects.filter(company = current_company)
+        except Exception as e:
+            logger.exception(f"Error in getting queryset of ProductMultiPageListView of superadmin: {e}")
+            return self.queryset
+        
+class ProductMultiPageDetailView(BaseProductMultiPageView, DetailView):
+    template_name = "product_company/multipage/detail.html"
+    context_object_name = "multipage"
+
+    def get_object(self):
+        try:
+            current_company = self.get_current_company()
+            current_product = self.get_current_product()
+            return get_object_or_404(self.model, company = current_company, product = current_product)
+        
+        except Http404:
+            messages.error(self.request, "Invalid product for this company")
+
+        except Exception as e:
+            logger.exception(f"Error in get_object function of ProductMultipageDetailView of superadmin: {e}")
+
+        return redirect(self.get_redirect_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        self.object = self.get_object
+        
+        context[self.context_object_name] = self.object
+        return context
+        
+    def get_current_product(self):
+        try:
+            product_slug = self.kwargs.get('product_slug')
+            return get_object_or_404(Product, slug = product_slug)
+        except Http404:
+            messages.error(self.request, "Failed! Invalid Product")
+            return redirect(self.redirect_url)        
+    
+
+class UpdateProductMultiPageView(BaseProductMultiPageView, UpdateView):    
+    form_class = ProductMultiPageDescriptionForm
+    template_name = "product_company/multipage/update.html"
+    context_object_name = "multipage"    
+
+    def get_object(self):
+        try:
+            company_slug = self.kwargs.get('slug')
+            multipage_slug = self.kwargs.get('multipage_slug')            
+            
+            return get_object_or_404(self.model, company__slug = company_slug, slug = multipage_slug)
+        
+        except Http404:
+            messages.error(self.request, "Invalid product multipage object")
+            return redirect(self.get_redirect_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            current_company = self.get_current_company()
+            self.object = self.get_object()
+            context[self.context_object_name] = self.object
+
+            context["categories"] = ProductCategory.objects.filter(company = current_company)
+            context["sub_categories"] = ProductSubCategory.objects.filter(company = current_company, category = self.object.product.category)
+            context["products"] = Product.objects.filter(company = current_company, sub_category = self.object.product.sub_category)
+        except Exception as e:
+            logger.exception(f"Error in getting context data of UpdateMultiPageView of superadmin: {e}")
+        
+        return context    
+    
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:update_product_multipage', kwargs = {"slug": self.kwargs.get('slug'), "multipage_slug": self.kwargs.get('multipage_slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of UpdateMultiPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of UpdateMultiPageView of superadmin: {e}")
+            return self.redirect_url
+        
+        
+    def post(self, request, *args, **kwargs):
+        try:            
+            form = self.get_form()
+
+            product_slug = request.POST.get('product')
+
+            summary = request.POST.get("summary")
+
+            meta_tags = request.POST.get("meta_tags")
+            meta_description = request.POST.get("meta_description")
+
+            vertical_title = request.POST.get("vertical_title")
+            horizontal_title = request.POST.get("horizontal_title")
+            table_title = request.POST.get("table_title")
+            bullet_title = request.POST.get("bullet_title")
+            tag_title = request.POST.get("tag_title")
+            timeline_title = request.POST.get("timeline_title")
+
+            hide_features = request.POST.get("hide_features")
+            hide_vertical_tab = request.POST.get("hide_vertical_tab")
+            hide_horizontal_tab = request.POST.get("hide_horizontal_tab")
+            hide_table = request.POST.get("hide_table")
+            hide_bullets = request.POST.get("hide_bullets")
+            hide_tags = request.POST.get("hide_tags")
+            hide_timeline = request.POST.get("hide_timeline")
+            hide_faqs = request.POST.get("hide_faqs")
+
+            summary = summary.strip() if summary else None
+
+            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_description = meta_description.strip() if meta_description else None
+
+            vertical_title = vertical_title.strip() if vertical_title else None
+            horizontal_title = horizontal_title.strip() if horizontal_title else None
+            table_title = table_title.strip() if table_title else None
+            bullet_title = bullet_title.strip() if bullet_title else None
+            tag_title = tag_title.strip() if tag_title else None
+            timeline_title = timeline_title.strip() if timeline_title else None
+
+            # Fetch current company
+            company = self.get_current_company()
+
+            if not company:
+                messages.error(request, "Invalid company")
+                return redirect(self.redirect_url)
+            
+            required_fields = {
+                "Product": product_slug,
+                "summary": summary,
+                "Meta Tags": meta_tags,
+                "Meta Description": meta_description
+                }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+                
+            checkbox_fields = {
+                "hide_features": hide_features,
+                "hide_vertical_tab": hide_vertical_tab,
+                "hide_horizontal_tab": hide_horizontal_tab,
+                "hide_table": hide_table,
+                "hide_bullets": hide_bullets,
+                "hide_tags": hide_tags,
+                "hide_timeline": hide_timeline,
+                "hide_faqs": hide_faqs
+                }
+
+            product = self.get_product(product_slug)
+
+            with transaction.atomic():
+
+                multipage = self.get_object()
+
+                if not form.is_valid():                    
+                    messages.error(request, "Description is required")
+                    return redirect(self.get_redirect_url())
+                
+                cleaned_form = form.cleaned_data
+                description = cleaned_form.get("description")
+
+                multipage.product = product
+                multipage.summary = summary
+
+                multipage.description = description
+
+                multipage.meta_tags = meta_tags
+                multipage.meta_description = meta_description
+
+                multipage.vertical_title = vertical_title
+                multipage.horizontal_title = horizontal_title
+                multipage.table_title = table_title
+                multipage.bullet_title = bullet_title
+                multipage.tag_title = tag_title
+                multipage.timeline_title = timeline_title                
+
+                for key, value in checkbox_fields.items():
+                    assigning_value = False
+
+                    if value:
+                        assigning_value = True
+
+                    setattr(multipage, key, assigning_value)
+                
+                multipage.save()
+
+                relationship_handlers = {
+                    "features": self.handle_features,
+                    "vertical_tabs": self.handle_vertical_tabs,
+                    "horizontal_tabs": self.handle_horizontal_tabs,
+                    "tables": self.handle_tables,
+                    "bullet_points": self.handle_bullet_points,
+                    "tags": self.handle_tags,
+                    "timelines": self.handle_timelines,
+                    "faqs": self.handle_faqs,
+                }
+
+                for field, handler in relationship_handlers.items():
+                    objects = handler(request, company, product)
+                    getattr(multipage, field).set(objects)
+
+                multipage.save()
+
+                messages.success(request, "Success! Updated product multipage")
+                return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateCompanyDetailView of superadmin: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
 # Education Company
 class BaseEducationCompanyView(AdminBaseView, View):
     model = Course
@@ -2592,14 +3313,6 @@ class AddCourseDetailView(BaseEducationCompanyView, CreateView):
             course = self.get_course(course_slug)
 
             with transaction.atomic():
-            
-                course_detail = self.model.objects.create(
-                    company = company, course = course, summary = summary,
-                    meta_tags = meta_tags, meta_description = meta_description,
-                    vertical_title = vertical_title, horizontal_title = horizontal_title,
-                    table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
-                    timeline_title = timeline_title
-                )
 
                 if not form.is_valid():                    
                     messages.error(request, "Description is required")
@@ -2608,7 +3321,13 @@ class AddCourseDetailView(BaseEducationCompanyView, CreateView):
                 cleaned_form = form.cleaned_data
                 description = cleaned_form.get("description")
 
-                course_detail.description = description
+                course_detail = self.model.objects.create(
+                    company = company, course = course, summary = summary, description = description,
+                    meta_tags = meta_tags, meta_description = meta_description,
+                    vertical_title = vertical_title, horizontal_title = horizontal_title,
+                    table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
+                    timeline_title = timeline_title
+                )                
 
                 for key, value in checkbox_fields.items():
                     if value:
@@ -3968,14 +4687,6 @@ class AddCourseMultiPageView(BaseCourseMultiPageView, CreateView):
                     messages.error(request, "Multipage for this course already exists")
                     return redirect(self.get_redirect_url())
 
-                course_multi_page = self.model.objects.create(
-                    company = company, course = course, summary = summary,
-                    meta_tags = meta_tags, meta_description = meta_description,
-                    vertical_title = vertical_title, horizontal_title = horizontal_title,
-                    table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
-                    timeline_title = timeline_title
-                )
-
                 if not form.is_valid():                    
                     messages.error(request, "Description is required")
                     return redirect(self.get_redirect_url())
@@ -3983,7 +4694,13 @@ class AddCourseMultiPageView(BaseCourseMultiPageView, CreateView):
                 cleaned_form = form.cleaned_data
                 description = cleaned_form.get("description")
 
-                course_multi_page.description = description
+                course_multi_page = self.model.objects.create(
+                    company = company, course = course, summary = summary, description = description,
+                    meta_tags = meta_tags, meta_description = meta_description,
+                    vertical_title = vertical_title, horizontal_title = horizontal_title,
+                    table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
+                    timeline_title = timeline_title
+                )                
 
                 for key, value in checkbox_fields.items():
                     if value:
@@ -5233,7 +5950,6 @@ class DeleteServiceEnquiryView(BaseServiceEnquiryView, View):
 # Service Detail
 class BaseServiceDetailView(BaseServiceCompanyView):
     model = ServiceDetail
-    fields = "__all__"
     success_url = redirect_url = reverse_lazy('superadmin:home')
 
     def get_context_data(self, **kwargs):
@@ -5503,20 +6219,16 @@ class BaseServiceDetailView(BaseServiceCompanyView):
 
     def handle_tags(self, request, company, service):
         try:
-            tag_list = [tag.strip() for tag in request.POST.getlist("tag")]
-            tag_link_list = [tag_link.strip() for tag_link in request.POST.getlist("tag_link")]
-
-            if len(tag_link_list) != len(tag_list):
-                raise ValueError("The number of tags does not match the number of links.")
+            tag_list = [tag.strip() for tag in request.POST.getlist("tag")]            
 
             with transaction.atomic():
                 ServiceTag.objects.filter(company = company, service = service).delete()
 
-                if tag_list and tag_link_list:                
+                if tag_list:
                     creating_tags = [ServiceTag(
                         company = company, service = service,
-                        tag = tag, link = link
-                        ) for tag, link in zip(tag_list, tag_link_list) if tag and link]
+                        tag = tag
+                        ) for tag in tag_list if tag]
 
                     ServiceTag.objects.bulk_create(creating_tags)
 
@@ -5558,6 +6270,7 @@ class BaseServiceDetailView(BaseServiceCompanyView):
 
 
 class AddServiceDetailView(BaseServiceDetailView, CreateView):
+    form_class = ServiceDetailDescriptionForm
     template_name = "service_company/service_detail/add.html"
 
     def get_context_data(self, **kwargs):
@@ -5572,19 +6285,35 @@ class AddServiceDetailView(BaseServiceDetailView, CreateView):
 
     def post(self, request, *args, **kwargs):
         try:
+            form = self.get_form()
+
             service_slug = request.POST.get('service')
 
             summary = request.POST.get("summary")
-            description = request.POST.get("description")
+
+            meta_tags = request.POST.get("meta_tags")
+            meta_description = request.POST.get("meta_description")
+
             vertical_title = request.POST.get("vertical_title")
             horizontal_title = request.POST.get("horizontal_title")
             table_title = request.POST.get("table_title")
             bullet_title = request.POST.get("bullet_title")
             tag_title = request.POST.get("tag_title")
             timeline_title = request.POST.get("timeline_title")
+            
+            hide_features = request.POST.get("hide_features")
+            hide_vertical_tab = request.POST.get("hide_vertical_tab")
+            hide_horizontal_tab = request.POST.get("hide_horizontal_tab")
+            hide_table = request.POST.get("hide_table")
+            hide_bullets = request.POST.get("hide_bullets")
+            hide_tags = request.POST.get("hide_tags")
+            hide_timeline = request.POST.get("hide_timeline")
 
             summary = summary.strip() if summary else None
-            description = description.strip() if description else None
+            
+            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_description = meta_description.strip() if meta_description else None
+
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
             table_title = table_title.strip() if table_title else None
@@ -5602,7 +6331,8 @@ class AddServiceDetailView(BaseServiceDetailView, CreateView):
             required_fields = {
                 "Service": service_slug,
                 "summary": summary,
-                "description": description
+                "Meta Tags": meta_tags,
+                "Meta Description": meta_description
                 }
 
             for key, value in required_fields.items():
@@ -5610,16 +6340,40 @@ class AddServiceDetailView(BaseServiceDetailView, CreateView):
                     messages.error(request, f"Failed! {key} is required")
                     return redirect(self.get_redirect_url())
 
+            checkbox_fields = {
+                "hide_features": hide_features,
+                "hide_vertical_tab": hide_vertical_tab,
+                "hide_horizontal_tab": hide_horizontal_tab,
+                "hide_table": hide_table,
+                "hide_bullets": hide_bullets,
+                "hide_tags": hide_tags,
+                "hide_timeline": hide_timeline,
+                }
+
             service = self.get_service(service_slug)
 
             with transaction.atomic():
-            
+                
+                if not form.is_valid():                    
+                    messages.error(request, "Description is required")
+                    return redirect(self.get_redirect_url())
+                
+                cleaned_form = form.cleaned_data
+                description = cleaned_form.get("description")
+
                 service_detail = self.model.objects.create(
                     company = company, service = service, summary = summary, description = description,
+                    meta_tags = meta_tags, meta_description = meta_description,
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
                     timeline_title = timeline_title
-                )
+                )                
+
+                for key, value in checkbox_fields.items():
+                    if value:
+                        setattr(service_detail, key, True)
+
+                service_detail.save()
 
                 relationship_handlers = {
                     "features": self.handle_features,
@@ -5675,16 +6429,9 @@ class ServiceDetailView(BaseServiceDetailView, DetailView):
 
 
 class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):    
+    form_class = ServiceDetailDescriptionForm
     template_name = "service_company/service_detail/update.html"
     context_object_name = "service_detail"
-    
-    def get_current_company(self):
-        try:
-            company_slug = self.kwargs.get('slug')            
-            return get_object_or_404(Company, slug = company_slug)
-        except Http404:
-            messages.error(self.request, "Failed! Invalid Company")
-            return redirect(self.redirect_url)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -5714,10 +6461,16 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
 
     def post(self, request, *args, **kwargs):
         try:
+            form = self.get_form()
+
             service_slug = request.POST.get('service')
 
             summary = request.POST.get("summary")
-            description = request.POST.get("description")
+
+            meta_tags = request.POST.get("meta_tags")
+
+            meta_description = request.POST.get("meta_description")
+
             vertical_title = request.POST.get("vertical_title")
             horizontal_title = request.POST.get("horizontal_title")
             table_title = request.POST.get("table_title")
@@ -5726,13 +6479,24 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
             timeline_title = request.POST.get("timeline_title")   
 
             summary = summary.strip() if summary else None
-            description = description.strip() if description else None
+
+            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_description = meta_description.strip() if meta_description else None
+
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
             table_title = table_title.strip() if table_title else None
             bullet_title = bullet_title.strip() if bullet_title else None
             tag_title = tag_title.strip() if tag_title else None
             timeline_title = timeline_title.strip() if timeline_title else None
+
+            hide_features = request.POST.get("hide_features")
+            hide_vertical_tab = request.POST.get("hide_vertical_tab")
+            hide_horizontal_tab = request.POST.get("hide_horizontal_tab")
+            hide_table = request.POST.get("hide_table")
+            hide_bullets = request.POST.get("hide_bullets")
+            hide_tags = request.POST.get("hide_tags")
+            hide_timeline = request.POST.get("hide_timeline")
 
             # Fetch current company
             company = self.get_current_company()
@@ -5744,7 +6508,8 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
             required_fields = {
                 "Service": service_slug,
                 "summary": summary,
-                "description": description
+                "Meta Tags": meta_tags,
+                "Meta Description": meta_description
                 }
 
             for key, value in required_fields.items():
@@ -5752,21 +6517,53 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
                     messages.error(request, f"Failed! {key} is required")
                     return redirect(self.get_redirect_url())
 
+            checkbox_fields = {
+                "hide_features": hide_features,
+                "hide_vertical_tab": hide_vertical_tab,
+                "hide_horizontal_tab": hide_horizontal_tab,
+                "hide_table": hide_table,
+                "hide_bullets": hide_bullets,
+                "hide_tags": hide_tags,
+                "hide_timeline": hide_timeline,
+                }
+
             service = self.get_service(service_slug)
 
             with transaction.atomic():
 
                 service_detail = self.get_object()
 
+                if not form.is_valid():                    
+                    messages.error(request, "Description is required")
+                    return redirect(self.get_redirect_url())
+                
+                cleaned_form = form.cleaned_data
+                description = cleaned_form.get("description")
+
                 service_detail.service = service
                 service_detail.summary = summary
+
                 service_detail.description = description
+
+                service_detail.meta_tags = meta_tags
+                service_detail.meta_description = meta_description
+
                 service_detail.vertical_title = vertical_title
                 service_detail.horizontal_title = horizontal_title
                 service_detail.table_title = table_title
                 service_detail.bullet_title = bullet_title
                 service_detail.tag_title = tag_title
-                service_detail.timeline_title = timeline_title                              
+                service_detail.timeline_title = timeline_title 
+
+                for key, value in checkbox_fields.items():
+                    assigning_value = False
+
+                    if value:                    
+                        assigning_value = True
+
+                    setattr(service_detail, key, assigning_value)
+                
+                service_detail.save()                             
 
                 relationship_handlers = {
                     "features": self.handle_features,
@@ -5794,13 +6591,705 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
         return redirect(self.get_redirect_url())
 
 
+
+class BaseServiceMultiPageView(BaseServiceCompanyView, View):
+    model = ServiceMultiPage
+    success_url = redirect_url = reverse_lazy('superadmin:home')        
+        
+    def get_categories(self):
+        return ServiceCategory.objects.filter(company = self.current_company)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            context["service_multipage"] = True
+            
+            self.current_company = self.get_current_company()
+            
+            context["current_company"] = self.current_company            
+        except Exception as e:
+            logger.exception(f"Error in getting context data of BaseServiceMultiPageView of superadmin: {e}")
+        
+        return context    
+    
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_service_multipage', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of BaseServiceMultiPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of BaseServiceMultiPageView of superadmin: {e}")
+            return self.redirect_url
+        
+    def get_service(self, service_slug):
+        try:
+            return get_object_or_404(Service, slug = service_slug)
+        except Http404:
+            messages.error(self.request, "Invalid Service")
+            return redirect(self.get_redirect_url())
+        
+    def handle_features(self, request, company, service):
+        try:
+
+            features_list = request.POST.getlist("feature")
+
+            features_list = list({feature.strip() for feature in features_list})
+            if features_list:
+                with transaction.atomic():
+
+                    ServiceMultiPageFeature.objects.filter(company = company, service = service).delete()
+
+                    features = [ServiceMultiPageFeature(company=company, service=service, feature=feature) for feature in features_list]
+                    ServiceMultiPageFeature.objects.bulk_create(features)
+
+                    feature_objs = ServiceMultiPageFeature.objects.filter(company = company, service = service)
+
+                    return feature_objs
+        
+        except Exception as e:
+            logger.exception(f"Error in handle_features function of BaseServiceMultiPageView: {e}")
+        
+        return []
+
+    def handle_vertical_tabs(self, request, company, service):
+        try:
+            vertical_tab_objects = []
+
+            vertical_heading_list = [heading.strip() for heading in request.POST.getlist("vertical_heading")]
+            vertical_sub_heading_list = [sub_heading.strip() for sub_heading in request.POST.getlist("vertical_sub_heading")]
+            vertical_summary_list = [summary.strip() for summary in request.POST.getlist("vertical_summary")]
+            vertical_bullet_list = [bullet.strip() for bullet in request.POST.getlist("vertical_bullet")]
+            vertical_bullet_count_list = [int(count) if count != '' else 0 for count in request.POST.getlist("vertical_bullet_count")]
+
+            if not (len(vertical_heading_list) == len(vertical_sub_heading_list) == len(vertical_summary_list) == len(vertical_bullet_count_list)):
+                raise ValueError("Mismatch in the number of vertical fields.")            
+            
+            initial = 0
+
+
+            with transaction.atomic():
+                ServiceMultiPageVerticalTab.objects.filter(company = company, service = service).delete()
+                ServiceMultiPageVerticalBullet.objects.filter(company = company, service = service).delete()
+
+                for i in range(len(vertical_bullet_count_list)):
+                    heading = vertical_heading_list[i]
+                    sub_heading = vertical_sub_heading_list[i]
+
+                    if heading:
+                        vertical_tab_obj = ServiceMultiPageVerticalTab.objects.create(
+                            company = company,
+                            service = service,
+                            heading = heading,
+                            sub_heading = sub_heading,
+                            summary = vertical_summary_list[i]
+                        )
+
+                        final = initial + vertical_bullet_count_list[i]
+                        vertical_bullets = vertical_bullet_list[initial:final]
+                        initial = final
+
+                        if vertical_bullet_count_list[i] != 0:
+
+                            creating_vertical_bullets = [ServiceMultiPageVerticalBullet(
+                                company = company, service = service, heading = heading,
+                                sub_heading = sub_heading, bullet = bullet
+                            ) for bullet in vertical_bullets if bullet]
+
+                            if creating_vertical_bullets:
+                                ServiceMultiPageVerticalBullet.objects.bulk_create(creating_vertical_bullets)  
+
+                            created_vertical_bullets = ServiceMultiPageVerticalBullet.objects.filter(company = company, service = service, heading = heading, sub_heading = sub_heading)
+
+                            vertical_tab_obj.bullets.set(created_vertical_bullets)
+
+
+                        vertical_tab_objects.append(vertical_tab_obj)
+
+            return vertical_tab_objects
+
+        except (IntegrityError, IndexError, ValueError) as e:
+            logger.exception(f"Error in handle_vertical_tabs function of BaseServiceMultiPageView: {e}")
+
+        return []
+    
+    def handle_horizontal_tabs(self, request, company, service):
+        try:
+            horizontal_tab_objects = []
+
+            horizontal_heading_list = [heading.strip() for heading in request.POST.getlist("horizontal_heading")]
+            horizontal_summary_list = [summary.strip() for summary in request.POST.getlist("horizontal_summary")]
+            horizontal_bullet_list = [bullet.strip() for bullet in request.POST.getlist("horizontal_bullet")]
+            horizontal_bullet_count_list = [int(count) if count != '' else 0 for count in request.POST.getlist("horizontal_bullet_count")] 
+
+            if not (len(horizontal_heading_list) == len(horizontal_summary_list) == len(horizontal_bullet_count_list)):
+                raise ValueError("Mismatch in the number of horizontal fields.")                        
+            
+            initial = 0
+
+
+            with transaction.atomic():
+                ServiceMultiPageHorizontalTab.objects.filter(company = company, service = service).delete()
+                ServiceMultiPageHorizontalBullet.objects.filter(company = company, service = service).delete()
+
+                for i in range(len(horizontal_bullet_count_list)):
+                    heading = horizontal_heading_list[i]
+
+                    if heading:
+                        horizontal_tab_obj = ServiceMultiPageHorizontalTab.objects.create(
+                            company = company,
+                            service = service,
+                            heading = heading,
+                            summary = horizontal_summary_list[i]
+                        )
+
+                        final = initial + horizontal_bullet_count_list[i]
+                        horizontal_bullets = horizontal_bullet_list[initial:final]
+                        initial = final
+                        
+                        if horizontal_bullet_count_list[i] != 0:
+                        
+                            creating_horizontal_bullets = [ServiceMultiPageHorizontalBullet(
+                                company = company, service = service, heading = heading,
+                                bullet = bullet
+                            ) for bullet in horizontal_bullets if bullet]
+
+                            if creating_horizontal_bullets:
+                                ServiceMultiPageHorizontalBullet.objects.bulk_create(creating_horizontal_bullets)
+
+                            created_horizontal_bullets = ServiceMultiPageHorizontalBullet.objects.filter(company = company, service = service, heading = heading)
+
+                            horizontal_tab_obj.bullets.set(created_horizontal_bullets)
+
+                        horizontal_tab_objects.append(horizontal_tab_obj)
+
+            return horizontal_tab_objects
+
+        except (IntegrityError, IndexError, ValueError) as e:
+            logger.exception(f"Error in handle_horizontal_tabs function of BaseServiceMultiPageView: {e}")
+
+        return []
+    
+    def handle_tables(self, request, company, service):
+        try:
+            service_tables = []
+
+            heading_list = [heading.strip() for heading in request.POST.getlist("table_heading")]
+            data_list = [data.strip() for data in request.POST.getlist("table_data")]
+
+            heading_length = len(heading_list)
+            data_length = len(data_list)
+
+
+            with transaction.atomic():
+                ServiceMultiPageTableData.objects.filter(company = company, service = service).delete()
+                ServiceMultiPageTable.objects.filter(company = company, service = service).delete()
+
+                for index, heading in enumerate(heading_list):
+                    service_table = ServiceMultiPageTable.objects.create(
+                        company = company, service = service, heading = heading
+                    )
+
+                    data_positions  = list(range(index, data_length, heading_length))
+                    data_list_of_heading = [data_list[i] for i in data_positions ]
+
+                    table_data_objs  = [ServiceMultiPageTableData(
+                            company = company, service = service,
+                            heading = heading, data = data
+                            ) for data in data_list_of_heading if data]
+
+                    ServiceMultiPageTableData.objects.bulk_create(table_data_objs )
+
+                    service_table_data_objs = ServiceMultiPageTableData.objects.filter(company = company, service = service, heading = heading)
+
+                    service_table.datas.set(service_table_data_objs)
+                    service_tables.append(service_table)
+
+            return service_tables
+        
+        except Exception as e:
+            logger.exception(f"Error in handle_tables function of BaseServiceMultiPageView: {e}")
+
+        return []
+    
+    def handle_bullet_points(self, request, company, service):
+        try:
+            bullet_point_list = [bullet_point.strip() for bullet_point in request.POST.getlist("bullet")]
+
+            with transaction.atomic():
+                ServiceMultiPageBulletPoint.objects.filter(company = company, service = service).delete()
+
+                if bullet_point_list:
+                    bullet_point_objects = [ServiceMultiPageBulletPoint(
+                        company = company, service = service,
+                        bullet_point = bullet_point
+                    ) for bullet_point in bullet_point_list if bullet_point]
+
+                    ServiceMultiPageBulletPoint.objects.bulk_create(bullet_point_objects)
+
+                    bullet_points = ServiceMultiPageBulletPoint.objects.filter(company = company, service = service)                
+
+                    return bullet_points
+
+        except Exception as e:
+            logger.exception(f"Error in handle_bullet_points function of BaseServiceMultiPageView: {e}")
+
+        return []
+
+    def handle_tags(self, request, company, service):
+        try:
+            tag_list = [tag.strip() for tag in request.POST.getlist("tag")]            
+
+            with transaction.atomic():
+                ServiceMultiPageTag.objects.filter(company = company, service = service).delete()
+
+                if tag_list:                
+                    creating_tags = [ServiceMultiPageTag(
+                        company = company, service = service,
+                        tag = tag
+                        ) for tag in tag_list if tag]
+
+                    ServiceMultiPageTag.objects.bulk_create(creating_tags)
+
+                    service_tags = ServiceMultiPageTag.objects.filter(company = company, service = service)                
+
+                    return service_tags
+
+        except Exception as e:
+            logger.exception(f"Error in handle_tags function of BaseServiceMultiPageView: {e}")
+
+        return []
+
+    def handle_timelines(self, request, company, service):
+        try:
+            heading_list = [heading.strip() for heading in request.POST.getlist("timeline_heading")]
+            summary_list = [summary.strip() for summary in request.POST.getlist("timeline_summary")]                        
+
+            if len(heading_list) != len(summary_list):
+                raise ValueError("The number of headings does not match the number of summaries.")
+
+            with transaction.atomic():
+                ServiceMultiPageTimeline.objects.filter(company = company, service = service).delete()
+                
+                if heading_list and summary_list:
+                    creating_timelines = [ServiceMultiPageTimeline(
+                        company = company, service = service,
+                        heading = heading, summary = summary
+                        ) for heading, summary in zip(heading_list, summary_list)]
+
+                    ServiceMultiPageTimeline.objects.bulk_create(creating_timelines)
+
+                    service_timelines = ServiceMultiPageTimeline.objects.filter(company = company, service = service)                
+                                            
+                    return service_timelines
+        except Exception as e:
+            logger.exception(f"Error in handle_timelines function of BaseServiceMultiPageView: {e}")
+
+        return []
+
+    def handle_faqs(self, request, company, service):
+        try:
+            question_list = [question.strip() for question in request.POST.getlist("faq_question")]
+            answer_list = [answer.strip() for answer in request.POST.getlist("faq_answer")]                        
+
+            if len(question_list) != len(answer_list):
+                raise ValueError("The number of questions does not match the number of summaries.")
+
+            with transaction.atomic():
+                ServiceMultiPageFaq.objects.filter(company = company, service = service).delete()
+                
+                if question_list and answer_list:
+                    creating_faqs = [ServiceMultiPageFaq(
+                        company = company, service = service,
+                        question = question, answer = answer
+                        ) for question, answer in zip(question_list, answer_list) if question and answer]
+
+                    ServiceMultiPageFaq.objects.bulk_create(creating_faqs)
+
+                    service_faqs = ServiceMultiPageFaq.objects.filter(company = company, service = service)                
+                                            
+                    return service_faqs
+        except Exception as e:
+            logger.exception(f"Error in handle_faqs function of BaseServiceMultiPageView: {e}")
+
+        return []
+
+
+class AddServiceMultiPageView(BaseServiceMultiPageView, CreateView):
+    form_class = ServiceMultiPageDescriptionForm
+    template_name = "service_company/multipage/add.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["categories"] = self.get_categories()
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        try:
+            current_company = self.get_current_company()
+
+            form = self.get_form()
+
+            service_slug = request.POST.get('service')
+
+            summary = request.POST.get("summary")
+
+            meta_tags = request.POST.get("meta_tags")
+            meta_description = request.POST.get("meta_description")
+
+            vertical_title = request.POST.get("vertical_title")
+            horizontal_title = request.POST.get("horizontal_title")
+            table_title = request.POST.get("table_title")
+            bullet_title = request.POST.get("bullet_title")
+            tag_title = request.POST.get("tag_title")
+            timeline_title = request.POST.get("timeline_title")
+
+            hide_features = request.POST.get("hide_features")
+            hide_vertical_tab = request.POST.get("hide_vertical_tab")
+            hide_horizontal_tab = request.POST.get("hide_horizontal_tab")
+            hide_table = request.POST.get("hide_table")
+            hide_bullets = request.POST.get("hide_bullets")
+            hide_tags = request.POST.get("hide_tags")
+            hide_timeline = request.POST.get("hide_timeline")
+            hide_faqs = request.POST.get("hide_faqs")
+
+            summary = summary.strip() if summary else None
+
+            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_description = meta_description.strip() if meta_description else None
+
+            vertical_title = vertical_title.strip() if vertical_title else None
+            horizontal_title = horizontal_title.strip() if horizontal_title else None
+            table_title = table_title.strip() if table_title else None
+            bullet_title = bullet_title.strip() if bullet_title else None
+            tag_title = tag_title.strip() if tag_title else None
+            timeline_title = timeline_title.strip() if timeline_title else None
+
+            # Fetch current company
+            company = current_company
+
+            if not company:
+                messages.error(request, "Invalid company")
+                return redirect(self.redirect_url)
+            
+            required_fields = {
+                "Service": service_slug,
+                "summary": summary,
+                "Meta Tags": meta_tags,
+                "Meta Description": meta_description
+                }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            checkbox_fields = {
+                "hide_features": hide_features,
+                "hide_vertical_tab": hide_vertical_tab,
+                "hide_horizontal_tab": hide_horizontal_tab,
+                "hide_table": hide_table,
+                "hide_bullets": hide_bullets,
+                "hide_tags": hide_tags,
+                "hide_timeline": hide_timeline,
+                "hide_faqs": hide_faqs
+                }
+
+            service = self.get_service(service_slug)
+
+            with transaction.atomic():
+                if self.model.objects.filter(company = company, service = service).exists():
+                    messages.error(request, "Multipage for this service already exists")
+                    return redirect(self.get_redirect_url())
+                
+                if not form.is_valid():                    
+                    messages.error(request, "Description is required")
+                    return redirect(self.get_redirect_url())
+                
+                cleaned_form = form.cleaned_data
+                description = cleaned_form.get("description")
+
+                service_multi_page = self.model.objects.create(
+                    company = company, service = service, summary = summary, description = description,
+                    meta_tags = meta_tags, meta_description = meta_description,
+                    vertical_title = vertical_title, horizontal_title = horizontal_title,
+                    table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
+                    timeline_title = timeline_title
+                )
+
+                for key, value in checkbox_fields.items():
+                    if value:
+                        setattr(service_multi_page, key, True)
+                
+                service_multi_page.save()
+
+                relationship_handlers = {
+                    "features": self.handle_features,
+                    "vertical_tabs": self.handle_vertical_tabs,
+                    "horizontal_tabs": self.handle_horizontal_tabs,
+                    "tables": self.handle_tables,
+                    "bullet_points": self.handle_bullet_points,
+                    "tags": self.handle_tags,
+                    "timelines": self.handle_timelines,
+                    "faqs": self.handle_faqs,
+                }
+
+                for field, handler in relationship_handlers.items():
+                    objects = handler(request, company, service)
+                    getattr(service_multi_page, field).set(objects)
+
+                messages.success(request, "Success! Created service multipage")
+                return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddServiceMultiPageView of superadmin: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class ServiceMultiPageListView(BaseServiceMultiPageView, ListView):
+    template_name = "service_company/multipage/list.html"
+    queryset = ServiceMultiPage.objects.none()
+    context_object_name = "multipages"    
+    
+    def get_queryset(self):
+        try:
+            current_company = self.get_current_company()
+            return self.model.objects.filter(company = current_company)
+        except Exception as e:
+            logger.exception(f"Error in getting queryset of ServiceMultiPageListView of superadmin: {e}")
+            return self.queryset
+        
+class ServiceMultiPageDetailView(BaseServiceMultiPageView, DetailView):
+    template_name = "service_company/multipage/detail.html"
+    context_object_name = "multipage"
+
+    def get_object(self):
+        try:
+            current_company = self.get_current_company()
+            current_service = self.get_current_service()
+            return get_object_or_404(self.model, company = current_company, service = current_service)
+        
+        except Http404:
+            messages.error(self.request, "Invalid service for this company")
+
+        except Exception as e:
+            logger.exception(f"Error in get_object function of ServiceMultipageDetailView of superadmin: {e}")
+
+        return redirect(self.get_redirect_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        self.object = self.get_object
+        
+        context[self.context_object_name] = self.object
+        return context
+        
+    def get_current_service(self):
+        try:
+            service_slug = self.kwargs.get('service_slug')
+            return get_object_or_404(Service, slug = service_slug)
+        except Http404:
+            messages.error(self.request, "Failed! Invalid Service")
+            return redirect(self.redirect_url)        
+    
+
+class UpdateServiceMultiPageView(BaseServiceMultiPageView, UpdateView):    
+    form_class = ServiceMultiPageDescriptionForm
+    template_name = "service_company/multipage/update.html"
+    context_object_name = "multipage"    
+
+    def get_object(self):
+        try:
+            company_slug = self.kwargs.get('slug')
+            multipage_slug = self.kwargs.get('multipage_slug')            
+            
+            return get_object_or_404(self.model, company__slug = company_slug, slug = multipage_slug)
+        
+        except Http404:
+            messages.error(self.request, "Invalid service multipage object")
+            return redirect(self.get_redirect_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            current_company = self.get_current_company()
+            self.object = self.get_object()
+            context[self.context_object_name] = self.object
+
+            context["categories"] = ServiceCategory.objects.filter(company = current_company)
+            context["sub_categories"] = ServiceSubCategory.objects.filter(company = current_company, category = self.object.service.category)
+            context["services"] = Service.objects.filter(company = current_company, sub_category = self.object.service.sub_category)
+        except Exception as e:
+            logger.exception(f"Error in getting context data of UpdateMultiPageView of superadmin: {e}")
+        
+        return context    
+    
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:update_service_multipage', kwargs = {"slug": self.kwargs.get('slug'), "multipage_slug": self.kwargs.get('multipage_slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of UpdateMultiPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of UpdateMultiPageView of superadmin: {e}")
+            return self.redirect_url
+        
+        
+    def post(self, request, *args, **kwargs):
+        try:            
+            form = self.get_form()
+
+            service_slug = request.POST.get('service')
+
+            summary = request.POST.get("summary")
+
+            meta_tags = request.POST.get("meta_tags")
+            meta_description = request.POST.get("meta_description")
+
+            vertical_title = request.POST.get("vertical_title")
+            horizontal_title = request.POST.get("horizontal_title")
+            table_title = request.POST.get("table_title")
+            bullet_title = request.POST.get("bullet_title")
+            tag_title = request.POST.get("tag_title")
+            timeline_title = request.POST.get("timeline_title")
+
+            hide_features = request.POST.get("hide_features")
+            hide_vertical_tab = request.POST.get("hide_vertical_tab")
+            hide_horizontal_tab = request.POST.get("hide_horizontal_tab")
+            hide_table = request.POST.get("hide_table")
+            hide_bullets = request.POST.get("hide_bullets")
+            hide_tags = request.POST.get("hide_tags")
+            hide_timeline = request.POST.get("hide_timeline")
+            hide_faqs = request.POST.get("hide_faqs")
+
+            summary = summary.strip() if summary else None
+
+            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_description = meta_description.strip() if meta_description else None
+
+            vertical_title = vertical_title.strip() if vertical_title else None
+            horizontal_title = horizontal_title.strip() if horizontal_title else None
+            table_title = table_title.strip() if table_title else None
+            bullet_title = bullet_title.strip() if bullet_title else None
+            tag_title = tag_title.strip() if tag_title else None
+            timeline_title = timeline_title.strip() if timeline_title else None
+
+            # Fetch current company
+            company = self.get_current_company()
+
+            if not company:
+                messages.error(request, "Invalid company")
+                return redirect(self.redirect_url)
+            
+            required_fields = {
+                "Service": service_slug,
+                "summary": summary,
+                "Meta Tags": meta_tags,
+                "Meta Description": meta_description
+                }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+                
+            checkbox_fields = {
+                "hide_features": hide_features,
+                "hide_vertical_tab": hide_vertical_tab,
+                "hide_horizontal_tab": hide_horizontal_tab,
+                "hide_table": hide_table,
+                "hide_bullets": hide_bullets,
+                "hide_tags": hide_tags,
+                "hide_timeline": hide_timeline,
+                "hide_faqs": hide_faqs
+                }
+
+            service = self.get_service(service_slug)
+
+            with transaction.atomic():
+
+                multipage = self.get_object()
+
+                if not form.is_valid():                    
+                    messages.error(request, "Description is required")
+                    return redirect(self.get_redirect_url())
+                
+                cleaned_form = form.cleaned_data
+                description = cleaned_form.get("description")
+
+                multipage.service = service
+                multipage.summary = summary
+
+                multipage.description = description
+
+                multipage.meta_tags = meta_tags
+                multipage.meta_description = meta_description
+
+                multipage.vertical_title = vertical_title
+                multipage.horizontal_title = horizontal_title
+                multipage.table_title = table_title
+                multipage.bullet_title = bullet_title
+                multipage.tag_title = tag_title
+                multipage.timeline_title = timeline_title                
+
+                for key, value in checkbox_fields.items():
+                    assigning_value = False
+
+                    if value:
+                        assigning_value = True
+
+                    setattr(multipage, key, assigning_value)
+                
+                multipage.save()
+
+                relationship_handlers = {
+                    "features": self.handle_features,
+                    "vertical_tabs": self.handle_vertical_tabs,
+                    "horizontal_tabs": self.handle_horizontal_tabs,
+                    "tables": self.handle_tables,
+                    "bullet_points": self.handle_bullet_points,
+                    "tags": self.handle_tags,
+                    "timelines": self.handle_timelines,
+                    "faqs": self.handle_faqs,
+                }
+
+                for field, handler in relationship_handlers.items():
+                    objects = handler(request, company, service)
+                    getattr(multipage, field).set(objects)
+
+                multipage.save()
+
+                messages.success(request, "Success! Updated service multipage")
+                return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateCompanyDetailView of superadmin: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+
 # Registration Company
 class BaseRegistrationCompanyView(AdminBaseView, View):
     success_url = redirect_url = reverse_lazy('superadmin:home')
 
     def get_current_company(self):
         try:
-            return get_object_or_404(Company, slug = self.kwargs.get('slug'))
+            return get_object_or_404(Company, slug = self.kwargs.get('slug'), type__name = "Registration")
         except Http404:
             messages.error(self.request, "Invalid Company")
             return redirect(self.redirect_url)
@@ -6727,6 +8216,1340 @@ class DeleteRegistrationEnquiryView(BaseRegistrationEnquiryView, View):
         except Http404:
             messages.error(request, "Failed! Invalid Registration Enquiry")
             return redirect(self.get_redirect_url())
+
+
+class BaseRegistrationDetailPageView(BaseRegistrationCompanyView):
+    model = RegistrationDetailPage
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            context["registration_detail_page"] = True
+            
+            current_company = self.get_current_company()
+
+            context["current_company"] = current_company
+
+        except Exception as e:
+            logger.exception(f"Error in getting context data of BaseRegistrationDetailPageView of superadmin: {e}")
+        
+        return context    
+        
+    def get_registration_sub_type(self, registration_sub_type_slug):
+        try:
+            return get_object_or_404(RegistrationSubType, slug = registration_sub_type_slug)
+        except Http404:
+            messages.error(self.request, "Invalid Registration Sub Type")
+            return redirect(self.get_redirect_url())
+        
+    def get_current_registration_sub_type(self):
+        try:
+            registration_sub_type_slug = self.kwargs.get('registration_sub_type_slug')   
+            registration = get_object_or_404(RegistrationSubType, slug = registration_sub_type_slug)
+            return registration
+        except Http404:
+            messages.error(self.request, "Failed! Invalid Registration Sub Type")
+            return redirect(self.redirect_url)
+
+    def get_object(self):
+        try:
+            current_company = self.get_current_company()
+            current_registration_sub_type = self.get_current_registration_sub_type()
+            return get_object_or_404(self.model, company = current_company, registration_sub_type = current_registration_sub_type)
+        
+        except Http404:
+            messages.error(self.request, "Invalid registration sub type")
+
+        except Exception as e:
+            logger.exception(f"Error in get_object function of BaseRegistrationDetailPageView of superadmin: {e}")
+
+        return redirect(self.get_redirect_url())
+        
+    def handle_features(self, request, company, registration_sub_type):
+        try:
+
+            features_list = request.POST.getlist("feature")
+
+            features_list = list({feature.strip() for feature in features_list})
+            if features_list:
+                with transaction.atomic():
+
+                    RegistrationFeature.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+
+                    features = [RegistrationFeature(company=company, registration_sub_type=registration_sub_type, feature=feature) for feature in features_list]
+                    RegistrationFeature.objects.bulk_create(features)
+
+                    feature_objs = RegistrationFeature.objects.filter(company = company, registration_sub_type = registration_sub_type)
+
+                    return feature_objs
+        
+        except Exception as e:
+            logger.exception(f"Error in handle_features function of BaseRegistrationDetailPageView: {e}")
+        
+        return []
+
+    def handle_vertical_tabs(self, request, company, registration_sub_type):
+        try:
+            vertical_tab_objects = []
+
+            vertical_heading_list = [heading.strip() for heading in request.POST.getlist("vertical_heading")]
+            vertical_sub_heading_list = [sub_heading.strip() for sub_heading in request.POST.getlist("vertical_sub_heading")]
+            vertical_summary_list = [summary.strip() for summary in request.POST.getlist("vertical_summary")]
+            vertical_bullet_list = [bullet.strip() for bullet in request.POST.getlist("vertical_bullet")]
+            vertical_bullet_count_list = [int(count) if count != '' else 0 for count in request.POST.getlist("vertical_bullet_count")]
+
+            if not (len(vertical_heading_list) == len(vertical_sub_heading_list) == len(vertical_summary_list) == len(vertical_bullet_count_list)):
+                raise ValueError("Mismatch in the number of vertical fields.")            
+            
+            initial = 0
+
+
+            with transaction.atomic():
+                RegistrationVerticalTab.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+                RegistrationVerticalBullet.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+
+                for i in range(len(vertical_bullet_count_list)):
+                    heading = vertical_heading_list[i]
+                    sub_heading = vertical_sub_heading_list[i]
+
+                    if heading:
+                        vertical_tab_obj = RegistrationVerticalTab.objects.create(
+                            company = company,
+                            registration_sub_type = registration_sub_type,
+                            heading = heading,
+                            sub_heading = sub_heading,
+                            summary = vertical_summary_list[i]
+                        )
+
+                        final = initial + vertical_bullet_count_list[i]
+                        vertical_bullets = vertical_bullet_list[initial:final]
+                        initial = final
+
+                        if vertical_bullet_count_list[i] != 0:
+
+                            creating_vertical_bullets = [RegistrationVerticalBullet(
+                                company = company, registration_sub_type = registration_sub_type, heading = heading,
+                                sub_heading = sub_heading, bullet = bullet
+                            ) for bullet in vertical_bullets if bullet]
+
+                            if creating_vertical_bullets:
+                                RegistrationVerticalBullet.objects.bulk_create(creating_vertical_bullets)  
+
+                            created_vertical_bullets = RegistrationVerticalBullet.objects.filter(company = company, registration_sub_type = registration_sub_type, heading = heading, sub_heading = sub_heading)
+
+                            vertical_tab_obj.bullets.set(created_vertical_bullets)
+
+                        vertical_tab_objects.append(vertical_tab_obj)
+
+            return vertical_tab_objects
+
+        except (IntegrityError, IndexError, ValueError) as e:
+            logger.exception(f"Error in handle_vertical_tabs function of BaseRegistrationDetailPageView: {e}")
+
+        return []
+    
+    def handle_horizontal_tabs(self, request, company, registration_sub_type):
+        try:
+            horizontal_tab_objects = []
+
+            horizontal_heading_list = [heading.strip() for heading in request.POST.getlist("horizontal_heading")]
+            horizontal_summary_list = [summary.strip() for summary in request.POST.getlist("horizontal_summary")]
+            horizontal_bullet_list = [bullet.strip() for bullet in request.POST.getlist("horizontal_bullet")]
+            horizontal_bullet_count_list = [int(count) if count != '' else 0 for count in request.POST.getlist("horizontal_bullet_count")] 
+
+            if not (len(horizontal_heading_list) == len(horizontal_summary_list) == len(horizontal_bullet_count_list)):
+                raise ValueError("Mismatch in the number of horizontal fields.")                        
+            
+            initial = 0
+
+
+            with transaction.atomic():
+                RegistrationHorizontalTab.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+                RegistrationHorizontalBullet.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+
+                for i in range(len(horizontal_bullet_count_list)):
+                    heading = horizontal_heading_list[i]
+
+                    if heading:
+                        horizontal_tab_obj = RegistrationHorizontalTab.objects.create(
+                            company = company,
+                            registration_sub_type = registration_sub_type,
+                            heading = heading,
+                            summary = horizontal_summary_list[i]
+                        )
+
+                        final = initial + horizontal_bullet_count_list[i]
+                        horizontal_bullets = horizontal_bullet_list[initial:final]
+                        initial = final
+                        
+                        if horizontal_bullet_count_list[i] != 0:
+                        
+                            creating_horizontal_bullets = [RegistrationHorizontalBullet(
+                                company = company, registration_sub_type = registration_sub_type, heading = heading,
+                                bullet = bullet
+                            ) for bullet in horizontal_bullets if bullet]
+
+                            if creating_horizontal_bullets:
+                                RegistrationHorizontalBullet.objects.bulk_create(creating_horizontal_bullets)
+
+                            created_horizontal_bullets = RegistrationHorizontalBullet.objects.filter(company = company, registration_sub_type = registration_sub_type, heading = heading)
+
+                            horizontal_tab_obj.bullets.set(created_horizontal_bullets)
+
+                        horizontal_tab_objects.append(horizontal_tab_obj)
+
+            return horizontal_tab_objects
+
+        except (IntegrityError, IndexError, ValueError) as e:
+            logger.exception(f"Error in handle_horizontal_tabs function of BaseRegistrationDetailPageView: {e}")
+
+        return []
+    
+    def handle_tables(self, request, company, registration_sub_type):
+        try:
+            registration_tables = []
+
+            heading_list = [heading.strip() for heading in request.POST.getlist("table_heading")]
+            data_list = [data.strip() for data in request.POST.getlist("table_data")]
+
+            heading_length = len(heading_list)
+            data_length = len(data_list)
+
+
+            with transaction.atomic():
+                RegistrationTableData.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+                RegistrationTable.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+
+                for index, heading in enumerate(heading_list):
+                    registration_table = RegistrationTable.objects.create(
+                        company = company, registration_sub_type = registration_sub_type, heading = heading
+                    )
+
+                    data_positions  = list(range(index, data_length, heading_length))
+                    data_list_of_heading = [data_list[i] for i in data_positions ]
+
+                    table_data_objs  = [RegistrationTableData(
+                            company = company, registration_sub_type = registration_sub_type,
+                            heading = heading, data = data
+                            ) for data in data_list_of_heading]
+
+                    RegistrationTableData.objects.bulk_create(table_data_objs )
+
+                    registration_table_data_objs = RegistrationTableData.objects.filter(company = company, registration_sub_type = registration_sub_type, heading = heading)
+
+                    registration_table.datas.set(registration_table_data_objs)
+
+                    registration_tables.append(registration_table)
+
+            return registration_tables
+        
+        except Exception as e:
+            logger.exception(f"Error in handle_tables function of BaseRegistrationDetailPageView: {e}")
+
+        return []
+    
+    def handle_bullet_points(self, request, company, registration_sub_type):
+        try:
+            bullet_point_list = [bullet_point.strip() for bullet_point in request.POST.getlist("bullet")]
+
+            with transaction.atomic():
+                RegistrationBulletPoint.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+
+                if bullet_point_list:
+                    bullet_point_objects = [RegistrationBulletPoint(
+                        company = company, registration_sub_type = registration_sub_type,
+                        bullet_point = bullet_point
+                    ) for bullet_point in bullet_point_list if bullet_point]
+
+                    RegistrationBulletPoint.objects.bulk_create(bullet_point_objects)
+
+                    bullet_points = RegistrationBulletPoint.objects.filter(company = company, registration_sub_type = registration_sub_type)                
+
+                    return bullet_points
+
+        except Exception as e:
+            logger.exception(f"Error in handle_bullet_points function of BaseRegistrationDetailPageView: {e}")
+
+        return []
+
+    def handle_tags(self, request, company, registration_sub_type):
+        try:
+            tag_list = [tag.strip() for tag in request.POST.getlist("tag")]            
+
+            with transaction.atomic():
+                RegistrationTag.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+
+                if tag_list:
+                    creating_tags = [RegistrationTag(
+                        company = company, registration_sub_type = registration_sub_type,
+                        tag = tag
+                        ) for tag in tag_list if tag]
+
+                    RegistrationTag.objects.bulk_create(creating_tags)
+
+                    registration_tags = RegistrationTag.objects.filter(company = company, registration_sub_type = registration_sub_type)                
+
+                    return registration_tags
+
+        except Exception as e:
+            logger.exception(f"Error in handle_tags function of BaseRegistrationDetailPageView: {e}")
+
+        return []
+
+    def handle_timelines(self, request, company, registration_sub_type):
+        try:
+            heading_list = [heading.strip() for heading in request.POST.getlist("timeline_heading")]
+            summary_list = [summary.strip() for summary in request.POST.getlist("timeline_summary")]                        
+
+            if len(heading_list) != len(summary_list):
+                raise ValueError("The number of headings does not match the number of summaries.")
+
+            with transaction.atomic():
+                RegistrationTimeline.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+                
+                if heading_list and summary_list:
+                    creating_timelines = [RegistrationTimeline(
+                        company = company, registration_sub_type = registration_sub_type,
+                        heading = heading, summary = summary
+                        ) for heading, summary in zip(heading_list, summary_list)]
+
+                    RegistrationTimeline.objects.bulk_create(creating_timelines)
+
+                    registration_timelines = RegistrationTimeline.objects.filter(company = company, registration_sub_type = registration_sub_type)                
+                                            
+                    return registration_timelines
+        except Exception as e:
+            logger.exception(f"Error in handle_timelines function of BaseRegistrationDetailPageView: {e}")
+
+        return []
+
+
+class AddRegistrationDetailPageView(BaseRegistrationDetailPageView, CreateView):
+    form_class = RegistrationDetailPageDescriptionForm
+    template_name = "registration_company/detail_page/add.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["add_registration_detail_page"] = True
+
+        current_company = self.get_current_company()        
+        context["types"] = RegistrationType.objects.filter(company = current_company)
+        
+        return context
+    
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_registration_detail_page', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of BaseRegistrationDetailPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of BaseRegistrationDetailPageView of superadmin: {e}")
+            return self.redirect_url
+
+    def post(self, request, *args, **kwargs):
+        try:
+            form = self.get_form()
+
+            registration_sub_type_slug = request.POST.get('sub_type')
+
+            summary = request.POST.get("summary")
+
+            meta_tags = request.POST.get("meta_tags")
+            meta_description = request.POST.get("meta_description")
+
+            vertical_title = request.POST.get("vertical_title")
+            horizontal_title = request.POST.get("horizontal_title")
+            table_title = request.POST.get("table_title")
+            bullet_title = request.POST.get("bullet_title")
+            tag_title = request.POST.get("tag_title")
+            timeline_title = request.POST.get("timeline_title")
+            
+            hide_features = request.POST.get("hide_features")
+            hide_vertical_tab = request.POST.get("hide_vertical_tab")
+            hide_horizontal_tab = request.POST.get("hide_horizontal_tab")
+            hide_table = request.POST.get("hide_table")
+            hide_bullets = request.POST.get("hide_bullets")
+            hide_tags = request.POST.get("hide_tags")
+            hide_timeline = request.POST.get("hide_timeline")
+
+            summary = summary.strip() if summary else None
+            
+            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_description = meta_description.strip() if meta_description else None
+
+            vertical_title = vertical_title.strip() if vertical_title else None
+            horizontal_title = horizontal_title.strip() if horizontal_title else None
+            table_title = table_title.strip() if table_title else None
+            bullet_title = bullet_title.strip() if bullet_title else None
+            tag_title = tag_title.strip() if tag_title else None
+            timeline_title = timeline_title.strip() if timeline_title else None
+
+            # Fetch current company
+            company = self.get_current_company()
+
+            if not company :
+                messages.error(request, "Invalid company")
+                return redirect(self.redirect_url)
+            
+            required_fields = {
+                "Registration": registration_sub_type_slug,
+                "summary": summary,
+                "Meta Tags": meta_tags,
+                "Meta Description": meta_description
+                }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            checkbox_fields = {
+                "hide_features": hide_features,
+                "hide_vertical_tab": hide_vertical_tab,
+                "hide_horizontal_tab": hide_horizontal_tab,
+                "hide_table": hide_table,
+                "hide_bullets": hide_bullets,
+                "hide_tags": hide_tags,
+                "hide_timeline": hide_timeline,
+                }
+
+            registration_sub_type = self.get_registration_sub_type(registration_sub_type_slug)
+
+            with transaction.atomic():
+                
+                if not form.is_valid():                    
+                    messages.error(request, "Description is required")
+                    return redirect(self.get_redirect_url())
+                
+                cleaned_form = form.cleaned_data
+                description = cleaned_form.get("description")
+
+                registration_detail = self.model.objects.create(
+                    company = company, registration_sub_type = registration_sub_type, summary = summary, description = description,
+                    meta_tags = meta_tags, meta_description = meta_description,
+                    vertical_title = vertical_title, horizontal_title = horizontal_title,
+                    table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
+                    timeline_title = timeline_title
+                )                
+
+                for key, value in checkbox_fields.items():
+                    if value:
+                        setattr(registration_detail, key, True)
+
+                registration_detail.save()
+
+                relationship_handlers = {
+                    "features": self.handle_features,
+                    "vertical_tabs": self.handle_vertical_tabs,
+                    "horizontal_tabs": self.handle_horizontal_tabs,
+                    "tables": self.handle_tables,
+                    "bullet_points": self.handle_bullet_points,
+                    "tags": self.handle_tags,
+                    "timelines": self.handle_timelines,
+                }
+
+                for field, handler in relationship_handlers.items():
+                    objects = handler(request, company, registration_sub_type)
+                    getattr(registration_detail, field).set(objects)
+
+                messages.success(request, "Success! Created registration detail page")
+                return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddRegistrationDetailPageView of superadmin: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class RegistrationDetailPageListView(BaseRegistrationDetailPageView, ListView):
+    template_name = "registration_company/detail_page/list.html"
+    queryset = RegistrationDetail.objects.none()
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    context_object_name = "detail_pages"        
+    
+    def get_queryset(self):
+        try:
+            current_company = self.get_current_company()
+            return self.model.objects.filter(company = current_company)
+        except Exception as e:
+            logger.exception(f"Error in getting queryset of RegistrationDetailsListView of superadmin: {e}")
+            return self.queryset
+
+
+class RegistrationDetailPageView(BaseRegistrationDetailPageView, DetailView):
+    template_name = "registration_company/detail_page/detail.html"
+    redirect_url = reverse_lazy('superadmin:home')
+    context_object_name = "detail_page"
+
+    def get_redirect_url(self):
+        try:
+            return reverse_lazy('superadmin:registration_detail_pages', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in get_redirect_url function of RegistrationDetailPageView: {e}")
+            return self.redirect_url
+
+
+class UpdateRegistrationDetailPageView(BaseRegistrationDetailPageView, UpdateView):    
+    form_class = RegistrationDetailPageDescriptionForm
+    template_name = "registration_company/detail_page/update.html"
+    context_object_name = "detail_page"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        self.object = self.get_object()
+        current_company = self.get_current_company()        
+        context["types"] = RegistrationType.objects.filter(company = current_company)
+        context["sub_types"] = RegistrationSubType.objects.filter(company = current_company, type = self.object.registration_sub_type.type)
+        
+        return context
+    
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:update_registration_detail_page', kwargs = {"slug": self.kwargs.get('slug'), "registration_sub_type_slug": self.kwargs.get('registration_sub_type_slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of UpdateRegistrationDetailPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of UpdateRegistrationDetailPageView of superadmin: {e}")
+            return self.redirect_url
+
+
+    def post(self, request, *args, **kwargs):
+        try:
+            form = self.get_form()
+
+            registration_sub_type_slug = request.POST.get('sub_type')
+
+            registration_sub_type_slug
+
+            summary = request.POST.get("summary")
+
+            meta_tags = request.POST.get("meta_tags")
+
+            meta_description = request.POST.get("meta_description")
+
+            vertical_title = request.POST.get("vertical_title")
+            horizontal_title = request.POST.get("horizontal_title")
+            table_title = request.POST.get("table_title")
+            bullet_title = request.POST.get("bullet_title")
+            tag_title = request.POST.get("tag_title")
+            timeline_title = request.POST.get("timeline_title")   
+
+            summary = summary.strip() if summary else None
+
+            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_description = meta_description.strip() if meta_description else None
+
+            vertical_title = vertical_title.strip() if vertical_title else None
+            horizontal_title = horizontal_title.strip() if horizontal_title else None
+            table_title = table_title.strip() if table_title else None
+            bullet_title = bullet_title.strip() if bullet_title else None
+            tag_title = tag_title.strip() if tag_title else None
+            timeline_title = timeline_title.strip() if timeline_title else None
+
+            hide_features = request.POST.get("hide_features")
+            hide_vertical_tab = request.POST.get("hide_vertical_tab")
+            hide_horizontal_tab = request.POST.get("hide_horizontal_tab")
+            hide_table = request.POST.get("hide_table")
+            hide_bullets = request.POST.get("hide_bullets")
+            hide_tags = request.POST.get("hide_tags")
+            hide_timeline = request.POST.get("hide_timeline")
+
+            # Fetch current company
+            company = self.get_current_company()
+
+            if not company:
+                messages.error(request, "Invalid company")
+                return redirect(self.redirect_url)
+            
+            required_fields = {
+                "Registration": registration_sub_type_slug,
+                "summary": summary,
+                "Meta Tags": meta_tags,
+                "Meta Description": meta_description
+                }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            checkbox_fields = {
+                "hide_features": hide_features,
+                "hide_vertical_tab": hide_vertical_tab,
+                "hide_horizontal_tab": hide_horizontal_tab,
+                "hide_table": hide_table,
+                "hide_bullets": hide_bullets,
+                "hide_tags": hide_tags,
+                "hide_timeline": hide_timeline,
+                }
+
+            registration_sub_type = self.get_registration_sub_type(registration_sub_type_slug)
+
+            with transaction.atomic():
+
+                registration_detail = self.get_object()
+
+                if not form.is_valid():                    
+                    messages.error(request, "Description is required")
+                    return redirect(self.get_redirect_url())
+                
+                cleaned_form = form.cleaned_data
+                description = cleaned_form.get("description")
+
+                registration_detail.registration_sub_type = registration_sub_type
+                registration_detail.summary = summary
+
+                registration_detail.description = description
+
+                registration_detail.meta_tags = meta_tags
+                registration_detail.meta_description = meta_description
+
+                registration_detail.vertical_title = vertical_title
+                registration_detail.horizontal_title = horizontal_title
+                registration_detail.table_title = table_title
+                registration_detail.bullet_title = bullet_title
+                registration_detail.tag_title = tag_title
+                registration_detail.timeline_title = timeline_title 
+
+                for key, value in checkbox_fields.items():
+                    assigning_value = False
+
+                    if value:                    
+                        assigning_value = True
+
+                    setattr(registration_detail, key, assigning_value)
+                
+                registration_detail.save()                             
+
+                relationship_handlers = {
+                    "features": self.handle_features,
+                    "vertical_tabs": self.handle_vertical_tabs,
+                    "horizontal_tabs": self.handle_horizontal_tabs,
+                    "tables": self.handle_tables,
+                    "bullet_points": self.handle_bullet_points,
+                    "tags": self.handle_tags,
+                    "timelines": self.handle_timelines,
+                }
+
+                for field, handler in relationship_handlers.items():
+                    objects = handler(request, company, registration_sub_type)
+                    getattr(registration_detail, field).set(objects)
+
+                registration_detail.save()
+
+                messages.success(request, "Success! Updated registration detail page")
+                return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateRegistrationDetailPageView of superadmin: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+
+class BaseRegistrationMultiPageView(BaseRegistrationCompanyView, View):
+    model = RegistrationMultiPage
+    success_url = redirect_url = reverse_lazy('superadmin:home')    
+        
+    def get_registration_types(self):
+        return RegistrationType.objects.filter(company = self.current_company)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            context["registration_multipage"] = True
+            
+            self.current_company = self.get_current_company()
+            
+            context["current_company"] = self.current_company            
+        except Exception as e:
+            logger.exception(f"Error in getting context data of BaseRegistrationMultiPageView of superadmin: {e}")
+        
+        return context    
+    
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_registration_multipage', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of BaseRegistrationMultiPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of BaseRegistrationMultiPageView of superadmin: {e}")
+            return self.redirect_url
+        
+    def get_registration_sub_type(self, registration_sub_type_slug):
+        try:
+            return get_object_or_404(RegistrationSubType, slug = registration_sub_type_slug)
+        except Http404:
+            messages.error(self.request, "Invalid Registration Sub Type")
+            return redirect(self.get_redirect_url())
+        
+    def handle_features(self, request, company, registration_sub_type):
+        try:
+
+            features_list = request.POST.getlist("feature")
+
+            features_list = list({feature.strip() for feature in features_list})
+            if features_list:
+                with transaction.atomic():
+
+                    RegistrationMultiPageFeature.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+
+                    features = [RegistrationMultiPageFeature(company=company, registration_sub_type=registration_sub_type, feature=feature) for feature in features_list]
+                    RegistrationMultiPageFeature.objects.bulk_create(features)
+
+                    feature_objs = RegistrationMultiPageFeature.objects.filter(company = company, registration_sub_type = registration_sub_type)
+
+                    return feature_objs
+        
+        except Exception as e:
+            logger.exception(f"Error in handle_features function of BaseRegistrationMultiPageView: {e}")
+        
+        return []
+
+    def handle_vertical_tabs(self, request, company, registration_sub_type):
+        try:
+            vertical_tab_objects = []
+
+            vertical_heading_list = [heading.strip() for heading in request.POST.getlist("vertical_heading")]
+            vertical_sub_heading_list = [sub_heading.strip() for sub_heading in request.POST.getlist("vertical_sub_heading")]
+            vertical_summary_list = [summary.strip() for summary in request.POST.getlist("vertical_summary")]
+            vertical_bullet_list = [bullet.strip() for bullet in request.POST.getlist("vertical_bullet")]
+            vertical_bullet_count_list = [int(count) if count != '' else 0 for count in request.POST.getlist("vertical_bullet_count")]
+
+            if not (len(vertical_heading_list) == len(vertical_sub_heading_list) == len(vertical_summary_list) == len(vertical_bullet_count_list)):
+                raise ValueError("Mismatch in the number of vertical fields.")            
+            
+            initial = 0
+
+
+            with transaction.atomic():
+                RegistrationMultiPageVerticalTab.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+                RegistrationMultiPageVerticalBullet.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+
+                for i in range(len(vertical_bullet_count_list)):
+                    heading = vertical_heading_list[i]
+                    sub_heading = vertical_sub_heading_list[i]
+
+                    if heading:
+                        vertical_tab_obj = RegistrationMultiPageVerticalTab.objects.create(
+                            company = company,
+                            registration_sub_type = registration_sub_type,
+                            heading = heading,
+                            sub_heading = sub_heading,
+                            summary = vertical_summary_list[i]
+                        )
+
+                        final = initial + vertical_bullet_count_list[i]
+                        vertical_bullets = vertical_bullet_list[initial:final]
+                        initial = final
+
+                        if vertical_bullet_count_list[i] != 0:
+
+                            creating_vertical_bullets = [RegistrationMultiPageVerticalBullet(
+                                company = company, registration_sub_type = registration_sub_type, heading = heading,
+                                sub_heading = sub_heading, bullet = bullet
+                            ) for bullet in vertical_bullets if bullet]
+
+                            if creating_vertical_bullets:
+                                RegistrationMultiPageVerticalBullet.objects.bulk_create(creating_vertical_bullets)  
+
+                            created_vertical_bullets = RegistrationMultiPageVerticalBullet.objects.filter(company = company, registration_sub_type = registration_sub_type, heading = heading, sub_heading = sub_heading)
+
+                            vertical_tab_obj.bullets.set(created_vertical_bullets)
+
+
+                        vertical_tab_objects.append(vertical_tab_obj)
+
+            return vertical_tab_objects
+
+        except (IntegrityError, IndexError, ValueError) as e:
+            logger.exception(f"Error in handle_vertical_tabs function of BaseRegistrationMultiPageView: {e}")
+
+        return []
+    
+    def handle_horizontal_tabs(self, request, company, registration_sub_type):
+        try:
+            horizontal_tab_objects = []
+
+            horizontal_heading_list = [heading.strip() for heading in request.POST.getlist("horizontal_heading")]
+            horizontal_summary_list = [summary.strip() for summary in request.POST.getlist("horizontal_summary")]
+            horizontal_bullet_list = [bullet.strip() for bullet in request.POST.getlist("horizontal_bullet")]
+            horizontal_bullet_count_list = [int(count) if count != '' else 0 for count in request.POST.getlist("horizontal_bullet_count")] 
+
+            if not (len(horizontal_heading_list) == len(horizontal_summary_list) == len(horizontal_bullet_count_list)):
+                raise ValueError("Mismatch in the number of horizontal fields.")                        
+            
+            initial = 0
+
+
+            with transaction.atomic():
+                RegistrationMultiPageHorizontalTab.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+                RegistrationMultiPageHorizontalBullet.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+
+                for i in range(len(horizontal_bullet_count_list)):
+                    heading = horizontal_heading_list[i]
+
+                    if heading:
+                        horizontal_tab_obj = RegistrationMultiPageHorizontalTab.objects.create(
+                            company = company,
+                            registration_sub_type = registration_sub_type,
+                            heading = heading,
+                            summary = horizontal_summary_list[i]
+                        )
+
+                        final = initial + horizontal_bullet_count_list[i]
+                        horizontal_bullets = horizontal_bullet_list[initial:final]
+                        initial = final
+                        
+                        if horizontal_bullet_count_list[i] != 0:
+                        
+                            creating_horizontal_bullets = [RegistrationMultiPageHorizontalBullet(
+                                company = company, registration_sub_type = registration_sub_type, heading = heading,
+                                bullet = bullet
+                            ) for bullet in horizontal_bullets if bullet]
+
+                            if creating_horizontal_bullets:
+                                RegistrationMultiPageHorizontalBullet.objects.bulk_create(creating_horizontal_bullets)
+
+                            created_horizontal_bullets = RegistrationMultiPageHorizontalBullet.objects.filter(company = company, registration_sub_type = registration_sub_type, heading = heading)
+
+                            horizontal_tab_obj.bullets.set(created_horizontal_bullets)
+
+                        horizontal_tab_objects.append(horizontal_tab_obj)
+
+            return horizontal_tab_objects
+
+        except (IntegrityError, IndexError, ValueError) as e:
+            logger.exception(f"Error in handle_horizontal_tabs function of BaseRegistrationMultiPageView: {e}")
+
+        return []
+    
+    def handle_tables(self, request, company, registration_sub_type):
+        try:
+            registration_tables = []
+
+            heading_list = [heading.strip() for heading in request.POST.getlist("table_heading")]
+            data_list = [data.strip() for data in request.POST.getlist("table_data")]
+
+            heading_length = len(heading_list)
+            data_length = len(data_list)
+
+
+            with transaction.atomic():
+                RegistrationMultiPageTableData.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+                RegistrationMultiPageTable.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+
+                for index, heading in enumerate(heading_list):
+                    registration_table = RegistrationMultiPageTable.objects.create(
+                        company = company, registration_sub_type = registration_sub_type, heading = heading
+                    )
+
+                    data_positions  = list(range(index, data_length, heading_length))
+                    data_list_of_heading = [data_list[i] for i in data_positions ]
+
+                    table_data_objs  = [RegistrationMultiPageTableData(
+                            company = company, registration_sub_type = registration_sub_type,
+                            heading = heading, data = data
+                            ) for data in data_list_of_heading if data]
+
+                    RegistrationMultiPageTableData.objects.bulk_create(table_data_objs )
+
+                    registration_table_data_objs = RegistrationMultiPageTableData.objects.filter(company = company, registration_sub_type = registration_sub_type, heading = heading)
+
+                    registration_table.datas.set(registration_table_data_objs)
+                    registration_tables.append(registration_table)
+
+            return registration_tables
+        
+        except Exception as e:
+            logger.exception(f"Error in handle_tables function of BaseRegistrationMultiPageView: {e}")
+
+        return []
+    
+    def handle_bullet_points(self, request, company, registration_sub_type):
+        try:
+            bullet_point_list = [bullet_point.strip() for bullet_point in request.POST.getlist("bullet")]
+
+            with transaction.atomic():
+                RegistrationMultiPageBulletPoint.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+
+                if bullet_point_list:
+                    bullet_point_objects = [RegistrationMultiPageBulletPoint(
+                        company = company, registration_sub_type = registration_sub_type,
+                        bullet_point = bullet_point
+                    ) for bullet_point in bullet_point_list if bullet_point]
+
+                    RegistrationMultiPageBulletPoint.objects.bulk_create(bullet_point_objects)
+
+                    bullet_points = RegistrationMultiPageBulletPoint.objects.filter(company = company, registration_sub_type = registration_sub_type)                
+
+                    return bullet_points
+
+        except Exception as e:
+            logger.exception(f"Error in handle_bullet_points function of BaseRegistrationMultiPageView: {e}")
+
+        return []
+
+    def handle_tags(self, request, company, registration_sub_type):
+        try:
+            tag_list = [tag.strip() for tag in request.POST.getlist("tag")]            
+
+            with transaction.atomic():
+                RegistrationMultiPageTag.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+
+                if tag_list:                
+                    creating_tags = [RegistrationMultiPageTag(
+                        company = company, registration_sub_type = registration_sub_type,
+                        tag = tag
+                        ) for tag in tag_list if tag]
+
+                    RegistrationMultiPageTag.objects.bulk_create(creating_tags)
+
+                    registration_tags = RegistrationMultiPageTag.objects.filter(company = company, registration_sub_type = registration_sub_type)                
+
+                    return registration_tags
+
+        except Exception as e:
+            logger.exception(f"Error in handle_tags function of BaseRegistrationMultiPageView: {e}")
+
+        return []
+
+    def handle_timelines(self, request, company, registration_sub_type):
+        try:
+            heading_list = [heading.strip() for heading in request.POST.getlist("timeline_heading")]
+            summary_list = [summary.strip() for summary in request.POST.getlist("timeline_summary")]                        
+
+            if len(heading_list) != len(summary_list):
+                raise ValueError("The number of headings does not match the number of summaries.")
+
+            with transaction.atomic():
+                RegistrationMultiPageTimeline.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+                
+                if heading_list and summary_list:
+                    creating_timelines = [RegistrationMultiPageTimeline(
+                        company = company, registration_sub_type = registration_sub_type,
+                        heading = heading, summary = summary
+                        ) for heading, summary in zip(heading_list, summary_list)]
+
+                    RegistrationMultiPageTimeline.objects.bulk_create(creating_timelines)
+
+                    registration_timelines = RegistrationMultiPageTimeline.objects.filter(company = company, registration_sub_type = registration_sub_type)                
+                                            
+                    return registration_timelines
+        except Exception as e:
+            logger.exception(f"Error in handle_timelines function of BaseRegistrationMultiPageView: {e}")
+
+        return []
+
+    def handle_faqs(self, request, company, registration_sub_type):
+        try:
+            question_list = [question.strip() for question in request.POST.getlist("faq_question")]
+            answer_list = [answer.strip() for answer in request.POST.getlist("faq_answer")]                        
+
+            if len(question_list) != len(answer_list):
+                raise ValueError("The number of questions does not match the number of summaries.")
+
+            with transaction.atomic():
+                RegistrationMultiPageFaq.objects.filter(company = company, registration_sub_type = registration_sub_type).delete()
+                
+                if question_list and answer_list:
+                    creating_faqs = [RegistrationMultiPageFaq(
+                        company = company, registration_sub_type = registration_sub_type,
+                        question = question, answer = answer
+                        ) for question, answer in zip(question_list, answer_list) if question and answer]
+
+                    RegistrationMultiPageFaq.objects.bulk_create(creating_faqs)
+
+                    registration_faqs = RegistrationMultiPageFaq.objects.filter(company = company, registration_sub_type = registration_sub_type)                
+                                            
+                    return registration_faqs
+        except Exception as e:
+            logger.exception(f"Error in handle_faqs function of BaseRegistrationMultiPageView: {e}")
+
+        return []
+
+
+class AddRegistrationMultiPageView(BaseRegistrationMultiPageView, CreateView):
+    form_class = RegistrationMultiPageDescriptionForm
+    template_name = "registration_company/multipage/add.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["types"] = self.get_registration_types()
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        try:
+            current_company = self.get_current_company()
+
+            form = self.get_form()
+
+            registration_sub_type_slug = request.POST.get('sub_type')
+
+            summary = request.POST.get("summary")
+
+            meta_tags = request.POST.get("meta_tags")
+            meta_description = request.POST.get("meta_description")
+
+            vertical_title = request.POST.get("vertical_title")
+            horizontal_title = request.POST.get("horizontal_title")
+            table_title = request.POST.get("table_title")
+            bullet_title = request.POST.get("bullet_title")
+            tag_title = request.POST.get("tag_title")
+            timeline_title = request.POST.get("timeline_title")
+
+            hide_features = request.POST.get("hide_features")
+            hide_vertical_tab = request.POST.get("hide_vertical_tab")
+            hide_horizontal_tab = request.POST.get("hide_horizontal_tab")
+            hide_table = request.POST.get("hide_table")
+            hide_bullets = request.POST.get("hide_bullets")
+            hide_tags = request.POST.get("hide_tags")
+            hide_timeline = request.POST.get("hide_timeline")
+            hide_faqs = request.POST.get("hide_faqs")
+
+            summary = summary.strip() if summary else None
+
+            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_description = meta_description.strip() if meta_description else None
+
+            vertical_title = vertical_title.strip() if vertical_title else None
+            horizontal_title = horizontal_title.strip() if horizontal_title else None
+            table_title = table_title.strip() if table_title else None
+            bullet_title = bullet_title.strip() if bullet_title else None
+            tag_title = tag_title.strip() if tag_title else None
+            timeline_title = timeline_title.strip() if timeline_title else None
+
+            # Fetch current company
+            company = current_company
+
+            if not company:
+                messages.error(request, "Invalid company")
+                return redirect(self.redirect_url)
+            
+            required_fields = {
+                "Registration Sub Type": registration_sub_type_slug,
+                "summary": summary,
+                "Meta Tags": meta_tags,
+                "Meta Description": meta_description
+                }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            checkbox_fields = {
+                "hide_features": hide_features,
+                "hide_vertical_tab": hide_vertical_tab,
+                "hide_horizontal_tab": hide_horizontal_tab,
+                "hide_table": hide_table,
+                "hide_bullets": hide_bullets,
+                "hide_tags": hide_tags,
+                "hide_timeline": hide_timeline,
+                "hide_faqs": hide_faqs
+                }
+
+            registration_sub_type = self.get_registration_sub_type(registration_sub_type_slug)
+
+            with transaction.atomic():
+                if self.model.objects.filter(company = company, registration_sub_type = registration_sub_type).exists():
+                    messages.error(request, "Multipage for this registration sub type already exists")
+                    return redirect(self.get_redirect_url())
+                
+                if not form.is_valid():                    
+                    messages.error(request, "Description is required")
+                    return redirect(self.get_redirect_url())
+                
+                cleaned_form = form.cleaned_data
+                description = cleaned_form.get("description")
+
+                registration_multi_page = self.model.objects.create(
+                    company = company, registration_sub_type = registration_sub_type, summary = summary, description = description,
+                    meta_tags = meta_tags, meta_description = meta_description,
+                    vertical_title = vertical_title, horizontal_title = horizontal_title,
+                    table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
+                    timeline_title = timeline_title
+                )
+
+                for key, value in checkbox_fields.items():
+                    if value:
+                        setattr(registration_multi_page, key, True)
+                
+                registration_multi_page.save()
+
+                relationship_handlers = {
+                    "features": self.handle_features,
+                    "vertical_tabs": self.handle_vertical_tabs,
+                    "horizontal_tabs": self.handle_horizontal_tabs,
+                    "tables": self.handle_tables,
+                    "bullet_points": self.handle_bullet_points,
+                    "tags": self.handle_tags,
+                    "timelines": self.handle_timelines,
+                    "faqs": self.handle_faqs,
+                }
+
+                for field, handler in relationship_handlers.items():
+                    objects = handler(request, company, registration_sub_type)
+                    getattr(registration_multi_page, field).set(objects)
+
+                messages.success(request, "Success! Created registration multipage")
+                return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddRegistrationMultiPageView of superadmin: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class RegistrationMultiPageListView(BaseRegistrationMultiPageView, ListView):
+    template_name = "registration_company/multipage/list.html"
+    queryset = RegistrationMultiPage.objects.none()
+    context_object_name = "multipages"    
+    
+    def get_queryset(self):
+        try:
+            current_company = self.get_current_company()
+            return self.model.objects.filter(company = current_company)
+        except Exception as e:
+            logger.exception(f"Error in getting queryset of RegistrationMultiPageListView of superadmin: {e}")
+            return self.queryset
+        
+class RegistrationMultiPageDetailView(BaseRegistrationMultiPageView, DetailView):
+    template_name = "registration_company/multipage/detail.html"
+    context_object_name = "multipage"
+
+    def get_current_registration_sub_type(self):
+        try:
+            registration_sub_type_slug = self.kwargs.get('registration_sub_type_slug')
+            return get_object_or_404(RegistrationSubType, slug = registration_sub_type_slug)
+        except Http404:
+            messages.error(self.request, "Failed! Invalid Registration Sub Type")
+            return redirect(self.redirect_url)   
+
+    def get_object(self):
+        try:
+            current_company = self.get_current_company()
+            current_registration_sub_type = self.get_current_registration_sub_type()
+            return get_object_or_404(self.model, company = current_company, registration_sub_type = current_registration_sub_type)
+        
+        except Http404:
+            messages.error(self.request, "Invalid registration for this company")
+
+        except Exception as e:
+            logger.exception(f"Error in get_object function of RegistrationMultipageDetailView of superadmin: {e}")
+
+        return redirect(self.get_redirect_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        self.object = self.get_object
+        
+        context[self.context_object_name] = self.object
+        return context     
+    
+
+class UpdateRegistrationMultiPageView(BaseRegistrationMultiPageView, UpdateView):    
+    form_class = RegistrationMultiPageDescriptionForm
+    template_name = "registration_company/multipage/update.html"
+    context_object_name = "multipage"    
+
+    def get_object(self):
+        try:
+            company_slug = self.kwargs.get('slug')
+            multipage_slug = self.kwargs.get('multipage_slug')            
+            
+            return get_object_or_404(self.model, company__slug = company_slug, slug = multipage_slug)
+        
+        except Http404:
+            messages.error(self.request, "Invalid registration multipage object")
+            return redirect(self.get_redirect_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            current_company = self.get_current_company()
+            self.object = self.get_object()
+            context[self.context_object_name] = self.object
+
+            context["types"] = RegistrationType.objects.filter(company = current_company)
+            context["sub_types"] = RegistrationSubType.objects.filter(company = current_company, type = self.object.registration_sub_type.type)
+        except Exception as e:
+            logger.exception(f"Error in getting context data of UpdateMultiPageView of superadmin: {e}")
+        
+        return context    
+    
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:update_registration_multipage', kwargs = {"slug": self.kwargs.get('slug'), "multipage_slug": self.kwargs.get('multipage_slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of UpdateMultiPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of UpdateMultiPageView of superadmin: {e}")
+            return self.redirect_url
+        
+        
+    def post(self, request, *args, **kwargs):
+        try:            
+            form = self.get_form()
+
+            registration_sub_type_slug = request.POST.get('sub_type')
+
+            summary = request.POST.get("summary")
+
+            meta_tags = request.POST.get("meta_tags")
+            meta_description = request.POST.get("meta_description")
+
+            vertical_title = request.POST.get("vertical_title")
+            horizontal_title = request.POST.get("horizontal_title")
+            table_title = request.POST.get("table_title")
+            bullet_title = request.POST.get("bullet_title")
+            tag_title = request.POST.get("tag_title")
+            timeline_title = request.POST.get("timeline_title")
+
+            hide_features = request.POST.get("hide_features")
+            hide_vertical_tab = request.POST.get("hide_vertical_tab")
+            hide_horizontal_tab = request.POST.get("hide_horizontal_tab")
+            hide_table = request.POST.get("hide_table")
+            hide_bullets = request.POST.get("hide_bullets")
+            hide_tags = request.POST.get("hide_tags")
+            hide_timeline = request.POST.get("hide_timeline")
+            hide_faqs = request.POST.get("hide_faqs")
+
+            summary = summary.strip() if summary else None
+
+            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_description = meta_description.strip() if meta_description else None
+
+            vertical_title = vertical_title.strip() if vertical_title else None
+            horizontal_title = horizontal_title.strip() if horizontal_title else None
+            table_title = table_title.strip() if table_title else None
+            bullet_title = bullet_title.strip() if bullet_title else None
+            tag_title = tag_title.strip() if tag_title else None
+            timeline_title = timeline_title.strip() if timeline_title else None
+
+            # Fetch current company
+            company = self.get_current_company()
+
+            if not company:
+                messages.error(request, "Invalid company")
+                return redirect(self.redirect_url)
+            
+            required_fields = {
+                "Registration Sub Type": registration_sub_type_slug,
+                "summary": summary,
+                "Meta Tags": meta_tags,
+                "Meta Description": meta_description
+                }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+                
+            checkbox_fields = {
+                "hide_features": hide_features,
+                "hide_vertical_tab": hide_vertical_tab,
+                "hide_horizontal_tab": hide_horizontal_tab,
+                "hide_table": hide_table,
+                "hide_bullets": hide_bullets,
+                "hide_tags": hide_tags,
+                "hide_timeline": hide_timeline,
+                "hide_faqs": hide_faqs
+                }
+
+            registration_sub_type = self.get_registration_sub_type(registration_sub_type_slug)
+
+            with transaction.atomic():
+
+                multipage = self.get_object()
+
+                if not form.is_valid():                    
+                    messages.error(request, "Description is required")
+                    return redirect(self.get_redirect_url())
+                
+                cleaned_form = form.cleaned_data
+                description = cleaned_form.get("description")
+
+                multipage.registration_sub_type = registration_sub_type
+                multipage.summary = summary
+
+                multipage.description = description
+
+                multipage.meta_tags = meta_tags
+                multipage.meta_description = meta_description
+
+                multipage.vertical_title = vertical_title
+                multipage.horizontal_title = horizontal_title
+                multipage.table_title = table_title
+                multipage.bullet_title = bullet_title
+                multipage.tag_title = tag_title
+                multipage.timeline_title = timeline_title                
+
+                for key, value in checkbox_fields.items():
+                    assigning_value = False
+
+                    if value:
+                        assigning_value = True
+
+                    setattr(multipage, key, assigning_value)
+                
+                multipage.save()
+
+                relationship_handlers = {
+                    "features": self.handle_features,
+                    "vertical_tabs": self.handle_vertical_tabs,
+                    "horizontal_tabs": self.handle_horizontal_tabs,
+                    "tables": self.handle_tables,
+                    "bullet_points": self.handle_bullet_points,
+                    "tags": self.handle_tags,
+                    "timelines": self.handle_timelines,
+                    "faqs": self.handle_faqs,
+                }
+
+                for field, handler in relationship_handlers.items():
+                    objects = handler(request, company, registration_sub_type)
+                    getattr(multipage, field).set(objects)
+
+                multipage.save()
+
+                messages.success(request, "Success! Updated registration multipage")
+                return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateCompanyDetailView of superadmin: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
 
 
 # Directory
