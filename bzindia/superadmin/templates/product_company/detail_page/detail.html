@@ -47,6 +47,9 @@
         </div>
 		<div class="card">
             <div class="card-body">
+				<h4>Meta Title</h4>
+                <div>{% if detail_page.meta_title %}{{detail_page.meta_title}}{% else %}Not Provided{% endif %}</div>
+				<br>
                 <h4>Meta Tags</h4>
                 <div>{% if detail_page.get_meta_tags %}{{detail_page.get_meta_tags}}{% else %}Not Provided{% endif %}</div>
 				<br>

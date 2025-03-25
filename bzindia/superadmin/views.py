@@ -1921,6 +1921,7 @@ class AddProductDetailPageView(BaseProductDetailPageView, CreateView):
 
             summary = request.POST.get("summary")
 
+            meta_title = request.POST.get("meta_title")
             meta_tags = request.POST.get("meta_tags")
             meta_description = request.POST.get("meta_description")
 
@@ -1941,6 +1942,7 @@ class AddProductDetailPageView(BaseProductDetailPageView, CreateView):
 
             summary = summary.strip() if summary else None
             
+            meta_title = meta_title.strip() if meta_title else None
             meta_tags = meta_tags.strip() if meta_tags else None
             meta_description = meta_description.strip() if meta_description else None
 
@@ -1993,7 +1995,7 @@ class AddProductDetailPageView(BaseProductDetailPageView, CreateView):
 
                 product_detail = self.model.objects.create(
                     company = company, product = product, summary = summary, description = description,
-                    meta_tags = meta_tags, meta_description = meta_description,
+                    meta_title = meta_title, meta_tags = meta_tags, meta_description = meta_description,
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
                     timeline_title = timeline_title
@@ -2097,6 +2099,7 @@ class UpdateProductDetailPageView(BaseProductDetailPageView, UpdateView):
 
             summary = request.POST.get("summary")
 
+            meta_title = request.POST.get("meta_title")
             meta_tags = request.POST.get("meta_tags")
 
             meta_description = request.POST.get("meta_description")
@@ -2138,6 +2141,7 @@ class UpdateProductDetailPageView(BaseProductDetailPageView, UpdateView):
             required_fields = {
                 "Product": product_slug,
                 "summary": summary,
+                "Meta Title": meta_title,
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -2175,6 +2179,7 @@ class UpdateProductDetailPageView(BaseProductDetailPageView, UpdateView):
 
                 product_detail.description = description
 
+                product_detail.meta_title = meta_title
                 product_detail.meta_tags = meta_tags
                 product_detail.meta_description = meta_description
 
@@ -3980,6 +3985,7 @@ class AddCourseDetailView(BaseEducationCompanyView, CreateView):
 
             summary = request.POST.get("summary")
 
+            meta_title = request.POST.get("meta_title")
             meta_tags = request.POST.get("meta_tags")
             meta_description = request.POST.get("meta_description")
 
@@ -4000,6 +4006,7 @@ class AddCourseDetailView(BaseEducationCompanyView, CreateView):
 
             summary = summary.strip() if summary else None
 
+            meta_title = meta_title.strip() if meta_title else None
             meta_tags = meta_tags.strip() if meta_tags else None
             meta_description = meta_description.strip() if meta_description else None
 
@@ -4020,6 +4027,7 @@ class AddCourseDetailView(BaseEducationCompanyView, CreateView):
             required_fields = {
                 "Course": course_slug,
                 "summary": summary,
+                "Meta Title": meta_title,
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -4052,7 +4060,7 @@ class AddCourseDetailView(BaseEducationCompanyView, CreateView):
 
                 course_detail = self.model.objects.create(
                     company = company, course = course, summary = summary, description = description,
-                    meta_tags = meta_tags, meta_description = meta_description,
+                    meta_title = meta_title, meta_tags = meta_tags, meta_description = meta_description,
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
                     timeline_title = timeline_title
@@ -4512,6 +4520,7 @@ class UpdateCourseDetailView(BaseEducationCompanyView, UpdateView):
 
             summary = request.POST.get("summary")
 
+            meta_title = request.POST.get("meta_title")
             meta_tags = request.POST.get("meta_tags")
             meta_description = request.POST.get("meta_description")
             
@@ -4524,6 +4533,7 @@ class UpdateCourseDetailView(BaseEducationCompanyView, UpdateView):
 
             summary = summary.strip() if summary else None
 
+            meta_title = meta_title.strip() if meta_title else None
             meta_tags = meta_tags.strip() if meta_tags else None
             meta_description = meta_description.strip() if meta_description else None
 
@@ -4552,6 +4562,7 @@ class UpdateCourseDetailView(BaseEducationCompanyView, UpdateView):
             required_fields = {
                 "Course": course_slug,
                 "summary": summary,
+                "Meta Title": meta_title,
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -4589,6 +4600,7 @@ class UpdateCourseDetailView(BaseEducationCompanyView, UpdateView):
 
                 course_detail.description = description
 
+                course_detail.meta_title = meta_title
                 course_detail.meta_tags = meta_tags
                 course_detail.meta_description = meta_description
 
@@ -7075,6 +7087,7 @@ class AddServiceDetailView(BaseServiceDetailView, CreateView):
 
             summary = request.POST.get("summary")
 
+            meta_title = request.POST.get("meta_title")
             meta_tags = request.POST.get("meta_tags")
             meta_description = request.POST.get("meta_description")
 
@@ -7095,6 +7108,7 @@ class AddServiceDetailView(BaseServiceDetailView, CreateView):
 
             summary = summary.strip() if summary else None
             
+            meta_title = meta_title.strip() if meta_title else None
             meta_tags = meta_tags.strip() if meta_tags else None
             meta_description = meta_description.strip() if meta_description else None
 
@@ -7115,6 +7129,7 @@ class AddServiceDetailView(BaseServiceDetailView, CreateView):
             required_fields = {
                 "Service": service_slug,
                 "summary": summary,
+                "Meta Title": meta_title,
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -7147,7 +7162,7 @@ class AddServiceDetailView(BaseServiceDetailView, CreateView):
 
                 service_detail = self.model.objects.create(
                     company = company, service = service, summary = summary, description = description,
-                    meta_tags = meta_tags, meta_description = meta_description,
+                    meta_title = meta_title, meta_tags = meta_tags, meta_description = meta_description,
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
                     timeline_title = timeline_title
@@ -7251,8 +7266,8 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
 
             summary = request.POST.get("summary")
 
+            meta_title = request.POST.get("meta_title")
             meta_tags = request.POST.get("meta_tags")
-
             meta_description = request.POST.get("meta_description")
 
             vertical_title = request.POST.get("vertical_title")
@@ -7264,6 +7279,7 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
 
             summary = summary.strip() if summary else None
 
+            meta_title = meta_title.strip() if meta_title else None
             meta_tags = meta_tags.strip() if meta_tags else None
             meta_description = meta_description.strip() if meta_description else None
 
@@ -7292,6 +7308,7 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
             required_fields = {
                 "Service": service_slug,
                 "summary": summary,
+                "Meta Title": meta_title,
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -7329,6 +7346,7 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
 
                 service_detail.description = description
 
+                service_detail.meta_title = meta_title
                 service_detail.meta_tags = meta_tags
                 service_detail.meta_description = meta_description
 
@@ -9419,6 +9437,7 @@ class AddRegistrationDetailPageView(BaseRegistrationDetailPageView, CreateView):
 
             summary = request.POST.get("summary")
 
+            meta_title = request.POST.get("meta_title")
             meta_tags = request.POST.get("meta_tags")
             meta_description = request.POST.get("meta_description")
 
@@ -9439,6 +9458,7 @@ class AddRegistrationDetailPageView(BaseRegistrationDetailPageView, CreateView):
 
             summary = summary.strip() if summary else None
             
+            meta_title = meta_title.strip() if meta_title else None
             meta_tags = meta_tags.strip() if meta_tags else None
             meta_description = meta_description.strip() if meta_description else None
 
@@ -9459,6 +9479,7 @@ class AddRegistrationDetailPageView(BaseRegistrationDetailPageView, CreateView):
             required_fields = {
                 "Registration": registration_sub_type_slug,
                 "summary": summary,
+                "Meta Title": meta_title,
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -9491,7 +9512,7 @@ class AddRegistrationDetailPageView(BaseRegistrationDetailPageView, CreateView):
 
                 registration_detail = self.model.objects.create(
                     company = company, registration_sub_type = registration_sub_type, summary = summary, description = description,
-                    meta_tags = meta_tags, meta_description = meta_description,
+                    meta_title = meta_title, meta_tags = meta_tags, meta_description = meta_description,
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
                     timeline_title = timeline_title
@@ -9588,8 +9609,9 @@ class UpdateRegistrationDetailPageView(BaseRegistrationDetailPageView, UpdateVie
 
             summary = request.POST.get("summary")
 
-            meta_tags = request.POST.get("meta_tags")
+            meta_title = request.POST.get("meta_title")
 
+            meta_tags = request.POST.get("meta_tags")
             meta_description = request.POST.get("meta_description")
 
             vertical_title = request.POST.get("vertical_title")
@@ -9601,6 +9623,7 @@ class UpdateRegistrationDetailPageView(BaseRegistrationDetailPageView, UpdateVie
 
             summary = summary.strip() if summary else None
 
+            meta_title = meta_title.strip() if meta_title else None
             meta_tags = meta_tags.strip() if meta_tags else None
             meta_description = meta_description.strip() if meta_description else None
 
@@ -9629,6 +9652,7 @@ class UpdateRegistrationDetailPageView(BaseRegistrationDetailPageView, UpdateVie
             required_fields = {
                 "Registration": registration_sub_type_slug,
                 "summary": summary,
+                "Meta Title": meta_title,
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -9666,6 +9690,7 @@ class UpdateRegistrationDetailPageView(BaseRegistrationDetailPageView, UpdateVie
 
                 registration_detail.description = description
 
+                registration_detail.meta_title = meta_title
                 registration_detail.meta_tags = meta_tags
                 registration_detail.meta_description = meta_description
 

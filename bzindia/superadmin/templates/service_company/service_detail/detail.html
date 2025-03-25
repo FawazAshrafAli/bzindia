@@ -50,6 +50,9 @@
 
 		<div class="card">
             <div class="card-body">
+				<h4>Meta Title</h4>
+                <div>{% if service_detail.meta_title %}{{service_detail.meta_title}}{% else %}Not Provided{% endif %}</div>
+				<br>
                 <h4>Meta Tags</h4>
                 <div>{% if service_detail.get_meta_tags %}{{service_detail.get_meta_tags}}{% else %}Not Provided{% endif %}</div>
 				<br>

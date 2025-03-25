@@ -48,6 +48,9 @@
 
 		<div class="card">
             <div class="card-body">
+				<h4>Meta Title</h4>
+                <div>{% if course_detail.meta_title %}{{course_detail.meta_title}}{% else %}Not Provided{% endif %}</div>
+				<br>
                 <h4>Meta Tags</h4>
                 <div>{% if course_detail.get_meta_tags %}{{course_detail.get_meta_tags}}{% else %}Not Provided{% endif %}</div>
 				<br>
