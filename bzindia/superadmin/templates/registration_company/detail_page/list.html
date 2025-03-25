@@ -42,7 +42,7 @@
 											<a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="material-icons">more_vert</i></a>
 											<div class="dropdown-menu dropdown-menu-right">
 												<a class="dropdown-item" href="{% url 'superadmin:update_registration_detail_page' current_company.slug detail_page.registration_sub_type.slug %}">Edit This Multi Page</a>
-												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{detail_page.registration.name}}" data-slug="{{detail_page.slug}}">Remove This Multi Page</a>
+												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{detail_page.registration_sub_type.name}}" data-slug="{{detail_page.slug}}">Remove This Multi Page</a>
 											</div>
 										</div>
 									</td>
@@ -75,7 +75,8 @@
 			<div class="modal-body">
 				<div class="row">
 					<div class="col-md-12">
-						<form id="deletion-form" method="get">
+						<form id="deletion-form" method="post">
+							{% csrf_token %}
 							<h4><span class="text-danger">Deleting</span> Multi Page. . .</h4>
 							<div class="form-group row">
 								<div class="col-md-12">
@@ -105,11 +106,10 @@
 		$('.delete-btn').click( function () {
 			const name = $(this).data('name');
 			const registrationDetailSlug = $(this).data('slug');
-			const companySlug = `{{current_company.slug}}`
-			const actionUrl = "#"
+			const companySlug = `{{current_company.slug}}`;
 
-			{% comment %} const actionUrl = `{% url 'superadmin:delete_registration_detail' 'dummyCompanySlug' 'dummyRegistrationDetailSlug' %}`
-			.replace('dummyCompanySlug', companySlug).replace('dummyRegistrationDetailSlug', registrationDetailSlug); {% endcomment %}
+			const actionUrl = `{% url 'superadmin:delete_registration_detail_page' 'dummyCompanySlug' 'dummyRegistrationDetailSlug' %}`
+			.replace('dummyCompanySlug', companySlug).replace('dummyRegistrationDetailSlug', registrationDetailSlug);
 
 			$('#deleting-object').html(name);
 			$('#deletion-form').prop('action', actionUrl);

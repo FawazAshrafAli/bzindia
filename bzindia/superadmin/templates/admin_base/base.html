@@ -387,6 +387,8 @@
 									<li><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_service_sub_category_modal">Add Service Sub Category</a></li>
 									{% elif service_detail_page %}
 									<li><a {% if add_service_detail_page %}class="active"{% endif %} href="{% url 'superadmin:add_service_details' current_company.slug %}">Add Service Detail</a></li>
+									{% elif product_detail_page %}
+									<li><a {% if add_product_detail_page %}class="active"{% endif %} href="{% url 'superadmin:add_product_detail_page' current_company.slug %}">Add Product Detail</a></li>
 									{% elif registration_detail_page %}
 									<li><a {% if add_registration_detail_page %}class="active"{% endif %} href="{% url 'superadmin:add_registration_detail_page' current_company.slug %}">Add Detail Page</a></li>
 									{% elif registration_page %}
@@ -1174,9 +1176,12 @@
 
 				if (isProduct) {
 					actionUrl = `{% url 'product:get_sub_categories' %}`;
+
+					$('#product-dropdown').html('<option value="" hidden disabled selected>Select Service</option>');
+				} else {
+					$('#service-dropdown').html('<option value="" hidden disabled selected>Select Service</option>');
 				}
 
-				$('#service-dropdown').html('<option value="" hidden disabled selected>Select Service</option>');
 	
 				$.ajax({
 					type: 'GET',

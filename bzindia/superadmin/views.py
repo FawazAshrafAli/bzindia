@@ -17,7 +17,8 @@ from django.db import transaction
 
 from .forms import (
     CourseMultiPageDescriptionForm, CourseDetailDescriptionForm, ServiceMultiPageDescriptionForm, RegistrationMultiPageDescriptionForm,
-    ServiceDetailDescriptionForm, RegistrationDetailPageDescriptionForm, ProductMultiPageDescriptionForm
+    ServiceDetailDescriptionForm, RegistrationDetailPageDescriptionForm, ProductMultiPageDescriptionForm, 
+    ProductDetailDescriptionForm
     )
 
 from custom_pages.models import (
@@ -30,6 +31,10 @@ from locations.models import UniqueState, UniqueDistrict, UniquePlace
 from product.models import (
     Product, Category as ProductCategory, SubCategory as ProductSubCategory, Color, Size, Brand,
     Faq as ProductFaq, Review as ProductReview, Enquiry as ProductEnquiry,
+
+    ProductDetailPage, Feature as ProductFeature, VerticalTab as ProductVerticalTab, VerticalBullet as ProductVerticalBullet,
+    HorizontalTab as ProductHorizontalTab, HorizontalBullet as ProductHorizontalBullet, Table as ProductTable, 
+    TableData as ProductTableData, BulletPoint as ProductBulletPoint, Tag as ProductTag, Timeline as ProductTimeline,
 
     MultiPage as ProductMultiPage, MultiPageFeature as ProductMultiPageFeature, MultiPageVerticalTab as ProductMultiPageVerticalTab,
     MultiPageVerticalBullet as ProductMultiPageVerticalBullet, MultiPageHorizontalTab as ProductMultiPageHorizontalTab,
@@ -1233,7 +1238,7 @@ class DeleteProductFaqView(ProductFaqBaseView, View):
             messages.error(request, "Invalid Product FAQ")
 
         except Exception as e:
-            logger.exception(f"Error in get function of DeleteProductFaqView of superadmin app: {e}")
+            logger.exception(f"Error in post function of DeleteProductFaqView of superadmin app: {e}")
             messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
@@ -1557,6 +1562,690 @@ class DeleteProductEnquiryView(BaseProductEnquiryView, View):
             return redirect(self.get_redirect_url())
 
 
+class BaseProductDetailPageView(BaseProductCompanyView):
+    model = ProductDetailPage
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            context["product_detail_page"] = True
+            
+            current_company = self.get_current_company()
+
+            context["current_company"] = current_company
+
+        except Exception as e:
+            logger.exception(f"Error in getting context data of BaseProductDetailPageView of superadmin: {e}")
+        
+        return context
+        
+    def get_product(self, product_slug):
+        try:
+            return get_object_or_404(Product, slug = product_slug)
+        except Http404:
+            messages.error(self.request, "Invalid Product")
+            return redirect(self.get_redirect_url())
+        
+    def get_current_product(self):
+        try:
+            product_slug = self.kwargs.get('product_slug')
+
+            product =  get_object_or_404(Product, slug = product_slug)
+            return product
+        except Http404:
+            messages.error(self.request, "Failed! Invalid Product")
+            return redirect(self.redirect_url)
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:product_detail_pages', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of BaseProductDetailPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of BaseProductDetailPageView of superadmin: {e}")
+            return self.redirect_url
+
+    def get_object(self):
+        try:
+            current_company = self.get_current_company()
+            current_product = self.get_current_product()
+
+            return get_object_or_404(self.model, company = current_company, product = current_product)
+        
+        except Http404:
+            messages.error(self.request, "Invalid product for this company")
+
+        except Exception as e:
+            logger.exception(f"Error in get_object function of BaseProductDetailPageView of superadmin: {e}")
+
+        return redirect(self.get_redirect_url())
+        
+    def handle_features(self, request, company, product):
+        try:
+
+            features_list = request.POST.getlist("feature")
+
+            features_list = list({feature.strip() for feature in features_list})
+            if features_list:
+                with transaction.atomic():
+
+                    ProductFeature.objects.filter(company = company, product = product).delete()
+
+                    features = [ProductFeature(company=company, product=product, feature=feature) for feature in features_list]
+                    ProductFeature.objects.bulk_create(features)
+
+                    feature_objs = ProductFeature.objects.filter(company = company, product = product)
+
+                    return feature_objs
+        
+        except Exception as e:
+            logger.exception(f"Error in handle_features function of BaseProductDetailPageView: {e}")
+        
+        return []
+
+    def handle_vertical_tabs(self, request, company, product):
+        try:
+            vertical_tab_objects = []
+
+            vertical_heading_list = [heading.strip() for heading in request.POST.getlist("vertical_heading")]
+            vertical_sub_heading_list = [sub_heading.strip() for sub_heading in request.POST.getlist("vertical_sub_heading")]
+            vertical_summary_list = [summary.strip() for summary in request.POST.getlist("vertical_summary")]
+            vertical_bullet_list = [bullet.strip() for bullet in request.POST.getlist("vertical_bullet")]
+            vertical_bullet_count_list = [int(count) if count != '' else 0 for count in request.POST.getlist("vertical_bullet_count")]
+
+            if not (len(vertical_heading_list) == len(vertical_sub_heading_list) == len(vertical_summary_list) == len(vertical_bullet_count_list)):
+                raise ValueError("Mismatch in the number of vertical fields.")            
+            
+            initial = 0
+
+
+            with transaction.atomic():
+                ProductVerticalTab.objects.filter(company = company, product = product).delete()
+                ProductVerticalBullet.objects.filter(company = company, product = product).delete()
+
+                for i in range(len(vertical_bullet_count_list)):
+                    heading = vertical_heading_list[i]
+                    sub_heading = vertical_sub_heading_list[i]
+
+                    if heading:
+                        vertical_tab_obj = ProductVerticalTab.objects.create(
+                            company = company,
+                            product = product,
+                            heading = heading,
+                            sub_heading = sub_heading,
+                            summary = vertical_summary_list[i]
+                        )
+
+                        final = initial + vertical_bullet_count_list[i]
+                        vertical_bullets = vertical_bullet_list[initial:final]
+                        initial = final
+
+                        if vertical_bullet_count_list[i] != 0:
+
+                            creating_vertical_bullets = [ProductVerticalBullet(
+                                company = company, product = product, heading = heading,
+                                sub_heading = sub_heading, bullet = bullet
+                            ) for bullet in vertical_bullets if bullet]
+
+                            if creating_vertical_bullets:
+                                ProductVerticalBullet.objects.bulk_create(creating_vertical_bullets)  
+
+                            created_vertical_bullets = ProductVerticalBullet.objects.filter(company = company, product = product, heading = heading, sub_heading = sub_heading)
+
+                            vertical_tab_obj.bullets.set(created_vertical_bullets)
+
+                        vertical_tab_objects.append(vertical_tab_obj)
+
+            return vertical_tab_objects
+
+        except (IntegrityError, IndexError, ValueError) as e:
+            logger.exception(f"Error in handle_vertical_tabs function of BaseProductDetailPageView: {e}")
+
+        return []
+    
+    def handle_horizontal_tabs(self, request, company, product):
+        try:
+            horizontal_tab_objects = []
+
+            horizontal_heading_list = [heading.strip() for heading in request.POST.getlist("horizontal_heading")]
+            horizontal_summary_list = [summary.strip() for summary in request.POST.getlist("horizontal_summary")]
+            horizontal_bullet_list = [bullet.strip() for bullet in request.POST.getlist("horizontal_bullet")]
+            horizontal_bullet_count_list = [int(count) if count != '' else 0 for count in request.POST.getlist("horizontal_bullet_count")] 
+
+            if not (len(horizontal_heading_list) == len(horizontal_summary_list) == len(horizontal_bullet_count_list)):
+                raise ValueError("Mismatch in the number of horizontal fields.")                        
+            
+            initial = 0
+
+
+            with transaction.atomic():
+                ProductHorizontalTab.objects.filter(company = company, product = product).delete()
+                ProductHorizontalBullet.objects.filter(company = company, product = product).delete()
+
+                for i in range(len(horizontal_bullet_count_list)):
+                    heading = horizontal_heading_list[i]
+
+                    if heading:
+                        horizontal_tab_obj = ProductHorizontalTab.objects.create(
+                            company = company,
+                            product = product,
+                            heading = heading,
+                            summary = horizontal_summary_list[i]
+                        )
+
+                        final = initial + horizontal_bullet_count_list[i]
+                        horizontal_bullets = horizontal_bullet_list[initial:final]
+                        initial = final
+                        
+                        if horizontal_bullet_count_list[i] != 0:
+                        
+                            creating_horizontal_bullets = [ProductHorizontalBullet(
+                                company = company, product = product, heading = heading,
+                                bullet = bullet
+                            ) for bullet in horizontal_bullets if bullet]
+
+                            if creating_horizontal_bullets:
+                                ProductHorizontalBullet.objects.bulk_create(creating_horizontal_bullets)
+
+                            created_horizontal_bullets = ProductHorizontalBullet.objects.filter(company = company, product = product, heading = heading)
+
+                            horizontal_tab_obj.bullets.set(created_horizontal_bullets)
+
+                        horizontal_tab_objects.append(horizontal_tab_obj)
+
+            return horizontal_tab_objects
+
+        except (IntegrityError, IndexError, ValueError) as e:
+            logger.exception(f"Error in handle_horizontal_tabs function of BaseProductDetailPageView: {e}")
+
+        return []
+    
+    def handle_tables(self, request, company, product):
+        try:
+            product_tables = []
+
+            heading_list = [heading.strip() for heading in request.POST.getlist("table_heading")]
+            data_list = [data.strip() for data in request.POST.getlist("table_data")]
+
+            heading_length = len(heading_list)
+            data_length = len(data_list)
+
+
+            with transaction.atomic():
+                ProductTableData.objects.filter(company = company, product = product).delete()
+                ProductTable.objects.filter(company = company, product = product).delete()
+
+                for index, heading in enumerate(heading_list):
+                    product_table = ProductTable.objects.create(
+                        company = company, product = product, heading = heading
+                    )
+
+                    data_positions  = list(range(index, data_length, heading_length))
+                    data_list_of_heading = [data_list[i] for i in data_positions ]
+
+                    table_data_objs  = [ProductTableData(
+                            company = company, product = product,
+                            heading = heading, data = data
+                            ) for data in data_list_of_heading]
+
+                    ProductTableData.objects.bulk_create(table_data_objs )
+
+                    product_table_data_objs = ProductTableData.objects.filter(company = company, product = product, heading = heading)
+
+                    product_table.datas.set(product_table_data_objs)
+
+                    product_tables.append(product_table)
+
+            return product_tables
+        
+        except Exception as e:
+            logger.exception(f"Error in handle_tables function of BaseProductDetailPageView: {e}")
+
+        return []
+    
+    def handle_bullet_points(self, request, company, product):
+        try:
+            bullet_point_list = [bullet_point.strip() for bullet_point in request.POST.getlist("bullet")]
+
+            with transaction.atomic():
+                ProductBulletPoint.objects.filter(company = company, product = product).delete()
+
+                if bullet_point_list:
+                    bullet_point_objects = [ProductBulletPoint(
+                        company = company, product = product,
+                        bullet_point = bullet_point
+                    ) for bullet_point in bullet_point_list if bullet_point]
+
+                    ProductBulletPoint.objects.bulk_create(bullet_point_objects)
+
+                    bullet_points = ProductBulletPoint.objects.filter(company = company, product = product)                
+
+                    return bullet_points
+
+        except Exception as e:
+            logger.exception(f"Error in handle_bullet_points function of BaseProductDetailPageView: {e}")
+
+        return []
+
+    def handle_tags(self, request, company, product):
+        try:
+            tag_list = [tag.strip() for tag in request.POST.getlist("tag")]            
+
+            with transaction.atomic():
+                ProductTag.objects.filter(company = company, product = product).delete()
+
+                if tag_list:
+                    creating_tags = [ProductTag(
+                        company = company, product = product,
+                        tag = tag
+                        ) for tag in tag_list if tag]
+
+                    ProductTag.objects.bulk_create(creating_tags)
+
+                    product_tags = ProductTag.objects.filter(company = company, product = product)                
+
+                    return product_tags
+
+        except Exception as e:
+            logger.exception(f"Error in handle_tags function of BaseProductDetailPageView: {e}")
+
+        return []
+
+    def handle_timelines(self, request, company, product):
+        try:
+            heading_list = [heading.strip() for heading in request.POST.getlist("timeline_heading")]
+            summary_list = [summary.strip() for summary in request.POST.getlist("timeline_summary")]                        
+
+            if len(heading_list) != len(summary_list):
+                raise ValueError("The number of headings does not match the number of summaries.")
+
+            with transaction.atomic():
+                ProductTimeline.objects.filter(company = company, product = product).delete()
+                
+                if heading_list and summary_list:
+                    creating_timelines = [ProductTimeline(
+                        company = company, product = product,
+                        heading = heading, summary = summary
+                        ) for heading, summary in zip(heading_list, summary_list)]
+
+                    ProductTimeline.objects.bulk_create(creating_timelines)
+
+                    product_timelines = ProductTimeline.objects.filter(company = company, product = product)                
+                                            
+                    return product_timelines
+        except Exception as e:
+            logger.exception(f"Error in handle_timelines function of BaseProductDetailPageView: {e}")
+
+        return []
+
+
+class AddProductDetailPageView(BaseProductDetailPageView, CreateView):
+    form_class = ProductDetailDescriptionForm
+    template_name = "product_company/detail_page/add.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["add_product_detail_page"] = True
+
+        current_company = self.get_current_company()        
+        context["categories"] = ProductCategory.objects.filter(company = current_company)
+        
+        return context
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_product_detail_page', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of BaseProductDetailPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of BaseProductDetailPageView of superadmin: {e}")
+            return self.redirect_url
+
+    def post(self, request, *args, **kwargs):
+        try:
+            form = self.get_form()
+
+            product_slug = request.POST.get('product')
+
+            summary = request.POST.get("summary")
+
+            meta_tags = request.POST.get("meta_tags")
+            meta_description = request.POST.get("meta_description")
+
+            vertical_title = request.POST.get("vertical_title")
+            horizontal_title = request.POST.get("horizontal_title")
+            table_title = request.POST.get("table_title")
+            bullet_title = request.POST.get("bullet_title")
+            tag_title = request.POST.get("tag_title")
+            timeline_title = request.POST.get("timeline_title")
+            
+            hide_features = request.POST.get("hide_features")
+            hide_vertical_tab = request.POST.get("hide_vertical_tab")
+            hide_horizontal_tab = request.POST.get("hide_horizontal_tab")
+            hide_table = request.POST.get("hide_table")
+            hide_bullets = request.POST.get("hide_bullets")
+            hide_tags = request.POST.get("hide_tags")
+            hide_timeline = request.POST.get("hide_timeline")
+
+            summary = summary.strip() if summary else None
+            
+            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_description = meta_description.strip() if meta_description else None
+
+            vertical_title = vertical_title.strip() if vertical_title else None
+            horizontal_title = horizontal_title.strip() if horizontal_title else None
+            table_title = table_title.strip() if table_title else None
+            bullet_title = bullet_title.strip() if bullet_title else None
+            tag_title = tag_title.strip() if tag_title else None
+            timeline_title = timeline_title.strip() if timeline_title else None
+
+            # Fetch current company
+            company = self.get_current_company()
+
+            if not company :
+                messages.error(request, "Invalid company")
+                return redirect(self.redirect_url)
+            
+            required_fields = {
+                "Product": product_slug,
+                "summary": summary,
+                "Meta Tags": meta_tags,
+                "Meta Description": meta_description
+                }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            checkbox_fields = {
+                "hide_features": hide_features,
+                "hide_vertical_tab": hide_vertical_tab,
+                "hide_horizontal_tab": hide_horizontal_tab,
+                "hide_table": hide_table,
+                "hide_bullets": hide_bullets,
+                "hide_tags": hide_tags,
+                "hide_timeline": hide_timeline,
+                }
+
+            product = self.get_product(product_slug)
+
+            with transaction.atomic():
+                
+                if not form.is_valid():                    
+                    messages.error(request, "Description is required")
+                    return redirect(self.get_redirect_url())
+                
+                cleaned_form = form.cleaned_data
+                description = cleaned_form.get("description")
+
+                product_detail = self.model.objects.create(
+                    company = company, product = product, summary = summary, description = description,
+                    meta_tags = meta_tags, meta_description = meta_description,
+                    vertical_title = vertical_title, horizontal_title = horizontal_title,
+                    table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
+                    timeline_title = timeline_title
+                )                
+
+                for key, value in checkbox_fields.items():
+                    if value:
+                        setattr(product_detail, key, True)
+
+                product_detail.save()
+
+                relationship_handlers = {
+                    "features": self.handle_features,
+                    "vertical_tabs": self.handle_vertical_tabs,
+                    "horizontal_tabs": self.handle_horizontal_tabs,
+                    "tables": self.handle_tables,
+                    "bullet_points": self.handle_bullet_points,
+                    "tags": self.handle_tags,
+                    "timelines": self.handle_timelines,
+                }
+
+                for field, handler in relationship_handlers.items():
+                    objects = handler(request, company, product)
+                    getattr(product_detail, field).set(objects)
+
+                messages.success(request, "Success! Created product detail page")
+                return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of AddProductDetailPageView of superadmin: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class ProductDetailPageListView(BaseProductDetailPageView, ListView):
+    template_name = "product_company/detail_page/list.html"
+    queryset = ProductDetailPage.objects.none()
+    success_url = redirect_url = reverse_lazy('superadmin:home')
+    context_object_name = "detail_pages"        
+    
+    def get_queryset(self):
+        try:
+            current_company = self.get_current_company()
+            return self.model.objects.filter(company = current_company)
+        except Exception as e:
+            logger.exception(f"Error in getting queryset of ProductDetailsListView of superadmin: {e}")
+            return self.queryset
+
+
+class ProductDetailPageView(BaseProductDetailPageView, DetailView):
+    model = ProductDetailPage
+    template_name = "product_company/detail_page/detail.html"
+    redirect_url = reverse_lazy('superadmin:home')
+    context_object_name = "detail_page"
+
+    def get_redirect_url(self):
+        try:
+            return reverse_lazy('superadmin:product_detail_pages', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in get_redirect_url function of ProductDetailPageView: {e}")
+            return self.redirect_url
+
+
+class UpdateProductDetailPageView(BaseProductDetailPageView, UpdateView):    
+    form_class = ProductDetailDescriptionForm
+    template_name = "product_company/detail_page/update.html"
+    context_object_name = "detail_page"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        self.object = self.get_object()
+        current_company = self.get_current_company()        
+        context["categories"] = ProductCategory.objects.filter(company = current_company)
+        context["sub_categories"] = ProductSubCategory.objects.filter(company = current_company, category = self.object.product.category)
+        context["products"] = Product.objects.filter(company = current_company, category = self.object.product.category, sub_category = self.object.product.sub_category)
+        
+        return context
+    
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:update_product_detail_page', kwargs = {"slug": self.kwargs.get('slug'), "product_slug": self.kwargs.get('product_slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of UpdateProductDetailPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of UpdateProductDetailPageView of superadmin: {e}")
+            return self.redirect_url
+
+
+    def post(self, request, *args, **kwargs):
+        try:
+            form = self.get_form()
+
+            product_slug = request.POST.get('product')
+
+            summary = request.POST.get("summary")
+
+            meta_tags = request.POST.get("meta_tags")
+
+            meta_description = request.POST.get("meta_description")
+
+            vertical_title = request.POST.get("vertical_title")
+            horizontal_title = request.POST.get("horizontal_title")
+            table_title = request.POST.get("table_title")
+            bullet_title = request.POST.get("bullet_title")
+            tag_title = request.POST.get("tag_title")
+            timeline_title = request.POST.get("timeline_title")   
+
+            summary = summary.strip() if summary else None
+
+            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_description = meta_description.strip() if meta_description else None
+
+            vertical_title = vertical_title.strip() if vertical_title else None
+            horizontal_title = horizontal_title.strip() if horizontal_title else None
+            table_title = table_title.strip() if table_title else None
+            bullet_title = bullet_title.strip() if bullet_title else None
+            tag_title = tag_title.strip() if tag_title else None
+            timeline_title = timeline_title.strip() if timeline_title else None
+
+            hide_features = request.POST.get("hide_features")
+            hide_vertical_tab = request.POST.get("hide_vertical_tab")
+            hide_horizontal_tab = request.POST.get("hide_horizontal_tab")
+            hide_table = request.POST.get("hide_table")
+            hide_bullets = request.POST.get("hide_bullets")
+            hide_tags = request.POST.get("hide_tags")
+            hide_timeline = request.POST.get("hide_timeline")
+
+            # Fetch current company
+            company = self.get_current_company()
+
+            if not company:
+                messages.error(request, "Invalid company")
+                return redirect(self.redirect_url)
+            
+            required_fields = {
+                "Product": product_slug,
+                "summary": summary,
+                "Meta Tags": meta_tags,
+                "Meta Description": meta_description
+                }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.get_redirect_url())
+
+            checkbox_fields = {
+                "hide_features": hide_features,
+                "hide_vertical_tab": hide_vertical_tab,
+                "hide_horizontal_tab": hide_horizontal_tab,
+                "hide_table": hide_table,
+                "hide_bullets": hide_bullets,
+                "hide_tags": hide_tags,
+                "hide_timeline": hide_timeline,
+                }
+
+            product = self.get_product(product_slug)
+
+            with transaction.atomic():
+
+                product_detail = self.get_object()
+
+                if not form.is_valid():                    
+                    messages.error(request, "Description is required")
+                    return redirect(self.get_redirect_url())
+                
+                cleaned_form = form.cleaned_data
+                description = cleaned_form.get("description")
+
+                product_detail.product = product
+                product_detail.summary = summary
+
+                product_detail.description = description
+
+                product_detail.meta_tags = meta_tags
+                product_detail.meta_description = meta_description
+
+                product_detail.vertical_title = vertical_title
+                product_detail.horizontal_title = horizontal_title
+                product_detail.table_title = table_title
+                product_detail.bullet_title = bullet_title
+                product_detail.tag_title = tag_title
+                product_detail.timeline_title = timeline_title 
+
+                for key, value in checkbox_fields.items():
+                    assigning_value = False
+
+                    if value:                    
+                        assigning_value = True
+
+                    setattr(product_detail, key, assigning_value)
+                
+                product_detail.save()                             
+
+                relationship_handlers = {
+                    "features": self.handle_features,
+                    "vertical_tabs": self.handle_vertical_tabs,
+                    "horizontal_tabs": self.handle_horizontal_tabs,
+                    "tables": self.handle_tables,
+                    "bullet_points": self.handle_bullet_points,
+                    "tags": self.handle_tags,
+                    "timelines": self.handle_timelines,
+                }
+
+                for field, handler in relationship_handlers.items():
+                    objects = handler(request, company, product)
+                    getattr(product_detail, field).set(objects)
+
+                product_detail.save()
+
+                messages.success(request, "Success! Updated product detail page")
+                return redirect(self.get_success_url())
+
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateProductDetailPageView of superadmin: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+class DeleteProductDetailPageView(BaseProductDetailPageView, View):
+    def get_object(self, **kwargs):
+        company_slug = self.kwargs.get('slug')
+        detail_page_slug = self.kwargs.get('detail_page_slug')
+
+        return get_object_or_404(self.model, company__slug = company_slug, slug = detail_page_slug)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            product_name = self.object.product.name
+            self.object.delete()
+
+            messages.success(request, f"Success! Removed product detail page of: {product_name}")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Product Detail")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteProductDetailPageView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
 class BaseProductMultiPageView(BaseProductCompanyView, View):
     model = ProductMultiPage
     success_url = redirect_url = reverse_lazy('superadmin:home')        
@@ -1579,7 +2268,7 @@ class BaseProductMultiPageView(BaseProductCompanyView, View):
     
     def get_success_url(self):
         try:
-            return reverse_lazy('superadmin:add_product_multipage', kwargs = {"slug": self.kwargs.get('slug')})
+            return reverse_lazy('superadmin:product_multipages', kwargs = {"slug": self.kwargs.get('slug')})
         except Exception as e:
             logger.exception(f"Error in fetching success url of BaseProductMultiPageView of superadmin: {e}")
             return self.success_url
@@ -1894,6 +2583,20 @@ class AddProductMultiPageView(BaseProductMultiPageView, CreateView):
         context["categories"] = self.get_categories()
 
         return context
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_product_multipage', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of AddProductMultiPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of AddProductMultiPageView of superadmin: {e}")
+            return self.redirect_url
 
     def post(self, request, *args, **kwargs):
         try:
@@ -2242,6 +2945,32 @@ class UpdateProductMultiPageView(BaseProductMultiPageView, UpdateView):
 
         except Exception as e:
             logger.exception(f"Error in post function of UpdateCompanyDetailView of superadmin: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class DeleteProductMultiPageView(BaseProductMultiPageView, View):
+    def get_object(self, **kwargs):
+        company_slug = self.kwargs.get('slug')
+        multipage_slug = self.kwargs.get('multipage_slug')
+
+        return get_object_or_404(self.model, company__slug = company_slug, slug = multipage_slug)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            product_name = self.object.product.name
+            self.object.delete()
+
+            messages.success(request, f"Success! Removed product multipage of: {product_name}")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Product Multipage")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteProductMultiPageView of superadmin app: {e}")
             messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
@@ -3904,7 +4633,8 @@ class UpdateCourseDetailView(BaseEducationCompanyView, UpdateView):
             messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
-    
+
+
 
 class DeleteCourseDetailView(BaseEducationCompanyView, View):
     model = CourseDetail
@@ -3943,7 +4673,7 @@ class DeleteCourseDetailView(BaseEducationCompanyView, View):
             messages.error(request, "Invalid Course Detail")
 
         except Exception as e:
-            logger.exception(f"Error in get function of DeleteCourseDetailView of superadmin app: {e}")
+            logger.exception(f"Error in post function of DeleteCourseDetailView of superadmin app: {e}")
             messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
@@ -4171,7 +4901,7 @@ class DeleteCourseFaqView(BaseEducationCompanyView, View):
             messages.error(request, "Invalid Course FAQ")
 
         except Exception as e:
-            logger.exception(f"Error in get function of DeleteCourseFaqView of superadmin app: {e}")
+            logger.exception(f"Error in post function of DeleteCourseFaqView of superadmin app: {e}")
             messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
@@ -4294,7 +5024,7 @@ class BaseCourseMultiPageView(BaseEducationCompanyView, View):
     
     def get_success_url(self):
         try:
-            return reverse_lazy('superadmin:add_course_multipage', kwargs = {"slug": self.kwargs.get('slug')})
+            return reverse_lazy('superadmin:course_multipages', kwargs = {"slug": self.kwargs.get('slug')})
         except Exception as e:
             logger.exception(f"Error in fetching success url of BaseCourseMultiPageView of superadmin: {e}")
             return self.success_url
@@ -4609,6 +5339,20 @@ class AddCourseMultiPageView(BaseCourseMultiPageView, CreateView):
         context["programs"] = self.get_programs()
 
         return context
+    
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_course_multipage', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of BaseCourseMultiPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of BaseCourseMultiPageView of superadmin: {e}")
+            return self.redirect_url
 
     def post(self, request, *args, **kwargs):
         try:
@@ -4955,6 +5699,32 @@ class UpdateCourseMultiPageView(BaseCourseMultiPageView, UpdateView):
 
         except Exception as e:
             logger.exception(f"Error in post function of UpdateCompanyDetailView of superadmin: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
+
+class DeleteCourseMultiPageView(BaseCourseMultiPageView, View):
+    def get_object(self):
+        multipage_slug = self.kwargs.get('multipage_slug')
+        company_slug = self.kwargs.get('slug')
+
+        return get_object_or_404(self.model, slug = multipage_slug, company__slug = company_slug)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            course_name = self.object.course.name
+            self.object.delete()
+
+            messages.success(request, f"Success! Removed course multipage of: {course_name}")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Course Multipage")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteCourseMultiPageView of superadmin app: {e}")
             messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
@@ -5879,7 +6649,7 @@ class DeleteServiceFaqView(ServiceFaqBaseView, View):
             messages.error(request, "Invalid Service FAQ")
 
         except Exception as e:
-            logger.exception(f"Error in get function of DeleteServiceFaqView of superadmin app: {e}")
+            logger.exception(f"Error in post function of DeleteServiceFaqView of superadmin app: {e}")
             messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
@@ -5964,11 +6734,11 @@ class BaseServiceDetailView(BaseServiceCompanyView):
         except Exception as e:
             logger.exception(f"Error in getting context data of BaseServiceDetailView of superadmin: {e}")
         
-        return context
-    
+        return context    
+
     def get_success_url(self):
         try:
-            return reverse_lazy('superadmin:add_service_details', kwargs = {"slug": self.kwargs.get('slug')})
+            return reverse_lazy('superadmin:service_details', kwargs = {"slug": self.kwargs.get('slug')})
         except Exception as e:
             logger.exception(f"Error in fetching success url of BaseServiceDetailView of superadmin: {e}")
             return self.success_url
@@ -6283,6 +7053,20 @@ class AddServiceDetailView(BaseServiceDetailView, CreateView):
         
         return context
 
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_service_details', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of AddServiceDetailView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of AddServiceDetailView of superadmin: {e}")
+            return self.redirect_url
+
     def post(self, request, *args, **kwargs):
         try:
             form = self.get_form()
@@ -6591,6 +7375,31 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
         return redirect(self.get_redirect_url())
 
 
+class DeleteServiceDetailPageView(BaseServiceDetailView, View):
+    def get_object(self, **kwargs):
+        company_slug = self.kwargs.get('slug')
+        detail_page_slug = self.kwargs.get('detail_page_slug')
+
+        return get_object_or_404(self.model, company__slug = company_slug, slug = detail_page_slug)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            service_name = self.object.service.name
+            self.object.delete()
+
+            messages.success(request, f"Success! Removed service detail page of: {service_name}")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Service Detail")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteServiceDetailPageView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
 
 class BaseServiceMultiPageView(BaseServiceCompanyView, View):
     model = ServiceMultiPage
@@ -6614,7 +7423,7 @@ class BaseServiceMultiPageView(BaseServiceCompanyView, View):
     
     def get_success_url(self):
         try:
-            return reverse_lazy('superadmin:add_service_multipage', kwargs = {"slug": self.kwargs.get('slug')})
+            return reverse_lazy('superadmin:service_multipages', kwargs = {"slug": self.kwargs.get('slug')})
         except Exception as e:
             logger.exception(f"Error in fetching success url of BaseServiceMultiPageView of superadmin: {e}")
             return self.success_url
@@ -6929,6 +7738,20 @@ class AddServiceMultiPageView(BaseServiceMultiPageView, CreateView):
         context["categories"] = self.get_categories()
 
         return context
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_service_multipage', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of AddServiceMultiPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of AddServiceMultiPageView of superadmin: {e}")
+            return self.redirect_url
 
     def post(self, request, *args, **kwargs):
         try:
@@ -7281,6 +8104,31 @@ class UpdateServiceMultiPageView(BaseServiceMultiPageView, UpdateView):
 
         return redirect(self.get_redirect_url())
 
+
+class DeleteServiceMultiPageView(BaseServiceMultiPageView, View):
+    def get_object(self, **kwargs):
+        company_slug = self.kwargs.get('slug')
+        multipage_slug = self.kwargs.get('multipage_slug')
+
+        return get_object_or_404(self.model, company__slug = company_slug, slug = multipage_slug)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            service_name = self.object.service.name
+            self.object.delete()
+
+            messages.success(request, f"Success! Removed service multipage of: {service_name}")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Service Multipage")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteServiceMultiPageView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
 
 
 # Registration Company
@@ -8149,7 +8997,7 @@ class DeleteRegistrationFaqView(RegistrationFaqBaseView, View):
             messages.error(request, "Invalid Registration FAQ")
 
         except Exception as e:
-            logger.exception(f"Error in get function of DeleteRegistrationFaqView of superadmin app: {e}")
+            logger.exception(f"Error in post function of DeleteRegistrationFaqView of superadmin app: {e}")
             messages.error(request, "An unexpected error occurred")
 
         return redirect(self.get_redirect_url())
@@ -8251,6 +9099,16 @@ class BaseRegistrationDetailPageView(BaseRegistrationCompanyView):
         except Http404:
             messages.error(self.request, "Failed! Invalid Registration Sub Type")
             return redirect(self.redirect_url)
+
+    def get_redirect_url(self):
+        try:
+            return reverse_lazy('superadmin:registration_detail_pages', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in get_redirect_url function of RegistrationDetailPageView: {e}")
+            return self.redirect_url
+
+    def get_success_url(self):
+        return self.get_redirect_url()
 
     def get_object(self):
         try:
@@ -8687,14 +9545,7 @@ class RegistrationDetailPageListView(BaseRegistrationDetailPageView, ListView):
 class RegistrationDetailPageView(BaseRegistrationDetailPageView, DetailView):
     template_name = "registration_company/detail_page/detail.html"
     redirect_url = reverse_lazy('superadmin:home')
-    context_object_name = "detail_page"
-
-    def get_redirect_url(self):
-        try:
-            return reverse_lazy('superadmin:registration_detail_pages', kwargs = {"slug": self.kwargs.get('slug')})
-        except Exception as e:
-            logger.exception(f"Error in get_redirect_url function of RegistrationDetailPageView: {e}")
-            return self.redirect_url
+    context_object_name = "detail_page"    
 
 
 class UpdateRegistrationDetailPageView(BaseRegistrationDetailPageView, UpdateView):    
@@ -8861,6 +9712,31 @@ class UpdateRegistrationDetailPageView(BaseRegistrationDetailPageView, UpdateVie
         return redirect(self.get_redirect_url())
 
 
+class DeleteRegistrationDetailPageView(BaseRegistrationDetailPageView, View):
+    def get_object(self, **kwargs):
+        company_slug = self.kwargs.get('slug')
+        detail_page_slug = self.kwargs.get('detail_page_slug')
+
+        return get_object_or_404(self.model, company__slug = company_slug, slug = detail_page_slug)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            registration_sub_type_name = self.object.registration_sub_type.name
+            self.object.delete()
+
+            messages.success(request, f"Success! Removed registration detail page of: {registration_sub_type_name}")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Registration Detail")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteRegistrationDetailPageView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
+
 
 class BaseRegistrationMultiPageView(BaseRegistrationCompanyView, View):
     model = RegistrationMultiPage
@@ -8884,7 +9760,7 @@ class BaseRegistrationMultiPageView(BaseRegistrationCompanyView, View):
     
     def get_success_url(self):
         try:
-            return reverse_lazy('superadmin:add_registration_multipage', kwargs = {"slug": self.kwargs.get('slug')})
+            return reverse_lazy('superadmin:registration_multipages', kwargs = {"slug": self.kwargs.get('slug')})
         except Exception as e:
             logger.exception(f"Error in fetching success url of BaseRegistrationMultiPageView of superadmin: {e}")
             return self.success_url
@@ -9199,6 +10075,20 @@ class AddRegistrationMultiPageView(BaseRegistrationMultiPageView, CreateView):
         context["types"] = self.get_registration_types()
 
         return context
+
+    def get_success_url(self):
+        try:
+            return reverse_lazy('superadmin:add_registration_multipage', kwargs = {"slug": self.kwargs.get('slug')})
+        except Exception as e:
+            logger.exception(f"Error in fetching success url of AddRegistrationMultiPageView of superadmin: {e}")
+            return self.success_url
+        
+    def get_redirect_url(self):
+        try:
+            return self.get_success_url()
+        except Exception as e:
+            logger.exception(f"Error in fetching redirect url of AddRegistrationMultiPageView of superadmin: {e}")
+            return self.redirect_url
 
     def post(self, request, *args, **kwargs):
         try:
@@ -9550,6 +10440,31 @@ class UpdateRegistrationMultiPageView(BaseRegistrationMultiPageView, UpdateView)
 
         return redirect(self.get_redirect_url())
 
+
+class DeleteRegistrationMultiPageView(BaseRegistrationMultiPageView, View):
+    def get_object(self, **kwargs):
+        company_slug = self.kwargs.get('slug')
+        multipage_slug = self.kwargs.get('multipage_slug')
+
+        return get_object_or_404(self.model, company__slug = company_slug, slug = multipage_slug)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            registration_sub_type_name = self.object.registration_sub_type.name
+            self.object.delete()
+
+            messages.success(request, f"Success! Removed registration multipage of: {registration_sub_type_name}")
+            return redirect(self.get_success_url())
+
+        except Http404:
+            messages.error(request, "Invalid Registration Multipage")
+
+        except Exception as e:
+            logger.exception(f"Error in post function of DeleteRegistrationMultiPageView of superadmin app: {e}")
+            messages.error(request, "An unexpected error occurred")
+
+        return redirect(self.get_redirect_url())
 
 
 # Directory

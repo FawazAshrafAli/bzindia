@@ -47,6 +47,9 @@
                                 <li class="nav-item {% if product_review_page %}active{% endif %}">
                                     <a class="nav-link" href="{% url 'superadmin:product_reviews' current_company.slug %}">Reviews</a>
                                 </li>
+                                <li class="nav-item {% if product_detail_page %}active{% endif %}">
+                                    <a class="nav-link" href="{% url 'superadmin:product_detail_pages' current_company.slug %}">Detail</a>
+                                </li>
                                 <li class="nav-item {% if product_multipage %}active{% endif %}">
                                     <a class="nav-link" href="{% url 'superadmin:product_multipages' current_company.slug %}">Multi Page</a>
                                 </li>
@@ -68,8 +71,8 @@
                                     <a class="nav-link" href="{% url 'superadmin:course_enquiries' current_company.slug %}">Enquiries</a>
                                 </li>
                                 <li class="nav-item {% if course_detail_page %}active{% endif %}">
-                                    <a class="nav-link" href="{% url 'superadmin:course_details' current_company.slug %}">Courses Detail</a>
-                                </li>                                
+                                    <a class="nav-link" href="{% url 'superadmin:course_details' current_company.slug %}">Detail</a>
+                                </li>
                                 <li class="nav-item {% if course_faq_page %}active{% endif %}">
                                     <a class="nav-link" href="{% url 'superadmin:course_faqs' current_company.slug %}">FAQs</a>
                                 </li>

@@ -3,7 +3,7 @@ from ckeditor.widgets import CKEditorWidget
 
 from educational.models import MultiPage as CourseMultiPage, CourseDetail
 from service.models import MultiPage as ServiceMultiPage, ServiceDetail
-from product.models import MultiPage as ProductMultiPage
+from product.models import MultiPage as ProductMultiPage, ProductDetailPage
 from registration.models import MultiPage as RegistrationMultiPage, RegistrationDetailPage
 
 class CourseMultiPageDescriptionForm(forms.ModelForm):
@@ -54,12 +54,12 @@ class ServiceDetailDescriptionForm(forms.ModelForm):
         fields = ["description"]
 
 
-# class ProductDetailDescriptionForm(forms.ModelForm):
-#     description = forms.CharField(widget=CKEditorWidget())
+class ProductDetailDescriptionForm(forms.ModelForm):
+    description = forms.CharField(widget=CKEditorWidget())
 
-#     class Meta:
-#         model = ProductDetail
-#         fields = ["description"]
+    class Meta:
+        model = ProductDetailPage
+        fields = ["description"]
 
 
 class RegistrationDetailPageDescriptionForm(forms.ModelForm):

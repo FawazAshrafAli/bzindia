@@ -34,7 +34,7 @@
 										</label>
 									</td>
 									<td>										
-										<a href="{% url 'superadmin:product_multipage' current_company.slug multipage.product.slug %}" >{{multipage.product.name}}</a>
+										<a href="{% url 'superadmin:product_multipage' current_company.slug multipage.product.slug %}" >{{multipage.product.name|slice:100}}{% if multipage.product.name|length > 100 %}...{% endif %}</a>
 									</td>									
 									
 									<td class="text-center">
@@ -75,7 +75,8 @@
 			<div class="modal-body">
 				<div class="row">
 					<div class="col-md-12">
-						<form id="deletion-form" method="get">
+						<form id="deletion-form" method="post">
+							{% csrf_token %}
 							<h4><span class="text-danger">Deleting</span> Multi Page. . .</h4>
 							<div class="form-group row">
 								<div class="col-md-12">
@@ -104,12 +105,11 @@
 	$(document).ready(() => {
 		$('.delete-btn').click( function () {
 			const name = $(this).data('name');
-			const productDetailSlug = $(this).data('slug');
-			const companySlug = `{{current_company.slug}}`
-			const actionUrl = "#"
+			const multiPageSlug = $(this).data('slug');
+			const companySlug = `{{current_company.slug}}`;
 
-			{% comment %} const actionUrl = `{% url 'superadmin:delete_product_detail' 'dummyCompanySlug' 'dummyProductDetailSlug' %}`
-			.replace('dummyCompanySlug', companySlug).replace('dummyProductDetailSlug', productDetailSlug); {% endcomment %}
+			const actionUrl = `{% url 'superadmin:delete_product_multipage' 'dummyCompanySlug' 'dummyMultiPageSlug' %}`
+			.replace('dummyCompanySlug', companySlug).replace('dummyMultiPageSlug', multiPageSlug);
 
 			$('#deleting-object').html(name);
 			$('#deletion-form').prop('action', actionUrl);

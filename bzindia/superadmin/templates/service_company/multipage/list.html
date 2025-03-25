@@ -75,7 +75,8 @@
 			<div class="modal-body">
 				<div class="row">
 					<div class="col-md-12">
-						<form id="deletion-form" method="get">
+						<form id="deletion-form" method="post">
+							{% csrf_token %}
 							<h4><span class="text-danger">Deleting</span> Multi Page. . .</h4>
 							<div class="form-group row">
 								<div class="col-md-12">
@@ -104,12 +105,11 @@
 	$(document).ready(() => {
 		$('.delete-btn').click( function () {
 			const name = $(this).data('name');
-			const serviceDetailSlug = $(this).data('slug');
-			const companySlug = `{{current_company.slug}}`
-			const actionUrl = "#"
+			const multiPageSlug = $(this).data('slug');
+			const companySlug = `{{current_company.slug}}`;
 
-			{% comment %} const actionUrl = `{% url 'superadmin:delete_service_detail' 'dummyCompanySlug' 'dummyServiceDetailSlug' %}`
-			.replace('dummyCompanySlug', companySlug).replace('dummyServiceDetailSlug', serviceDetailSlug); {% endcomment %}
+			const actionUrl = `{% url 'superadmin:delete_service_multipage' 'dummyCompanySlug' 'dummyMultiPageSlug' %}`
+			.replace('dummyCompanySlug', companySlug).replace('dummyMultiPageSlug', multiPageSlug);
 
 			$('#deleting-object').html(name);
 			$('#deletion-form').prop('action', actionUrl);

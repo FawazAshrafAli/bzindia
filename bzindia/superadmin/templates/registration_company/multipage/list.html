@@ -42,7 +42,7 @@
 											<a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="material-icons">more_vert</i></a>
 											<div class="dropdown-menu dropdown-menu-right">
 												<a class="dropdown-item" href="{% url 'superadmin:update_registration_multipage' current_company.slug multipage.slug %}">Edit This Multi Page</a>
-												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{multipage.registration.name}}" data-slug="{{multipage.slug}}">Remove This Multi Page</a>
+												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{multipage.registration_sub_type.name}}" data-slug="{{multipage.slug}}">Remove This Multi Page</a>
 											</div>
 										</div>
 									</td>
@@ -75,7 +75,8 @@
 			<div class="modal-body">
 				<div class="row">
 					<div class="col-md-12">
-						<form id="deletion-form" method="get">
+						<form id="deletion-form" method="post">
+							{% csrf_token %}
 							<h4><span class="text-danger">Deleting</span> Multi Page. . .</h4>
 							<div class="form-group row">
 								<div class="col-md-12">
@@ -104,12 +105,11 @@
 	$(document).ready(() => {
 		$('.delete-btn').click( function () {
 			const name = $(this).data('name');
-			const registrationDetailSlug = $(this).data('slug');
+			const multiPageSlug = $(this).data('slug');
 			const companySlug = `{{current_company.slug}}`
-			const actionUrl = "#"
 
-			{% comment %} const actionUrl = `{% url 'superadmin:delete_registration_detail' 'dummyCompanySlug' 'dummyRegistrationDetailSlug' %}`
-			.replace('dummyCompanySlug', companySlug).replace('dummyRegistrationDetailSlug', registrationDetailSlug); {% endcomment %}
+			const actionUrl = `{% url 'superadmin:delete_registration_multipage' 'dummyCompanySlug' 'dummymultiPageSlug' %}`
+			.replace('dummyCompanySlug', companySlug).replace('dummymultiPageSlug', multiPageSlug);
 
 			$('#deleting-object').html(name);
 			$('#deletion-form').prop('action', actionUrl);
