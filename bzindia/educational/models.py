@@ -310,6 +310,7 @@ class CourseDetail(models.Model):
     summary = models.TextField()
     description = RichTextField()
 
+    meta_title = models.CharField(max_length=100)
     meta_tags = models.CharField(max_length=250)
     meta_description = models.TextField()
 
