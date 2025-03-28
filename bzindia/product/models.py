@@ -5,6 +5,7 @@ from ckeditor.fields import RichTextField
 
 from company.models import Company
 from locations.models import UniqueState
+from base.models import MetaTag
 
 class Category(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
@@ -552,7 +553,7 @@ class ProductDetailPage(models.Model):
     description = models.TextField(null=True, blank=True)
 
     meta_title = models.CharField(max_length=100)
-    meta_tags = models.CharField(max_length=250)
+    meta_tags = models.ManyToManyField(MetaTag)
     meta_description = models.TextField()
 
     features = models.ManyToManyField(Feature)
@@ -589,12 +590,19 @@ class ProductDetailPage(models.Model):
     hide_tags = models.BooleanField(default=False)
     hide_timeline = models.BooleanField(default=False)
 
+    buy_now_action = models.CharField(max_length=50, default="whatsapp")
+    whatsapp = models.CharField(max_length=20, blank=True, null=True)
+    external_link = models.URLField(max_length=500, blank=True, null=True)
+
     slug = models.SlugField(null=True, blank=True, max_length=500)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
+        if not self.meta_title:
+            self.meta_title = f"{self.product.name} - {self.company.name}"
+
         if not self.slug:
             base_slug = slugify(f"{self.company.name}-{self.product.name}")
             slug = base_slug
@@ -633,9 +641,10 @@ class ProductDetailPage(models.Model):
         if not self.meta_tags:
             return ""
 
-        tag_list = self.meta_tags.split(",")
+        tag_list = [tag.name for tag in self.meta_tags.all()]
 
-        return ", ".join(tag for tag in tag_list if tag.strip())
+        return ", ".join(tag_list)
+
 
 
 class MultiPageFeature(models.Model):
@@ -845,8 +854,11 @@ class MultiPage(models.Model):
     summary = models.TextField(null=True, blank=True)
     description = RichTextField()
 
-    meta_tags = models.CharField(max_length=250)
+    meta_title = models.CharField(max_length=100)
+    meta_tags = models.ManyToManyField(MetaTag, related_name="meta_tag_of_multipage")
     meta_description = models.TextField()
+
+    url_type = models.CharField(max_length=50, default="slug_filtered")
 
     features = models.ManyToManyField(MultiPageFeature)
 
@@ -886,12 +898,19 @@ class MultiPage(models.Model):
     hide_timeline = models.BooleanField(default=False)
     hide_faqs = models.BooleanField(default=False)
 
+    buy_now_action = models.CharField(max_length=50, default="whatsapp")
+    whatsapp = models.CharField(max_length=20, blank=True, null=True)
+    external_link = models.URLField(max_length=500, blank=True, null=True)
+
     slug = models.SlugField(null=True, blank=True, max_length=500)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
+        if not self.meta_title:
+            self.meta_title = f"{self.product.name} - {self.company.name}"
+
         if not self.slug:
             base_slug = slugify(f"{self.company.name}-{self.product.name}")
             slug = base_slug
@@ -930,6 +949,6 @@ class MultiPage(models.Model):
         if not self.meta_tags:
             return ""
 
-        tag_list = self.meta_tags.split(",")
+        tag_list = [tag.name for tag in self.meta_tags.all()]
 
-        return ", ".join(tag for tag in tag_list if tag.strip())
+        return ", ".join(tag_list)

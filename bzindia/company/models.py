@@ -1,6 +1,9 @@
 from django.db import models
 from django.utils.text import slugify
 from locations.models import UniquePlace
+from ckeditor.fields import RichTextField
+
+from base.models import MetaTag
 
 class CompanyType(models.Model):
     name = models.CharField(max_length=150)
@@ -71,9 +74,17 @@ class Company(models.Model):
     phone2 = models.CharField(max_length=50)
     whatsapp = models.CharField(max_length=50)
     email = models.EmailField(max_length=254)
-    description = models.TextField(null=True, blank=True)
+    description = RichTextField(null=True, blank=True)
+
+    meta_title = models.CharField(max_length=100)
+    meta_tags = models.ManyToManyField(MetaTag)
+    meta_description = models.TextField()
 
     def save(self, *args, **kwargs):
+
+        if not self.meta_title:
+            self.meta_title = f"Home - {self.name}"
+
         if not self.slug:
             base_slug = slugify(self.name)
             self.slug = base_slug
@@ -117,6 +128,15 @@ class Company(models.Model):
             return Category.objects.filter(company = self).values("name", "slug").order_by("name")
 
         return None
+
+    @property
+    def get_meta_tags(self):
+        if not self.meta_tags:
+            return ""
+
+        tag_list = [tag.name for tag in self.meta_tags.all()]
+
+        return ", ".join(tag_list)
 
 
 class Client(models.Model):
@@ -200,87 +220,3 @@ class Testimonial(models.Model):
         if self.image:
             return f"{self.image.name}".replace('testimonials/', '')
         return None
-    
-
-# class MultiPage(models.Model):
-#     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="multi_page_company")
-
-#     subtitles = models.TextField(blank=True, null=True)
-#     text = models.TextField()
-
-#     slug = models.SlugField(null=True, blank=True, max_length=500)
-
-#     created = models.DateTimeField(auto_now_add=True)
-#     updated = models.DateTimeField(auto_now=True)
-
-#     def save(self, *args, **kwargs):
-#         if not self.slug:
-#             base_slug = slugify(self.company.name)
-
-#             slug = base_slug
-#             count = 1
-
-#             while MultiPage.objects.filter(slug = slug).exists():
-#                 slug = f"{base_slug}-{count}"
-#                 count += 1
-
-#             self.slug = slug
-
-#         super().save(*args, **kwargs)
-
-#     def __str__(self):
-#         return self.company.name
-
-#     class Meta:
-#         db_table = "multipages"
-#         ordering = ["created"]
-
-#     @property
-#     def get_content(self):
-#         if self.text:
-#             content = self.text
-
-#             replacing_data = {
-#                 'state_name': "Kerala",
-#                 'district_name': "Malappuram",
-#                 "block_name": "Perinthalmanna",                
-#             }
-
-#             for key, value in replacing_data.items():
-#                 content = content.replace(key, value)
-            
-#             return content
-        
-        return None
-    
-
-class MetaTag(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-
-    name = models.CharField(max_length=150)
-    
-    slug = models.SlugField(null=True, blank=True, max_length=500)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated =models.DateTimeField(auto_now=True)
-
-    def save(self, *args, **kwargs):
-        base_slug = slugify(f"{self.company}-{self.tag}")
-
-        slug = base_slug
-        count = 1
-
-        while MetaTag.objects.filter(slug = slug).exists():
-            slug = f"{base_slug}-{count}"
-            count += 1
-
-        self.slug = slug
-
-        super().save(*args, **kwargs)
-
-    class Meta:
-        db_table = "meta_tags"
-        ordering = ["name"]
-
-    def __str__(self):
-        return f"{self.company}-{self.tag}"

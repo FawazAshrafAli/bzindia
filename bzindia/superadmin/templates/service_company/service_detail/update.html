@@ -59,6 +59,8 @@
         height: 35px;
     }
 </style>
+<link rel="stylesheet" href="{% static 'w3/css/chosen-style.css' %}">
+<link rel="stylesheet" href="{% static 'w3/css/main-color.css' %}" id="colors">
 {% endblock styles %}
 
 {% block company_content %} 
@@ -138,12 +140,17 @@
 
                         <div class="form-group row">
                             <div class="col-sm-6">
-                                <label class="col-form-label">Meta Title <span class="text-danger">*</span></label>
+                                <label class="col-form-label">Meta Title</label>
                                 <input class="form-control"  type="text" id="meta-title-input" name="meta_title" placeholder="Meta Title" value="{% if service_detail.meta_title %}{{service_detail.meta_title}}{% endif %}" required>
                             </div>
                             <div class="col-sm-6">
                                 <label class="col-form-label">Meta Tags <span class="text-danger">*</span></label>
-                                <input class="form-control"  type="text" id="meta-tags-input" name="meta_tags" placeholder="Meta Tags" value="{% if service_detail.meta_tags %}{{service_detail.get_meta_tags}}{% endif %}" required>
+                                
+                                <select data-placeholder="Select Meta Tags" class="chosen-select" name="meta_tag" multiple>
+                                    {% for tag in tags %}
+                                    <option value="{{tag.slug}}" {% if tag in service_detail.meta_tags.all %}selected{% endif %}>{{tag.name}}</option>
+                                    {% endfor %}									
+								</select>
                             </div>
                         </div>
 

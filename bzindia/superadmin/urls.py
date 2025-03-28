@@ -89,7 +89,10 @@ from .views import (
 
     # Blog
     AddBlogView, ListBlogView, UpdateBlogView, DeleteBlogView,
-    PublishBlogView, UnPublishBlogView
+    PublishBlogView, UnPublishBlogView,
+
+    # Meta TaTagsgs,
+    MetaTagListView, AddMetaTagView, UpdateMetaTagView, DeleteMetaTagView,
     )
 
 app_name = "superadmin"
@@ -325,4 +328,10 @@ urlpatterns = [
 
     path('publish_blog/<str:slug>', PublishBlogView.as_view(), name="publish_blog"),
     path('unpublish_blog/<str:slug>', UnPublishBlogView.as_view(), name="unpublish_blog"),
+
+    # Meta Tag
+    path('meta_tags/', MetaTagListView.as_view(), name="meta_tags"),
+    path('add_meta_tag/', AddMetaTagView.as_view(), name="add_meta_tag"),
+    path('update_meta_tag/<str:slug>', UpdateMetaTagView.as_view(), name="update_meta_tag"),
+    path('delete_meta_tag/<str:slug>', DeleteMetaTagView.as_view(), name="delete_meta_tag"),
 ]

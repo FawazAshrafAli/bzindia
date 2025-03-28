@@ -5,6 +5,7 @@ from educational.models import MultiPage as CourseMultiPage, CourseDetail
 from service.models import MultiPage as ServiceMultiPage, ServiceDetail
 from product.models import MultiPage as ProductMultiPage, ProductDetailPage
 from registration.models import MultiPage as RegistrationMultiPage, RegistrationDetailPage
+from company.models import Company
 
 class CourseMultiPageDescriptionForm(forms.ModelForm):
     description = forms.CharField(widget=CKEditorWidget())
@@ -67,4 +68,10 @@ class RegistrationDetailPageDescriptionForm(forms.ModelForm):
 
     class Meta:
         model = RegistrationDetailPage
+        fields = ["description"]
+
+
+class CompanyForm(forms.ModelForm):
+    class Meta:
+        model = Company
         fields = ["description"]

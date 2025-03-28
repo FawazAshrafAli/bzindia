@@ -59,6 +59,8 @@
         height: 35px;
     }
 </style>
+<link rel="stylesheet" href="{% static 'w3/css/chosen-style.css' %}">
+<link rel="stylesheet" href="{% static 'w3/css/main-color.css' %}" id="colors">
 {% endblock styles %}
 
 {% block company_content %}  
@@ -119,12 +121,17 @@
 
                         <div class="form-group row">
                             <div class="col-sm-6">
-                                <label class="col-form-label">Meta Title <span class="text-danger">*</span></label>
+                                <label class="col-form-label">Meta Title</label>
                                 <input class="form-control"  type="text" id="meta-title-input" name="meta_title" placeholder="Meta Title" required>
                             </div>
                             <div class="col-sm-6">
                                 <label class="col-form-label">Meta Tags <span class="text-danger">*</span></label>
-                                <input class="form-control"  type="text" id="meta-tags-input" name="meta_tags" placeholder="Meta Tags" required>
+                                
+                                <select data-placeholder="Select Meta Tags" class="chosen-select" name="meta_tag" multiple>
+                                    {% for tag in tags %}
+                                    <option value="{{tag.slug}}">{{tag.name}}</option>
+                                    {% endfor %}									
+								</select>
                             </div>
                         </div>
 
@@ -132,6 +139,18 @@
                             <div class="col-sm-12">
                                 <label class="col-form-label">Meta Description <span class="text-danger">*</span></label>
                                 <textarea class="form-control" rows="3" id="meta-description-input" name="meta_description" placeholder="Meta Description" required></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-sm-12">
+                                <label for="url-type-radio" class="col-form-label">URL Type</label><br>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" name="url_type" id="location-filtered" value="location_filtered" required><label class="form-check-label" for="location-filtered">Location Filtered</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" name="url_type" id="slug-filtered" value="slug_filtered" checked required><label class="form-check-label" for="slug-filtered">Slug Filtered</label>
+                                </div>
                             </div>
                         </div>
 

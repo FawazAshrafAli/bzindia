@@ -18,7 +18,7 @@ from django.db import transaction
 from .forms import (
     CourseMultiPageDescriptionForm, CourseDetailDescriptionForm, ServiceMultiPageDescriptionForm, RegistrationMultiPageDescriptionForm,
     ServiceDetailDescriptionForm, RegistrationDetailPageDescriptionForm, ProductMultiPageDescriptionForm, 
-    ProductDetailDescriptionForm
+    ProductDetailDescriptionForm, CompanyForm
     )
 
 from custom_pages.models import (
@@ -89,6 +89,8 @@ from registration.models import (
     MultiPageFaq as RegistrationMultiPageFaq, MultiPageBulletPoint as RegistrationMultiPageBulletPoint
     )
 from blog.models import Blog
+
+from base.models import MetaTag
 
 logger = logging.getLogger(__name__)
 
@@ -230,19 +232,18 @@ class CompanyDetailView(BaseCompanyView, DetailView):
 
 class AddCompanyView(BaseCompanyView, CreateView):
     success_url = redirect_url = reverse_lazy('superadmin:add_company')
-    fields = ["name", "type", "slug", "favicon", "logo", "phone1", "phone2", "whatsapp", "email", "description"]
+    form_class = CompanyForm
     template_name = "admin_company/company/add.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        try:
-            pass
-        except Exception as e:
-            logger.exception(f"Error in fetching context data of admin add company view: {e}")
+        context["tags"] = MetaTag.objects.all().order_by("name")
         return context
 
     def post(self, request, *args, **kwargs):
         try:
+            form = self.get_form()
+
             name = request.POST.get("name")
             type = request.POST.get("type")
             slug = request.POST.get("slug")
@@ -252,7 +253,41 @@ class AddCompanyView(BaseCompanyView, CreateView):
             phone2 = request.POST.get("phone2")
             whatsapp = request.POST.get("whatsapp")
             email = request.POST.get("email")
-            description = request.POST.get("description")
+
+            meta_title = request.POST.get("meta_title")
+            meta_tags = request.POST.getlist("meta_tag")
+            meta_description = request.POST.get("meta_description")
+
+            name = name.strip() if name else None
+            type = type.strip() if type else None
+            slug = slug.strip() if slug else None
+            phone1 = phone1.strip() if phone1 else None
+            phone2 = phone2.strip() if phone2 else None
+            whatsapp = whatsapp.strip() if whatsapp else None
+            email = email.strip() if email else None
+
+            meta_title = meta_title.strip() if meta_title else None
+            meta_description = meta_description.strip() if meta_description else None
+
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
+            
+            required_fields = {
+                "Name": name, "Type": type, "Contact Number 1": phone1,
+                "Contact Number 2": phone2, "Whats App Number": whatsapp,
+                "Email": email, "Meta Tags": meta_tags, 
+                "Meta Description": meta_description
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.redirect_url)
+
+            description = None
+            if form.is_valid():
+                cleaned_form = form.cleaned_data
+                description = cleaned_form.get("description")
+                description = description.strip() if description else None
 
             type = CompanyType.objects.get(slug = type)
 
@@ -260,8 +295,15 @@ class AddCompanyView(BaseCompanyView, CreateView):
                 name = name, type=type, slug=slug,
                 favicon=favicon, logo=logo, phone1=phone1,
                 phone2=phone2, whatsapp=whatsapp, email=email,
-                description=description
+                description=description, meta_title = meta_title,
+                meta_description = meta_description
                 )
+
+            meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+
+            company_obj.meta_tags.set(meta_tag_objs)
+
+            company_obj.save()
             
             User.objects.create_user(
                 username = company_obj.email,
@@ -287,16 +329,13 @@ class AddCompanyView(BaseCompanyView, CreateView):
         
     
 class UpdateCompanyView(BaseCompanyView, UpdateView):
-    fields = ["name", "type", "slug", "favicon", "logo", "phone1", "phone2", "whatsapp", "email"]
+    form_class = CompanyForm
     template_name = "admin_company/company/update.html"
     success_url = redirect_url = reverse_lazy('superadmin:companies')
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        try:
-            pass
-        except Exception as e:
-            logger.exception(f"Error in fetching context data of admin update company view: {e}")
+        context = super().get_context_data(**kwargs)        
+        context["tags"] = MetaTag.objects.all().order_by("name")
         return context
 
     def get_success_url(self):
@@ -318,6 +357,8 @@ class UpdateCompanyView(BaseCompanyView, UpdateView):
 
     def post(self, request, *args, **kwargs):
         try:
+            form = self.get_form()
+
             name = request.POST.get("name")
             type = request.POST.get("type")
             slug = request.POST.get("slug")
@@ -328,19 +369,63 @@ class UpdateCompanyView(BaseCompanyView, UpdateView):
             whatsapp = request.POST.get("whatsapp")
             email = request.POST.get("email")
 
+            meta_title = request.POST.get("meta_title")
+            meta_tags = request.POST.getlist("meta_tag")
+            meta_description = request.POST.get("meta_description")
+
+            name = name.strip() if name else None
+            type = type.strip() if type else None
+            slug = slug.strip() if slug else None
+            phone1 = phone1.strip() if phone1 else None
+            phone2 = phone2.strip() if phone2 else None
+            whatsapp = whatsapp.strip() if whatsapp else None
+            email = email.strip() if email else None
+
+            meta_title = meta_title.strip() if meta_title else None
+            meta_description = meta_description.strip() if meta_description else None
+
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
+
+            required_fields = {
+                "Name": name, "Type": type, "Contact Number 1": phone1,
+                "Contact Number 2": phone2, "Whats App Number": whatsapp,
+                "Email": email, "Meta Tags": meta_tags, 
+                "Meta Description": meta_description
+            }
+
+            for key, value in required_fields.items():
+                if not value:
+                    messages.error(request, f"Failed! {key} is required")
+                    return redirect(self.redirect_url)
+
             type = CompanyType.objects.get(slug = type)
 
             self.object = self.get_object()
 
-            self.object.name = name.strip()
+            description = None
+
+            if form.is_valid():
+                cleaned_form = form.cleaned_data
+                description = cleaned_form.get("description")
+                description = description.strip() if description else None
+
+            self.object.name = name
             self.object.type = type
-            self.object.slug = slug.strip()
+            self.object.slug = slug
             self.object.favicon = favicon if favicon else self.object.favicon
             self.object.logo = logo if logo else self.object.logo
-            self.object.phone1 = phone1.strip()
-            self.object.phone2 = phone2.strip()
-            self.object.whatsapp = whatsapp.strip()
-            self.object.email = email.strip()
+            self.object.phone1 = phone1
+            self.object.phone2 = phone2
+            self.object.whatsapp = whatsapp
+            self.object.email = email
+            self.object.description = description
+
+            self.object.meta_title = meta_title
+            self.object.meta_description = meta_description
+
+            meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+
+            self.object.meta_tags.set(meta_tag_objs)
 
             self.object.save()
 
@@ -1896,6 +1981,8 @@ class AddProductDetailPageView(BaseProductDetailPageView, CreateView):
 
         current_company = self.get_current_company()        
         context["categories"] = ProductCategory.objects.filter(company = current_company)
+
+        context["tags"] = MetaTag.objects.all().order_by("name")
         
         return context
 
@@ -1922,8 +2009,12 @@ class AddProductDetailPageView(BaseProductDetailPageView, CreateView):
             summary = request.POST.get("summary")
 
             meta_title = request.POST.get("meta_title")
-            meta_tags = request.POST.get("meta_tags")
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
+
+            buy_now_action = request.POST.get("buy_now_action")
+            whatsapp = request.POST.get("whatsapp")
+            external_link = request.POST.get("external_link")
 
             vertical_title = request.POST.get("vertical_title")
             horizontal_title = request.POST.get("horizontal_title")
@@ -1943,8 +2034,13 @@ class AddProductDetailPageView(BaseProductDetailPageView, CreateView):
             summary = summary.strip() if summary else None
             
             meta_title = meta_title.strip() if meta_title else None
-            meta_tags = meta_tags.strip() if meta_tags else None
             meta_description = meta_description.strip() if meta_description else None
+            
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
+
+            buy_now_action = buy_now_action.strip() if buy_now_action else None
+            whatsapp = whatsapp.strip() if whatsapp else None
+            external_link = external_link.strip() if external_link else None
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -1972,6 +2068,17 @@ class AddProductDetailPageView(BaseProductDetailPageView, CreateView):
                     messages.error(request, f"Failed! {key} is required")
                     return redirect(self.get_redirect_url())
 
+            buy_now_missing_field = ""
+            if buy_now_action == "whatsapp" and not whatsapp:
+                buy_now_missing_field = "Whatsapp Number"
+            
+            if buy_now_action == "external_link" and not external_link:
+                buy_now_missing_field = "External Link"
+
+            if buy_now_missing_field:
+                messages.error(request, f"Failed! {buy_now_missing_field} is not provided")
+                return redirect(self.get_redirect_url())
+
             checkbox_fields = {
                 "hide_features": hide_features,
                 "hide_vertical_tab": hide_vertical_tab,
@@ -1995,11 +2102,16 @@ class AddProductDetailPageView(BaseProductDetailPageView, CreateView):
 
                 product_detail = self.model.objects.create(
                     company = company, product = product, summary = summary, description = description,
-                    meta_title = meta_title, meta_tags = meta_tags, meta_description = meta_description,
+                    meta_title = meta_title, meta_description = meta_description,
+                    buy_now_action = buy_now_action, whatsapp = whatsapp, external_link = external_link,
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
                     timeline_title = timeline_title
-                )                
+                )
+
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+
+                product_detail.meta_tags.set(meta_tag_objs)           
 
                 for key, value in checkbox_fields.items():
                     if value:
@@ -2073,6 +2185,8 @@ class UpdateProductDetailPageView(BaseProductDetailPageView, UpdateView):
         context["categories"] = ProductCategory.objects.filter(company = current_company)
         context["sub_categories"] = ProductSubCategory.objects.filter(company = current_company, category = self.object.product.category)
         context["products"] = Product.objects.filter(company = current_company, category = self.object.product.category, sub_category = self.object.product.sub_category)
+
+        context["tags"] = MetaTag.objects.all().order_by("name")
         
         return context
     
@@ -2100,9 +2214,12 @@ class UpdateProductDetailPageView(BaseProductDetailPageView, UpdateView):
             summary = request.POST.get("summary")
 
             meta_title = request.POST.get("meta_title")
-            meta_tags = request.POST.get("meta_tags")
-
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
+
+            buy_now_action = request.POST.get("buy_now_action")
+            whatsapp = request.POST.get("whatsapp")
+            external_link = request.POST.get("external_link")
 
             vertical_title = request.POST.get("vertical_title")
             horizontal_title = request.POST.get("horizontal_title")
@@ -2113,8 +2230,14 @@ class UpdateProductDetailPageView(BaseProductDetailPageView, UpdateView):
 
             summary = summary.strip() if summary else None
 
-            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
+
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
+
+            buy_now_action = buy_now_action.strip() if buy_now_action else None
+            whatsapp = whatsapp.strip() if whatsapp else None
+            external_link = external_link.strip() if external_link else None
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -2140,8 +2263,7 @@ class UpdateProductDetailPageView(BaseProductDetailPageView, UpdateView):
             
             required_fields = {
                 "Product": product_slug,
-                "summary": summary,
-                "Meta Title": meta_title,
+                "summary": summary,                
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -2150,6 +2272,17 @@ class UpdateProductDetailPageView(BaseProductDetailPageView, UpdateView):
                 if not value:
                     messages.error(request, f"Failed! {key} is required")
                     return redirect(self.get_redirect_url())
+
+            buy_now_missing_field = ""
+            if buy_now_action == "whatsapp" and not whatsapp:
+                buy_now_missing_field = "Whatsapp Number"
+            
+            if buy_now_action == "external_link" and not external_link:
+                buy_now_missing_field = "External Link"
+
+            if buy_now_missing_field:
+                messages.error(request, f"Failed! {buy_now_missing_field} is not provided")
+                return redirect(self.get_redirect_url())
 
             checkbox_fields = {
                 "hide_features": hide_features,
@@ -2180,8 +2313,15 @@ class UpdateProductDetailPageView(BaseProductDetailPageView, UpdateView):
                 product_detail.description = description
 
                 product_detail.meta_title = meta_title
-                product_detail.meta_tags = meta_tags
                 product_detail.meta_description = meta_description
+
+                product_detail.buy_now_action = buy_now_action
+
+                if buy_now_action == "whatsapp":
+                    product_detail.whatsapp = whatsapp 
+
+                if buy_now_action == "external_link":
+                    product_detail.external_link = external_link 
 
                 product_detail.vertical_title = vertical_title
                 product_detail.horizontal_title = horizontal_title
@@ -2189,6 +2329,10 @@ class UpdateProductDetailPageView(BaseProductDetailPageView, UpdateView):
                 product_detail.bullet_title = bullet_title
                 product_detail.tag_title = tag_title
                 product_detail.timeline_title = timeline_title 
+
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+                
+                product_detail.meta_tags.set(meta_tag_objs)
 
                 for key, value in checkbox_fields.items():
                     assigning_value = False
@@ -2586,6 +2730,7 @@ class AddProductMultiPageView(BaseProductMultiPageView, CreateView):
         context = super().get_context_data(**kwargs)
 
         context["categories"] = self.get_categories()
+        context["tags"] = MetaTag.objects.all().order_by("name")
 
         return context
 
@@ -2613,8 +2758,15 @@ class AddProductMultiPageView(BaseProductMultiPageView, CreateView):
 
             summary = request.POST.get("summary")
 
-            meta_tags = request.POST.get("meta_tags")
+            meta_title = request.POST.get("meta_title")
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
+
+            url_type = request.POST.get("url_type")
+
+            buy_now_action = request.POST.get("buy_now_action")
+            whatsapp = request.POST.get("whatsapp")
+            external_link = request.POST.get("external_link")
 
             vertical_title = request.POST.get("vertical_title")
             horizontal_title = request.POST.get("horizontal_title")
@@ -2634,8 +2786,16 @@ class AddProductMultiPageView(BaseProductMultiPageView, CreateView):
 
             summary = summary.strip() if summary else None
 
-            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
+
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
+
+            url_type = url_type.strip() if url_type else None
+
+            buy_now_action = buy_now_action.strip() if buy_now_action else None
+            whatsapp = whatsapp.strip() if whatsapp else None
+            external_link = external_link.strip() if external_link else None
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -2653,7 +2813,7 @@ class AddProductMultiPageView(BaseProductMultiPageView, CreateView):
             
             required_fields = {
                 "Product": product_slug,
-                "summary": summary,
+                "summary": summary,                
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -2662,6 +2822,17 @@ class AddProductMultiPageView(BaseProductMultiPageView, CreateView):
                 if not value:
                     messages.error(request, f"Failed! {key} is required")
                     return redirect(self.get_redirect_url())
+                
+            buy_now_missing_field = ""
+            if buy_now_action == "whatsapp" and not whatsapp:
+                buy_now_missing_field = "Whatsapp Number"
+            
+            if buy_now_action == "external_link" and not external_link:
+                buy_now_missing_field = "External Link"
+
+            if buy_now_missing_field:
+                messages.error(request, f"Failed! {buy_now_missing_field} is not provided")
+                return redirect(self.get_redirect_url())
 
             checkbox_fields = {
                 "hide_features": hide_features,
@@ -2690,11 +2861,17 @@ class AddProductMultiPageView(BaseProductMultiPageView, CreateView):
 
                 product_multi_page = self.model.objects.create(
                     company = company, product = product, summary = summary, description = description,
-                    meta_tags = meta_tags, meta_description = meta_description,
+                    meta_title = meta_title, meta_description = meta_description,
+                    url_type = url_type, 
+                    buy_now_action = buy_now_action, whatsapp = whatsapp, external_link = external_link,
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
                     timeline_title = timeline_title
                 )
+
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+
+                product_multi_page.meta_tags.set(meta_tag_objs)  
 
                 for key, value in checkbox_fields.items():
                     if value:
@@ -2801,6 +2978,7 @@ class UpdateProductMultiPageView(BaseProductMultiPageView, UpdateView):
             context["categories"] = ProductCategory.objects.filter(company = current_company)
             context["sub_categories"] = ProductSubCategory.objects.filter(company = current_company, category = self.object.product.category)
             context["products"] = Product.objects.filter(company = current_company, sub_category = self.object.product.sub_category)
+            context["tags"] = MetaTag.objects.all().order_by("name")
         except Exception as e:
             logger.exception(f"Error in getting context data of UpdateMultiPageView of superadmin: {e}")
         
@@ -2829,8 +3007,15 @@ class UpdateProductMultiPageView(BaseProductMultiPageView, UpdateView):
 
             summary = request.POST.get("summary")
 
-            meta_tags = request.POST.get("meta_tags")
+            meta_title = request.POST.get("meta_title")
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
+
+            url_type = request.POST.get("url_type")
+
+            buy_now_action = request.POST.get("buy_now_action")
+            whatsapp = request.POST.get("whatsapp")
+            external_link = request.POST.get("external_link")
 
             vertical_title = request.POST.get("vertical_title")
             horizontal_title = request.POST.get("horizontal_title")
@@ -2850,8 +3035,16 @@ class UpdateProductMultiPageView(BaseProductMultiPageView, UpdateView):
 
             summary = summary.strip() if summary else None
 
-            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
+            
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
+
+            url_type = url_type.strip() if url_type else None
+
+            buy_now_action = buy_now_action.strip() if buy_now_action else None
+            whatsapp = whatsapp.strip() if whatsapp else None
+            external_link = external_link.strip() if external_link else None
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -2869,7 +3062,7 @@ class UpdateProductMultiPageView(BaseProductMultiPageView, UpdateView):
             
             required_fields = {
                 "Product": product_slug,
-                "summary": summary,
+                "summary": summary,                
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -2878,6 +3071,17 @@ class UpdateProductMultiPageView(BaseProductMultiPageView, UpdateView):
                 if not value:
                     messages.error(request, f"Failed! {key} is required")
                     return redirect(self.get_redirect_url())
+
+            buy_now_missing_field = ""
+            if buy_now_action == "whatsapp" and not whatsapp:
+                buy_now_missing_field = "Whatsapp Number"
+            
+            if buy_now_action == "external_link" and not external_link:
+                buy_now_missing_field = "External Link"
+
+            if buy_now_missing_field:
+                messages.error(request, f"Failed! {buy_now_missing_field} is not provided")
+                return redirect(self.get_redirect_url())
                 
             checkbox_fields = {
                 "hide_features": hide_features,
@@ -2908,8 +3112,18 @@ class UpdateProductMultiPageView(BaseProductMultiPageView, UpdateView):
 
                 multipage.description = description
 
-                multipage.meta_tags = meta_tags
+                multipage.meta_title = meta_title
                 multipage.meta_description = meta_description
+
+                multipage.url_type = url_type
+
+                multipage.buy_now_action = buy_now_action
+
+                if buy_now_action == "whatsapp":
+                    multipage.whatsapp = whatsapp 
+
+                if buy_now_action == "external_link":
+                    multipage.external_link = external_link 
 
                 multipage.vertical_title = vertical_title
                 multipage.horizontal_title = horizontal_title
@@ -2917,6 +3131,10 @@ class UpdateProductMultiPageView(BaseProductMultiPageView, UpdateView):
                 multipage.bullet_title = bullet_title
                 multipage.tag_title = tag_title
                 multipage.timeline_title = timeline_title                
+
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+                
+                multipage.meta_tags.set(meta_tag_objs)
 
                 for key, value in checkbox_fields.items():
                     assigning_value = False
@@ -3692,6 +3910,8 @@ class AddCourseDetailView(BaseEducationCompanyView, CreateView):
             
             context["current_company"] = current_company
 
+            context["tags"] = MetaTag.objects.all().order_by("name")
+
             context["programs"] = Program.objects.filter(company = current_company)
         except Exception as e:
             logger.exception(f"Error in getting context data of AddCourseDetailView of superadmin: {e}")
@@ -3986,7 +4206,7 @@ class AddCourseDetailView(BaseEducationCompanyView, CreateView):
             summary = request.POST.get("summary")
 
             meta_title = request.POST.get("meta_title")
-            meta_tags = request.POST.get("meta_tags")
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
 
             vertical_title = request.POST.get("vertical_title")
@@ -4007,8 +4227,9 @@ class AddCourseDetailView(BaseEducationCompanyView, CreateView):
             summary = summary.strip() if summary else None
 
             meta_title = meta_title.strip() if meta_title else None
-            meta_tags = meta_tags.strip() if meta_tags else None
             meta_description = meta_description.strip() if meta_description else None
+
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -4027,7 +4248,6 @@ class AddCourseDetailView(BaseEducationCompanyView, CreateView):
             required_fields = {
                 "Course": course_slug,
                 "summary": summary,
-                "Meta Title": meta_title,
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -4060,11 +4280,15 @@ class AddCourseDetailView(BaseEducationCompanyView, CreateView):
 
                 course_detail = self.model.objects.create(
                     company = company, course = course, summary = summary, description = description,
-                    meta_title = meta_title, meta_tags = meta_tags, meta_description = meta_description,
+                    meta_title = meta_title, meta_description = meta_description,
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
                     timeline_title = timeline_title
-                )                
+                )
+
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+
+                course_detail.meta_tags.set(meta_tag_objs)
 
                 for key, value in checkbox_fields.items():
                     if value:
@@ -4225,7 +4449,8 @@ class UpdateCourseDetailView(BaseEducationCompanyView, UpdateView):
             
             current_company = self.get_current_company()
             
-            context["current_company"] = current_company   
+            context["current_company"] = current_company 
+            context["tags"] = MetaTag.objects.all().order_by("name")  
 
             self.object = self.get_object()         
 
@@ -4521,7 +4746,7 @@ class UpdateCourseDetailView(BaseEducationCompanyView, UpdateView):
             summary = request.POST.get("summary")
 
             meta_title = request.POST.get("meta_title")
-            meta_tags = request.POST.get("meta_tags")
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
             
             vertical_title = request.POST.get("vertical_title")
@@ -4534,8 +4759,9 @@ class UpdateCourseDetailView(BaseEducationCompanyView, UpdateView):
             summary = summary.strip() if summary else None
 
             meta_title = meta_title.strip() if meta_title else None
-            meta_tags = meta_tags.strip() if meta_tags else None
             meta_description = meta_description.strip() if meta_description else None
+
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -4562,7 +4788,6 @@ class UpdateCourseDetailView(BaseEducationCompanyView, UpdateView):
             required_fields = {
                 "Course": course_slug,
                 "summary": summary,
-                "Meta Title": meta_title,
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -4601,7 +4826,6 @@ class UpdateCourseDetailView(BaseEducationCompanyView, UpdateView):
                 course_detail.description = description
 
                 course_detail.meta_title = meta_title
-                course_detail.meta_tags = meta_tags
                 course_detail.meta_description = meta_description
 
                 course_detail.vertical_title = vertical_title
@@ -4610,6 +4834,10 @@ class UpdateCourseDetailView(BaseEducationCompanyView, UpdateView):
                 course_detail.bullet_title = bullet_title
                 course_detail.tag_title = tag_title
                 course_detail.timeline_title = timeline_title
+
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+                
+                course_detail.meta_tags.set(meta_tag_objs)
                 
                 for key, value in checkbox_fields.items():
                     assigning_value = False
@@ -5349,6 +5577,7 @@ class AddCourseMultiPageView(BaseCourseMultiPageView, CreateView):
         context = super().get_context_data(**kwargs)
 
         context["programs"] = self.get_programs()
+        context["tags"] = MetaTag.objects.all().order_by("name")
 
         return context
     
@@ -5375,8 +5604,11 @@ class AddCourseMultiPageView(BaseCourseMultiPageView, CreateView):
 
             summary = request.POST.get("summary")
 
-            meta_tags = request.POST.get("meta_tags")
+            meta_title = request.POST.get("meta_title")
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
+
+            url_type = request.POST.get("url_type")
 
             vertical_title = request.POST.get("vertical_title")
             horizontal_title = request.POST.get("horizontal_title")
@@ -5396,8 +5628,12 @@ class AddCourseMultiPageView(BaseCourseMultiPageView, CreateView):
 
             summary = summary.strip() if summary else None
 
-            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
+            
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
+
+            url_type = url_type.strip() if url_type else None
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -5452,11 +5688,16 @@ class AddCourseMultiPageView(BaseCourseMultiPageView, CreateView):
 
                 course_multi_page = self.model.objects.create(
                     company = company, course = course, summary = summary, description = description,
-                    meta_tags = meta_tags, meta_description = meta_description,
+                    meta_title = meta_title, meta_description = meta_description,
+                    url_type = url_type,
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
                     timeline_title = timeline_title
-                )                
+                )
+                
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+
+                course_multi_page.meta_tags.set(meta_tag_objs)
 
                 for key, value in checkbox_fields.items():
                     if value:
@@ -5562,6 +5803,7 @@ class UpdateCourseMultiPageView(BaseCourseMultiPageView, UpdateView):
 
             context["programs"] = Program.objects.filter(company = current_company)
             context["courses"] = Course.objects.filter(company = current_company, program = self.object.course.program)
+            context["tags"] = MetaTag.objects.all().order_by("name")
         except Exception as e:
             logger.exception(f"Error in getting context data of UpdateMultiPageView of superadmin: {e}")
         
@@ -5589,9 +5831,12 @@ class UpdateCourseMultiPageView(BaseCourseMultiPageView, UpdateView):
             course_slug = request.POST.get('course')
 
             summary = request.POST.get("summary")
-
-            meta_tags = request.POST.get("meta_tags")
+            
+            meta_title = request.POST.get("meta_title")
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
+
+            url_type = request.POST.get("url_type")
 
             vertical_title = request.POST.get("vertical_title")
             horizontal_title = request.POST.get("horizontal_title")
@@ -5611,8 +5856,12 @@ class UpdateCourseMultiPageView(BaseCourseMultiPageView, UpdateView):
 
             summary = summary.strip() if summary else None
 
-            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
+
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
+
+            url_type = url_type.strip() if url_type else None
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -5669,8 +5918,10 @@ class UpdateCourseMultiPageView(BaseCourseMultiPageView, UpdateView):
 
                 multipage.description = description
 
-                multipage.meta_tags = meta_tags
+                multipage.meta_title = meta_title
                 multipage.meta_description = meta_description
+
+                multipage.url_type = url_type
 
                 multipage.vertical_title = vertical_title
                 multipage.horizontal_title = horizontal_title
@@ -5678,6 +5929,10 @@ class UpdateCourseMultiPageView(BaseCourseMultiPageView, UpdateView):
                 multipage.bullet_title = bullet_title
                 multipage.tag_title = tag_title
                 multipage.timeline_title = timeline_title                
+
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+                
+                multipage.meta_tags.set(meta_tag_objs)
 
                 for key, value in checkbox_fields.items():
                     assigning_value = False
@@ -7062,6 +7317,7 @@ class AddServiceDetailView(BaseServiceDetailView, CreateView):
 
         current_company = self.get_current_company()        
         context["categories"] = ServiceCategory.objects.filter(company = current_company)
+        context["tags"] = MetaTag.objects.all().order_by("name")
         
         return context
 
@@ -7088,8 +7344,9 @@ class AddServiceDetailView(BaseServiceDetailView, CreateView):
             summary = request.POST.get("summary")
 
             meta_title = request.POST.get("meta_title")
-            meta_tags = request.POST.get("meta_tags")
             meta_description = request.POST.get("meta_description")
+
+            meta_tags = request.POST.getlist("meta_tag")
 
             vertical_title = request.POST.get("vertical_title")
             horizontal_title = request.POST.get("horizontal_title")
@@ -7109,8 +7366,9 @@ class AddServiceDetailView(BaseServiceDetailView, CreateView):
             summary = summary.strip() if summary else None
             
             meta_title = meta_title.strip() if meta_title else None
-            meta_tags = meta_tags.strip() if meta_tags else None
             meta_description = meta_description.strip() if meta_description else None
+
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -7128,8 +7386,7 @@ class AddServiceDetailView(BaseServiceDetailView, CreateView):
             
             required_fields = {
                 "Service": service_slug,
-                "summary": summary,
-                "Meta Title": meta_title,
+                "summary": summary,                
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -7162,11 +7419,15 @@ class AddServiceDetailView(BaseServiceDetailView, CreateView):
 
                 service_detail = self.model.objects.create(
                     company = company, service = service, summary = summary, description = description,
-                    meta_title = meta_title, meta_tags = meta_tags, meta_description = meta_description,
+                    meta_title = meta_title, meta_description = meta_description,
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
                     timeline_title = timeline_title
-                )                
+                )
+                
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+
+                service_detail.meta_tags.set(meta_tag_objs)
 
                 for key, value in checkbox_fields.items():
                     if value:
@@ -7240,6 +7501,7 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
         context["categories"] = ServiceCategory.objects.filter(company = current_company)
         context["sub_categories"] = ServiceSubCategory.objects.filter(company = current_company, category = self.object.service.category)
         context["services"] = Service.objects.filter(company = current_company, category = self.object.service.category, sub_category = self.object.service.sub_category)
+        context["tags"] = MetaTag.objects.all().order_by("name")
         
         return context
     
@@ -7267,8 +7529,9 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
             summary = request.POST.get("summary")
 
             meta_title = request.POST.get("meta_title")
-            meta_tags = request.POST.get("meta_tags")
             meta_description = request.POST.get("meta_description")
+
+            meta_tags = request.POST.getlist("meta_tag")
 
             vertical_title = request.POST.get("vertical_title")
             horizontal_title = request.POST.get("horizontal_title")
@@ -7280,8 +7543,9 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
             summary = summary.strip() if summary else None
 
             meta_title = meta_title.strip() if meta_title else None
-            meta_tags = meta_tags.strip() if meta_tags else None
             meta_description = meta_description.strip() if meta_description else None
+
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -7307,8 +7571,7 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
             
             required_fields = {
                 "Service": service_slug,
-                "summary": summary,
-                "Meta Title": meta_title,
+                "summary": summary,                
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -7347,7 +7610,6 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
                 service_detail.description = description
 
                 service_detail.meta_title = meta_title
-                service_detail.meta_tags = meta_tags
                 service_detail.meta_description = meta_description
 
                 service_detail.vertical_title = vertical_title
@@ -7355,7 +7617,11 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
                 service_detail.table_title = table_title
                 service_detail.bullet_title = bullet_title
                 service_detail.tag_title = tag_title
-                service_detail.timeline_title = timeline_title 
+                service_detail.timeline_title = timeline_title
+
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+                
+                service_detail.meta_tags.set(meta_tag_objs)  
 
                 for key, value in checkbox_fields.items():
                     assigning_value = False
@@ -7754,6 +8020,7 @@ class AddServiceMultiPageView(BaseServiceMultiPageView, CreateView):
         context = super().get_context_data(**kwargs)
 
         context["categories"] = self.get_categories()
+        context["tags"] = MetaTag.objects.all().order_by("name")
 
         return context
 
@@ -7781,8 +8048,12 @@ class AddServiceMultiPageView(BaseServiceMultiPageView, CreateView):
 
             summary = request.POST.get("summary")
 
-            meta_tags = request.POST.get("meta_tags")
+            meta_title = request.POST.get("meta_title")
             meta_description = request.POST.get("meta_description")
+
+            meta_tags = request.POST.getlist("meta_tag")
+
+            url_type = request.POST.get("url_type")
 
             vertical_title = request.POST.get("vertical_title")
             horizontal_title = request.POST.get("horizontal_title")
@@ -7802,8 +8073,10 @@ class AddServiceMultiPageView(BaseServiceMultiPageView, CreateView):
 
             summary = summary.strip() if summary else None
 
-            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
+
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -7821,7 +8094,7 @@ class AddServiceMultiPageView(BaseServiceMultiPageView, CreateView):
             
             required_fields = {
                 "Service": service_slug,
-                "summary": summary,
+                "summary": summary,                
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -7858,11 +8131,16 @@ class AddServiceMultiPageView(BaseServiceMultiPageView, CreateView):
 
                 service_multi_page = self.model.objects.create(
                     company = company, service = service, summary = summary, description = description,
-                    meta_tags = meta_tags, meta_description = meta_description,
+                    meta_title = meta_title, meta_description = meta_description,
+                    url_type = url_type,
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
                     timeline_title = timeline_title
                 )
+
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+
+                service_multi_page.meta_tags.set(meta_tag_objs)
 
                 for key, value in checkbox_fields.items():
                     if value:
@@ -7969,6 +8247,7 @@ class UpdateServiceMultiPageView(BaseServiceMultiPageView, UpdateView):
             context["categories"] = ServiceCategory.objects.filter(company = current_company)
             context["sub_categories"] = ServiceSubCategory.objects.filter(company = current_company, category = self.object.service.category)
             context["services"] = Service.objects.filter(company = current_company, sub_category = self.object.service.sub_category)
+            context["tags"] = MetaTag.objects.all().order_by("name")
         except Exception as e:
             logger.exception(f"Error in getting context data of UpdateMultiPageView of superadmin: {e}")
         
@@ -7997,8 +8276,11 @@ class UpdateServiceMultiPageView(BaseServiceMultiPageView, UpdateView):
 
             summary = request.POST.get("summary")
 
-            meta_tags = request.POST.get("meta_tags")
+            meta_title = request.POST.get("meta_title")
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
+
+            url_type = request.POST.get("url_type")
 
             vertical_title = request.POST.get("vertical_title")
             horizontal_title = request.POST.get("horizontal_title")
@@ -8018,8 +8300,12 @@ class UpdateServiceMultiPageView(BaseServiceMultiPageView, UpdateView):
 
             summary = summary.strip() if summary else None
 
-            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
+
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
+
+            url_type = url_type.strip() if url_type else None
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -8037,7 +8323,7 @@ class UpdateServiceMultiPageView(BaseServiceMultiPageView, UpdateView):
             
             required_fields = {
                 "Service": service_slug,
-                "summary": summary,
+                "summary": summary,                
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -8076,15 +8362,21 @@ class UpdateServiceMultiPageView(BaseServiceMultiPageView, UpdateView):
 
                 multipage.description = description
 
-                multipage.meta_tags = meta_tags
+                multipage.meta_title = meta_title
                 multipage.meta_description = meta_description
+
+                multipage.url_type = url_type
 
                 multipage.vertical_title = vertical_title
                 multipage.horizontal_title = horizontal_title
                 multipage.table_title = table_title
                 multipage.bullet_title = bullet_title
                 multipage.tag_title = tag_title
-                multipage.timeline_title = timeline_title                
+                multipage.timeline_title = timeline_title
+                
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+                
+                multipage.meta_tags.set(meta_tag_objs)
 
                 for key, value in checkbox_fields.items():
                     assigning_value = False
@@ -9412,6 +9704,7 @@ class AddRegistrationDetailPageView(BaseRegistrationDetailPageView, CreateView):
 
         current_company = self.get_current_company()        
         context["types"] = RegistrationType.objects.filter(company = current_company)
+        context["tags"] = MetaTag.objects.all().order_by("name")
         
         return context
     
@@ -9438,7 +9731,7 @@ class AddRegistrationDetailPageView(BaseRegistrationDetailPageView, CreateView):
             summary = request.POST.get("summary")
 
             meta_title = request.POST.get("meta_title")
-            meta_tags = request.POST.get("meta_tags")
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
 
             vertical_title = request.POST.get("vertical_title")
@@ -9459,8 +9752,9 @@ class AddRegistrationDetailPageView(BaseRegistrationDetailPageView, CreateView):
             summary = summary.strip() if summary else None
             
             meta_title = meta_title.strip() if meta_title else None
-            meta_tags = meta_tags.strip() if meta_tags else None
             meta_description = meta_description.strip() if meta_description else None
+            
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -9478,8 +9772,7 @@ class AddRegistrationDetailPageView(BaseRegistrationDetailPageView, CreateView):
             
             required_fields = {
                 "Registration": registration_sub_type_slug,
-                "summary": summary,
-                "Meta Title": meta_title,
+                "summary": summary,                
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -9512,11 +9805,15 @@ class AddRegistrationDetailPageView(BaseRegistrationDetailPageView, CreateView):
 
                 registration_detail = self.model.objects.create(
                     company = company, registration_sub_type = registration_sub_type, summary = summary, description = description,
-                    meta_title = meta_title, meta_tags = meta_tags, meta_description = meta_description,
+                    meta_title = meta_title, meta_description = meta_description,
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
                     timeline_title = timeline_title
                 )                
+
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+
+                registration_detail.meta_tags.set(meta_tag_objs)
 
                 for key, value in checkbox_fields.items():
                     if value:
@@ -9581,6 +9878,7 @@ class UpdateRegistrationDetailPageView(BaseRegistrationDetailPageView, UpdateVie
         current_company = self.get_current_company()        
         context["types"] = RegistrationType.objects.filter(company = current_company)
         context["sub_types"] = RegistrationSubType.objects.filter(company = current_company, type = self.object.registration_sub_type.type)
+        context["tags"] = MetaTag.objects.all().order_by("name")
         
         return context
     
@@ -9605,13 +9903,10 @@ class UpdateRegistrationDetailPageView(BaseRegistrationDetailPageView, UpdateVie
 
             registration_sub_type_slug = request.POST.get('sub_type')
 
-            registration_sub_type_slug
-
             summary = request.POST.get("summary")
 
             meta_title = request.POST.get("meta_title")
-
-            meta_tags = request.POST.get("meta_tags")
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
 
             vertical_title = request.POST.get("vertical_title")
@@ -9624,8 +9919,9 @@ class UpdateRegistrationDetailPageView(BaseRegistrationDetailPageView, UpdateVie
             summary = summary.strip() if summary else None
 
             meta_title = meta_title.strip() if meta_title else None
-            meta_tags = meta_tags.strip() if meta_tags else None
             meta_description = meta_description.strip() if meta_description else None
+            
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -9651,8 +9947,7 @@ class UpdateRegistrationDetailPageView(BaseRegistrationDetailPageView, UpdateVie
             
             required_fields = {
                 "Registration": registration_sub_type_slug,
-                "summary": summary,
-                "Meta Title": meta_title,
+                "summary": summary,                
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -9691,7 +9986,6 @@ class UpdateRegistrationDetailPageView(BaseRegistrationDetailPageView, UpdateVie
                 registration_detail.description = description
 
                 registration_detail.meta_title = meta_title
-                registration_detail.meta_tags = meta_tags
                 registration_detail.meta_description = meta_description
 
                 registration_detail.vertical_title = vertical_title
@@ -9699,7 +9993,11 @@ class UpdateRegistrationDetailPageView(BaseRegistrationDetailPageView, UpdateVie
                 registration_detail.table_title = table_title
                 registration_detail.bullet_title = bullet_title
                 registration_detail.tag_title = tag_title
-                registration_detail.timeline_title = timeline_title 
+                registration_detail.timeline_title = timeline_title
+
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+                
+                registration_detail.meta_tags.set(meta_tag_objs) 
 
                 for key, value in checkbox_fields.items():
                     assigning_value = False
@@ -10098,6 +10396,7 @@ class AddRegistrationMultiPageView(BaseRegistrationMultiPageView, CreateView):
         context = super().get_context_data(**kwargs)
 
         context["types"] = self.get_registration_types()
+        context["tags"] = MetaTag.objects.all().order_by("name")
 
         return context
 
@@ -10125,8 +10424,11 @@ class AddRegistrationMultiPageView(BaseRegistrationMultiPageView, CreateView):
 
             summary = request.POST.get("summary")
 
-            meta_tags = request.POST.get("meta_tags")
+            meta_title = request.POST.get("meta_title")
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
+
+            url_type = request.POST.get("url_type")
 
             vertical_title = request.POST.get("vertical_title")
             horizontal_title = request.POST.get("horizontal_title")
@@ -10146,8 +10448,12 @@ class AddRegistrationMultiPageView(BaseRegistrationMultiPageView, CreateView):
 
             summary = summary.strip() if summary else None
 
-            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
+
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
+
+            url_type = url_type.strip() if url_type else None
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -10165,7 +10471,7 @@ class AddRegistrationMultiPageView(BaseRegistrationMultiPageView, CreateView):
             
             required_fields = {
                 "Registration Sub Type": registration_sub_type_slug,
-                "summary": summary,
+                "summary": summary,                
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -10202,11 +10508,16 @@ class AddRegistrationMultiPageView(BaseRegistrationMultiPageView, CreateView):
 
                 registration_multi_page = self.model.objects.create(
                     company = company, registration_sub_type = registration_sub_type, summary = summary, description = description,
-                    meta_tags = meta_tags, meta_description = meta_description,
+                    meta_title = meta_title, meta_description = meta_description,
+                    url_type = url_type,
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
                     timeline_title = timeline_title
                 )
+
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+
+                registration_multi_page.meta_tags.set(meta_tag_objs)  
 
                 for key, value in checkbox_fields.items():
                     if value:
@@ -10312,6 +10623,7 @@ class UpdateRegistrationMultiPageView(BaseRegistrationMultiPageView, UpdateView)
 
             context["types"] = RegistrationType.objects.filter(company = current_company)
             context["sub_types"] = RegistrationSubType.objects.filter(company = current_company, type = self.object.registration_sub_type.type)
+            context["tags"] = MetaTag.objects.all().order_by("name")
         except Exception as e:
             logger.exception(f"Error in getting context data of UpdateMultiPageView of superadmin: {e}")
         
@@ -10340,8 +10652,11 @@ class UpdateRegistrationMultiPageView(BaseRegistrationMultiPageView, UpdateView)
 
             summary = request.POST.get("summary")
 
-            meta_tags = request.POST.get("meta_tags")
+            meta_title = request.POST.get("meta_title")
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
+
+            url_type = request.POST.get("url_type")
 
             vertical_title = request.POST.get("vertical_title")
             horizontal_title = request.POST.get("horizontal_title")
@@ -10361,8 +10676,12 @@ class UpdateRegistrationMultiPageView(BaseRegistrationMultiPageView, UpdateView)
 
             summary = summary.strip() if summary else None
 
-            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
+
+            meta_tags = [tag.strip() for tag in meta_tags if tag]
+
+            url_type = url_type.strip() if url_type else None
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -10380,7 +10699,7 @@ class UpdateRegistrationMultiPageView(BaseRegistrationMultiPageView, UpdateView)
             
             required_fields = {
                 "Registration Sub Type": registration_sub_type_slug,
-                "summary": summary,
+                "summary": summary,                
                 "Meta Tags": meta_tags,
                 "Meta Description": meta_description
                 }
@@ -10419,15 +10738,21 @@ class UpdateRegistrationMultiPageView(BaseRegistrationMultiPageView, UpdateView)
 
                 multipage.description = description
 
-                multipage.meta_tags = meta_tags
+                multipage.meta_title = meta_title
                 multipage.meta_description = meta_description
+
+                multipage.url_type = url_type
 
                 multipage.vertical_title = vertical_title
                 multipage.horizontal_title = horizontal_title
                 multipage.table_title = table_title
                 multipage.bullet_title = bullet_title
                 multipage.tag_title = tag_title
-                multipage.timeline_title = timeline_title                
+                multipage.timeline_title = timeline_title
+
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+                
+                multipage.meta_tags.set(meta_tag_objs)            
 
                 for key, value in checkbox_fields.items():
                     assigning_value = False
@@ -12423,3 +12748,90 @@ class UnPublishBlogView(BaseBlogView, UpdateView):
             messages.error(request, "Failed! An unexpected error occurred")
 
         return redirect(self.redirect_url)
+    
+
+class BaseMetaTagView(AdminBaseView):
+    model = MetaTag
+    success_url = redirect_url = reverse_lazy("superadmin:meta_tags")
+    slug_url_kwarg = 'slug'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["meta_tag_page"] = True
+
+        return context
+
+
+class AddMetaTagView(BaseMetaTagView, CreateView):
+    fields = ["name"]
+
+    def post(self, request, *args, **kwargs):
+        name = request.POST.get("name")
+
+        name = name.strip() if name else None
+
+        if not name:
+            messages.error(request, "Failed! Name is required")
+            return redirect(self.redirect_url)
+
+        meta_tag, created = self.model.objects.get_or_create(name = name)
+
+        if not created:
+            messages.warning(request, "Failed! Similar meta tag already exists")
+            return redirect(self.redirect_url)
+
+        messages.success(request, "Success! Created Meta Tag")
+        return redirect(self.success_url)
+    
+
+class MetaTagListView(BaseMetaTagView, ListView):
+    queryset = MetaTag.objects.all().order_by("name")
+    template_name = "meta_tag/list.html"
+    context_object_name = "meta_tags"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["list_meta_tag_page"] = True
+
+        return context
+
+
+class UpdateMetaTagView(BaseMetaTagView, UpdateView):
+    fields = ["name"]
+
+    def post(self, request, *args, **kwargs):
+        name = request.POST.get("name")
+        name = name.strip() if name else None
+
+        if not name:
+            messages.error(request, "Failed! Name is required")
+            return redirect(self.redirect_url)
+
+        self.object = self.get_object()
+        
+        if MetaTag.objects.filter(name = name).exclude(slug = self.object.slug).exists():
+            messages.warning(request, "Failed! Similar meta tag already exists")
+            return redirect(self.redirect_url)
+
+        self.object.name = name
+        self.object.save()    
+
+        messages.success(request, "Success! Updated Meta Tag")
+        return redirect(self.success_url)
+
+
+class DeleteMetaTagView(BaseMetaTagView, UpdateView):
+    def post(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            self.object.delete()
+
+            messages.success(request, "Success! Deleted Meta Tag")
+            return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid Meta Tag")
+            return redirect(self.redirect_url)
+    

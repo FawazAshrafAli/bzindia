@@ -59,6 +59,8 @@
         height: 35px;
     }
 </style>
+<link rel="stylesheet" href="{% static 'w3/css/chosen-style.css' %}">
+<link rel="stylesheet" href="{% static 'w3/css/main-color.css' %}" id="colors">
 {% endblock styles %}
 
 {% block company_content %} 
@@ -124,7 +126,7 @@
 
                         <div class="form-group row">
                             <div class="col-sm-12">
-                                <label class="col-form-label">Summary<span>*</span></label>
+                                <label class="col-form-label">Summary <span class="text-danger">*</span></label>
                                 <textarea class="form-control" rows="3" id="summary-input" name="summary" placeholder="Summary">{% if multipage.summary %}{{multipage.summary}}{% endif %}</textarea>
                             </div>
                         </div>
@@ -137,16 +139,64 @@
                         </div>
 
                         <div class="form-group row">
-                            <div class="col-sm-12">
-                                <label class="col-form-label">Meta Tags</label>
-                                <input class="form-control"  type="text" id="meta-tags-input" name="meta_tags" placeholder="Meta Tags" value="{% if multipage.meta_tags %}{{multipage.get_meta_tags}}{% endif %}" required>
+                            <div class="col-sm-6">
+                                <label class="col-form-label">Meta Title</label>
+                                <input class="form-control"  type="text" id="meta-title-input" name="meta_title" placeholder="Meta Title" value="{% if multipage.meta_title %}{{multipage.meta_title}}{% endif %}" required>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="col-form-label">Meta Tags <span class="text-danger">*</span></label>
+                                
+                                <select data-placeholder="Select Meta Tags" class="chosen-select" name="meta_tag" multiple>
+                                    {% for tag in tags %}
+                                    <option value="{{tag.slug}}" {% if tag in multipage.meta_tags.all %}selected{% endif %}>{{tag.name}}</option>
+                                    {% endfor %}									
+								</select>
                             </div>
                         </div>
 
                         <div class="form-group row">
                             <div class="col-sm-12">
-                                <label class="col-form-label">Meta Description</label>
+                                <label class="col-form-label">Meta Description <span class="text-danger">*</span></label>
                                 <textarea class="form-control" rows="3" id="meta-description-input" name="meta_description" placeholder="Meta Description" required>{% if multipage.meta_description %}{{multipage.meta_description}}{% endif %}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-sm-12">
+                                <label for="url-type-radio" class="col-form-label">URL Type</label><br>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" name="url_type" id="location-filtered" value="location_filtered" {% if multipage.url_type == "location_filtered" %}checked{% endif %} required><label class="form-check-label" for="location-filtered">Location Filtered</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" name="url_type" id="slug-filtered" value="slug_filtered" {% if multipage.url_type == "slug_filtered" %}checked{% endif %} required><label class="form-check-label" for="slug-filtered">Slug Filtered</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-sm-12">
+                                <label class="col-form-label">On Clicking 'Buy Now'</label><br>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" name="buy_now_action" id="whatsapp" value="whatsapp" {% if multipage.buy_now_action == "whatsapp" %}checked{% endif %} required><label class="form-check-label" for="whatsapp">Redirect To Whatsapp</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" name="buy_now_action" id="add-to-cart" value="add_to_cart" {% if multipage.buy_now_action == "add_to_cart" %}checked{% endif %} required><label class="form-check-label" for="add-to-cart">Add To Cart</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" name="buy_now_action" id="external-link" value="external_link" {% if multipage.buy_now_action == "external_link" %}checked{% endif %} required><label class="form-check-label" for="external-link">External Link</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-sm-12" id="buy-btn-sub-field">
+                                {% if multipage.buy_now_action == "whatsapp" %}
+                                <label for="whatsapp-number" class="col-form-label">Whatsapp Number</label>
+                                <input type="tel" class="form-control" id="whatsapp-number" name="whatsapp" value="{% if multipage.whatsapp %}{{multipage.whatsapp}}{% else %}{{current_company.whatsapp}}{% endif %}" placeholder="Whatsapp Number">
+                                {% elif multipage.buy_now_action == "external_link" %}
+                                <label for="external-link" class="col-form-label">External Link</label>
+                                <input type="tel" class="form-control" id="external-link" name="external_link" value="{% if multipage.external_link %}{{multipage.external_link}}{% else %}{{current_company.external_link}}{% endif %}" placeholder="External Link">
+                                {% endif %}
                             </div>
                         </div>
 
@@ -1209,6 +1259,37 @@
         
         $('#sub-category-dropdown').on('change', () => getProducts());
         
+        // Buy Now Action
+        $('input[name=buy_now_action]').on('change', function () {
+            const currentValue = $(this).val();
+
+            $('#buy-btn-sub-field').hide();
+
+            let content;
+
+            if (currentValue == "whatsapp") {
+                let whatsappNumber = `{{multipage.whatsapp}}`;
+                let companyWhatsappNumber = `{{current_company.whatsapp}}`;
+
+                whatsappNumber = whatsappNumber?whatsappNumber:companyWhatsappNumber;
+
+                content = `
+                    <label for="whatsapp-number" class="col-form-label">Whatsapp Number</label>
+                    <input type="tel" class="form-control" id="whatsapp-number" name="whatsapp" value="${whatsappNumber != 'None'?whatsappNumber:''}" placeholder="Whatsapp Number">
+                `
+            } else if (currentValue == "external_link") {
+                const externalLink = `{{multipage.external_link}}`;
+
+                content = `
+                    <label for="external-link" class="col-form-label">External Link</label>
+                    <input type="tel" class="form-control" id="external-link" name="external_link" value="${externalLink != 'None'?externalLink:''}" placeholder="External Link">                    
+                `
+            }
+
+            if (content) {
+                $('#buy-btn-sub-field').show().html(content);
+            };
+        });
     });
 </script>
 {% endblock scripts %}

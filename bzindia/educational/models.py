@@ -4,6 +4,7 @@ from ckeditor.fields import RichTextField
 
 from company.models import Company
 from locations.models import UniquePlace, UniqueDistrict, UniqueState
+from base.models import MetaTag
 
 class Program(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
@@ -281,7 +282,7 @@ class Tag(models.Model):
         return f"{self.company.name}-{self.course.name}"
     
     class Meta:
-        db_table = "tags"
+        db_table = "course_tags"
         ordering = ["created"]
 
 
@@ -311,7 +312,8 @@ class CourseDetail(models.Model):
     description = RichTextField()
 
     meta_title = models.CharField(max_length=100)
-    meta_tags = models.CharField(max_length=250)
+    # meta_tags = models.CharField(max_length=250)
+    meta_tags = models.ManyToManyField(MetaTag)
     meta_description = models.TextField()
 
     features = models.ManyToManyField(Feature)
@@ -354,6 +356,9 @@ class CourseDetail(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
+        if not self.meta_title:
+            self.meta_title = f"{self.course.name} - {self.company.name}"
+
         if not self.slug:
             base_slug = slugify(f"{self.company.name}-{self.course.name}")
             slug = base_slug
@@ -392,9 +397,9 @@ class CourseDetail(models.Model):
         if not self.meta_tags:
             return ""
 
-        tag_list = self.meta_tags.split(",")
+        tag_list = [tag.name for tag in self.meta_tags.all()]
 
-        return ", ".join(tag for tag in tag_list if tag.strip())
+        return ", ".join(tag_list)
 
 
 class Enquiry(models.Model):
@@ -730,8 +735,11 @@ class MultiPage(models.Model):
     summary = models.TextField(null=True, blank=True)
     description = RichTextField()
 
-    meta_tags = models.CharField(max_length=250)
+    meta_title = models.CharField(max_length=100)
+    meta_tags = models.ManyToManyField(MetaTag)
     meta_description = models.TextField()
+
+    url_type = models.CharField(max_length=50, default="slug_filtered")
 
     features = models.ManyToManyField(MultiPageFeature)
 
@@ -777,6 +785,9 @@ class MultiPage(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
+        if not self.meta_title:
+            self.meta_title = f"{self.course.name} - {self.company.name}"
+
         if not self.slug:
             base_slug = slugify(f"{self.company.name}-{self.course.name}")
             slug = base_slug
@@ -815,6 +826,6 @@ class MultiPage(models.Model):
         if not self.meta_tags:
             return ""
 
-        tag_list = self.meta_tags.split(",")
+        tag_list = [tag.name for tag in self.meta_tags.all()]
 
-        return ", ".join(tag for tag in tag_list if tag.strip())
+        return ", ".join(tag_list)

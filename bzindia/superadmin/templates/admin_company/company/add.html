@@ -1,8 +1,14 @@
 
 {% extends "admin_base/base.html" %}
 {% load static %}
+{% load crispy_forms_tags %}
 
 {% block title %}Add Company{% endblock title %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'w3/css/chosen-style.css' %}">
+<link rel="stylesheet" href="{% static 'w3/css/main-color.css' %}" id="colors">
+{% endblock styles %}
 
 {% block content %}
 			
@@ -114,14 +120,8 @@
 
                         <div class="row">
                             <div class="col-md-12 mb-3">
-                                <label for="description-input">Description <span class="text-danger">*</span></label>
-                                <textarea class="froala-editor" name="description" id="description-input" placeholder="description" required></textarea>
-                                <div class="invalid-feedback">
-                                    Please provide favicon image.
-                                </div>
-                                <div class="valid-feedback">
-                                    Looks good!
-                                </div>
+                                {{form.media}}                               
+                                {{form.description|as_crispy_field}}
                             </div>                            
                         </div>
                     </div>
@@ -179,6 +179,35 @@
                                         Looks good!
                                     </div>
                                 </div>
+                            </div>                        
+                        </div>                        
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title mb-0">Meta Details</h4>
+                    </div>
+                    <div class="card-body">                    
+                        <div class="form-group row">
+                            <div class="col-sm-6">
+                                <label class="col-form-label">Meta Title</label>
+                                <input class="form-control"  type="text" id="meta-title-input" name="meta_title" placeholder="Meta Title" required>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="col-form-label">Meta Tags <span class="text-danger">*</span></label>
+                                
+                                <select data-placeholder="Select Meta Tags" class="chosen-select" name="meta_tag" multiple>
+                                    {% for tag in tags %}
+                                    <option value="{{tag.slug}}">{{tag.name}}</option>
+                                    {% endfor %}									
+								</select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-12 mb-3">
+                                <label class="col-form-label">Meta Description <span class="text-danger">*</span></label>
+                                <textarea class="form-control" rows="3" id="meta-description-input" name="meta_description" placeholder="Meta Description" required></textarea>
                             </div>                        
                         </div>                        
                     </div>
