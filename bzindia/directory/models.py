@@ -218,7 +218,7 @@ class TouristAttraction(models.Model):
     latitude = models.DecimalField(max_digits=10, decimal_places=7, blank=True, null=True)
     longitude = models.DecimalField(max_digits=10, decimal_places=7, blank=True, null=True)
 
-    slug = models.SlugField(null=True, blank=True)
+    slug = models.SlugField(null=True, blank=True, max_length=500)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -227,6 +227,26 @@ class TouristAttraction(models.Model):
     class Meta:
         db_table = "attractions"
         ordering = ["created"]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            if self.name:
+                base_slug = slugify(self.name)
+
+                slug = base_slug
+                count = 1
+
+                while TouristAttraction.objects.filter(slug = slug).exists():
+                    slug = f"{base_slug}-{count}"
+                    count += 1
+
+                self.slug = slug
+
+            else:
+                self.slug = uuid.uuid4()
+
+        super().save(*args, **kwargs)
+
 
     @property
     def attraction_type(self):        
@@ -237,7 +257,11 @@ class TouristAttraction(models.Model):
         elif self.waterbody_type and self.waterbody_type!= "yes":
             return str(self.waterbody_type).title()
         return None
+    
 
+    @property
+    def get_place(self):
+        return self.place or self.city or None
 
 
 class Court(models.Model):

@@ -520,7 +520,11 @@
                                             </div>
                                         </div>
                                       </div>
-                                </div>
+                                    </div>
+                                    <br>
+                                    <div class="text-center">
+                                        <label><input type="checkbox" class="form-control-checkbox" name="hide_support_languages" {% if course_detail.hide_support_languages %}checked{% endif %}>&nbsp;Hide Support Languages</label>
+                                    </div>
                                 </div>                                
                             </div>
                           </div>
@@ -980,7 +984,7 @@
                row += `<td><input type="text" class="form-control" placeholder="Data of Column${colCount}" name="table_data"></td>`
             };
 
-            let tableBodyContent = $('#table-body').html();            
+            let tableBodyContent = $('#table-body').html(); 
     
             tableBodyContent = tableBodyContent.replace('<tr><td><button class="add-button" id="add-row-btn" type="button" style="width: fit-content;">Add Row</button>&nbsp;<button class="remove-button" id="remove-row-btn" type="button" style="width: fit-content;">Remove Row</button></td></tr>', `<tr id="row-${rowCount}">${row}</tr>`)
     

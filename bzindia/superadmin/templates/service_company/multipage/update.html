@@ -171,6 +171,7 @@
                                     <input type="radio" class="form-check-input" name="url_type" id="slug-filtered" value="slug_filtered" {% if multipage.url_type == "slug_filtered" %}checked{% endif %} required><label class="form-check-label" for="slug-filtered">Slug Filtered</label>
                                 </div>
                             </div>
+                            <small class="text-muted">Preview: <span id="current-url-preview">{% if multipage.url_type == "location_filtered" %}https://bzindia.in/category/service/state-name/district-or-location-name/{% else %}https://bzindia.in/category/service-location-name(Location/Coutry/State/District){% endif %}</span></small>
                         </div>
 
                         <div class="task-infos">
@@ -1232,6 +1233,15 @@
         
         $('#sub-category-dropdown').on('change', () => getServices());
         
+        $('input[name="url_type"]').on('change', function () {
+            const currentUrlType = $(this).val();
+
+            if (currentUrlType === "location_filtered") {
+                $('#current-url-preview').html("https://bzindia.in/category/service/state-name/district-or-location-name/");                
+            } else {
+                $('#current-url-preview').html("https://bzindia.in/category/service-location-name(Location/Coutry/State/District)");
+            }
+        });
     });
 </script>
 {% endblock scripts %}

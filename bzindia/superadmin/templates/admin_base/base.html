@@ -478,7 +478,7 @@
 								<ul class="sub-menus">									
 									<li class="submenu">										
 										<li><a href="{% url 'superadmin:meta_tags' %}" {% if list_meta_tag_page %}class="active"{% endif %}> <span>Meta Tags</span></a></li>
-										<li><a href="#" data-bs-toggle="modal" data-bs-target="#add_meta_tag_modal"> <span>Add Meta Tag</span></a></li>
+										<li><a href="{% url 'superadmin:add_meta_tag' %}"> <span>Add Meta Tag</span></a></li>
 									</li>
 								</ul>
 							</li>
@@ -646,43 +646,7 @@
 				</div><!-- modal-content -->
 			</div><!-- modal-dialog -->
 		</div><!-- modal -->
-		<!-- Company Type (End) -->
-
-		<!-- Meta Tag Modal (Start) -->
-		<div class="modal fade" id="add_meta_tag_modal" tabindex="-1" role="dialog" aria-modal="true">
-			<div class="modal-dialog" role="document">
-				<div class="modal-content">
-
-					<div class="modal-header">
-						<h4 class="modal-title text-center">Add Meta Tag</h4>
-						<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
-					  </div>
-
-					<div class="modal-body">
-						<div class="row">
-							<div class="col-md-12">
-								<form method="post" action="{% url 'superadmin:add_meta_tag' %}" class="needs-validation">
-									{% csrf_token %}
-									<div class="form-group row">
-										<div class="col-md-12"><label class="col-form-label">Name <span class="text-danger">*</span></label></div>
-										<div class="col-md-12">
-											<input class="form-control" type="text" id="meta-tag" placeholder="Name of Meta Tag" name="name">											
-										</div>
-									</div>									
-									<div class="text-center py-3">
-										<button type="submit" class="border-0 btn btn-primary btn-gradient-primary btn-rounded">Add</button>&nbsp;&nbsp;
-										<button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">Cancel</button>
-									</div>
-								</form>
-							</div>
-						</div>
-
-					</div>
-
-				</div><!-- modal-content -->
-			</div><!-- modal-dialog -->
-		</div><!-- modal -->
-		<!-- Meta Tag Modal (End) -->
+		<!-- Company Type (End) -->		
 
 		 <!--theme settings modal-->
 

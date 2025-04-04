@@ -18,7 +18,7 @@ from django.db import transaction
 from .forms import (
     CourseMultiPageDescriptionForm, CourseDetailDescriptionForm, ServiceMultiPageDescriptionForm, RegistrationMultiPageDescriptionForm,
     ServiceDetailDescriptionForm, RegistrationDetailPageDescriptionForm, ProductMultiPageDescriptionForm, 
-    ProductDetailDescriptionForm, CompanyForm
+    ProductDetailDescriptionForm, CompanyForm, BlogContentForm, MetaTagDescriptionForm
     )
 
 from custom_pages.models import (
@@ -254,6 +254,11 @@ class AddCompanyView(BaseCompanyView, CreateView):
             whatsapp = request.POST.get("whatsapp")
             email = request.POST.get("email")
 
+            facebook = request.POST.get("email")
+            twitter = request.POST.get("twitter")
+            linkedin = request.POST.get("linkedin")
+            youtube = request.POST.get("youtube")
+
             meta_title = request.POST.get("meta_title")
             meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
@@ -265,6 +270,11 @@ class AddCompanyView(BaseCompanyView, CreateView):
             phone2 = phone2.strip() if phone2 else None
             whatsapp = whatsapp.strip() if whatsapp else None
             email = email.strip() if email else None
+
+            facebook = facebook.strip() if facebook else None
+            twitter = twitter.strip() if twitter else None
+            linkedin = linkedin.strip() if linkedin else None
+            youtube = youtube.strip() if youtube else None
 
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
@@ -291,37 +301,42 @@ class AddCompanyView(BaseCompanyView, CreateView):
 
             type = CompanyType.objects.get(slug = type)
 
-            company_obj = self.model.objects.create(
-                name = name, type=type, slug=slug,
-                favicon=favicon, logo=logo, phone1=phone1,
-                phone2=phone2, whatsapp=whatsapp, email=email,
-                description=description, meta_title = meta_title,
-                meta_description = meta_description
+            with transaction.atomic():
+
+                company_obj = self.model.objects.create(
+                    name = name, type=type, slug=slug,
+                    favicon=favicon, logo=logo, phone1=phone1,
+                    phone2=phone2, whatsapp=whatsapp, email=email,
+                    description=description, meta_title = meta_title,
+                    meta_description = meta_description,
+
+                    facebook = facebook, twitter = twitter, 
+                    linkedin = linkedin, youtube = youtube
+                    )
+
+                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+
+                company_obj.meta_tags.set(meta_tag_objs)
+
+                company_obj.save()
+                
+                User.objects.create_user(
+                    username = company_obj.email,
+                    email = company_obj.email,
+                    password = company_obj.phone1
                 )
 
-            meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+                company = {
+                    "name": company_obj.name,
+                    "phone1": company_obj.phone1,
+                    "email": company_obj.email
+                }
 
-            company_obj.meta_tags.set(meta_tag_objs)
+                # send_company_created_email.delay(company)
 
-            company_obj.save()
-            
-            User.objects.create_user(
-                username = company_obj.email,
-                email = company_obj.email,
-                password = company_obj.phone1
-            )
+                messages.success(self.request, "Added Company")
 
-            company = {
-                "name": company_obj.name,
-                "phone1": company_obj.phone1,
-                "email": company_obj.email
-            }
-
-            # send_company_created_email.delay(company)
-
-            messages.success(self.request, "Added Company")
-
-            return redirect(self.success_url)
+                return redirect(self.success_url)
         
         except Exception as e:
             logger.exception(f"Error in adding company: {e}")
@@ -369,6 +384,11 @@ class UpdateCompanyView(BaseCompanyView, UpdateView):
             whatsapp = request.POST.get("whatsapp")
             email = request.POST.get("email")
 
+            facebook = request.POST.get("facebook")
+            twitter = request.POST.get("twitter")
+            linkedin = request.POST.get("linkedin")
+            youtube = request.POST.get("youtube")
+
             meta_title = request.POST.get("meta_title")
             meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
@@ -380,6 +400,11 @@ class UpdateCompanyView(BaseCompanyView, UpdateView):
             phone2 = phone2.strip() if phone2 else None
             whatsapp = whatsapp.strip() if whatsapp else None
             email = email.strip() if email else None
+
+            facebook = facebook.strip() if facebook else None
+            twitter = twitter.strip() if twitter else None
+            linkedin = linkedin.strip() if linkedin else None
+            youtube = youtube.strip() if youtube else None
 
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
@@ -420,6 +445,11 @@ class UpdateCompanyView(BaseCompanyView, UpdateView):
             self.object.email = email
             self.object.description = description
 
+            self.object.facebook = facebook
+            self.object.twitter = twitter
+            self.object.linkedin = linkedin
+            self.object.youtube = youtube
+
             self.object.meta_title = meta_title
             self.object.meta_description = meta_description
 
@@ -437,28 +467,24 @@ class UpdateCompanyView(BaseCompanyView, UpdateView):
             return redirect(self.get_redirect_url())
 
 
-class DeleteCompanyView(BaseCompanyView, View):
+class DeleteCompanyView(BaseCompanyView, UpdateView):
     success_url = redirect_url = reverse_lazy("superadmin:companies")
-
-    def get_object(self):
-        try:
-            return get_object_or_404(self.model, slug = self.kwargs.get('slug'))
-        except Http404:
-            messages.error(self.request, "Invalid Company")
-        except Exception as e:
-            logger.exception(f"Error in getting company object: {e}")
+    slug_url_kwarg = 'slug'
             
-        return None
-
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         try:
             self.object = self.get_object()
             self.object.delete()
             messages.success(request, "Company Deletion Successfull.")
             return redirect(self.success_url)
+        
+        except Http404:
+            messages.error(request, "Failed! Invalid Company")
+
         except Exception as e:
             logger.exception(f"Error in deleting company: {e}")
-            return redirect(self.redirect_url)
+
+        return redirect(self.redirect_url)
         
 
 class CompanyTypeListView(BaseCompanyView, ListView):
@@ -2036,7 +2062,7 @@ class AddProductDetailPageView(BaseProductDetailPageView, CreateView):
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
             
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             buy_now_action = buy_now_action.strip() if buy_now_action else None
             whatsapp = whatsapp.strip() if whatsapp else None
@@ -2233,7 +2259,7 @@ class UpdateProductDetailPageView(BaseProductDetailPageView, UpdateView):
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
 
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             buy_now_action = buy_now_action.strip() if buy_now_action else None
             whatsapp = whatsapp.strip() if whatsapp else None
@@ -2789,7 +2815,7 @@ class AddProductMultiPageView(BaseProductMultiPageView, CreateView):
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
 
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             url_type = url_type.strip() if url_type else None
 
@@ -3038,7 +3064,7 @@ class UpdateProductMultiPageView(BaseProductMultiPageView, UpdateView):
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
             
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             url_type = url_type.strip() if url_type else None
 
@@ -4224,12 +4250,14 @@ class AddCourseDetailView(BaseEducationCompanyView, CreateView):
             hide_tags = request.POST.get("hide_tags")
             hide_timeline = request.POST.get("hide_timeline")
 
+            hide_support_languages = request.POST.get("hide_support_languages")
+
             summary = summary.strip() if summary else None
 
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
 
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -4283,7 +4311,7 @@ class AddCourseDetailView(BaseEducationCompanyView, CreateView):
                     meta_title = meta_title, meta_description = meta_description,
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
-                    timeline_title = timeline_title
+                    timeline_title = timeline_title, hide_support_languages = True if hide_support_languages else False
                 )
 
                 meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
@@ -4754,14 +4782,16 @@ class UpdateCourseDetailView(BaseEducationCompanyView, UpdateView):
             table_title = request.POST.get("table_title")
             bullet_title = request.POST.get("bullet_title")
             tag_title = request.POST.get("tag_title")
-            timeline_title = request.POST.get("timeline_title")   
+            timeline_title = request.POST.get("timeline_title") 
+
+            hide_support_languages = request.POST.get("hide_support_languages")  
 
             summary = summary.strip() if summary else None
 
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
 
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -4834,6 +4864,8 @@ class UpdateCourseDetailView(BaseEducationCompanyView, UpdateView):
                 course_detail.bullet_title = bullet_title
                 course_detail.tag_title = tag_title
                 course_detail.timeline_title = timeline_title
+
+                course_detail.hide_support_languages = True if hide_support_languages else False
 
                 meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
                 
@@ -5631,7 +5663,7 @@ class AddCourseMultiPageView(BaseCourseMultiPageView, CreateView):
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
             
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             url_type = url_type.strip() if url_type else None
 
@@ -5674,6 +5706,7 @@ class AddCourseMultiPageView(BaseCourseMultiPageView, CreateView):
 
             course = self.get_course(course_slug)
 
+            updating_meta_tags = []
             with transaction.atomic():
                 if self.model.objects.filter(company = company, course = course).exists():
                     messages.error(request, "Multipage for this course already exists")
@@ -5686,6 +5719,18 @@ class AddCourseMultiPageView(BaseCourseMultiPageView, CreateView):
                 cleaned_form = form.cleaned_data
                 description = cleaned_form.get("description")
 
+                for tag in meta_tags:
+                    if not MetaTag.objects.filter(slug = tag).exists():
+
+                        new_tag, created = MetaTag.objects.get_or_create(name = tag.strip())
+
+                        if not new_tag.slug in updating_meta_tags:
+                            updating_meta_tags.append(new_tag.slug)
+
+                    else:
+                        if not tag in updating_meta_tags:
+                            updating_meta_tags.append(tag)
+
                 course_multi_page = self.model.objects.create(
                     company = company, course = course, summary = summary, description = description,
                     meta_title = meta_title, meta_description = meta_description,
@@ -5693,11 +5738,7 @@ class AddCourseMultiPageView(BaseCourseMultiPageView, CreateView):
                     vertical_title = vertical_title, horizontal_title = horizontal_title,
                     table_title = table_title, bullet_title = bullet_title, tag_title = tag_title, 
                     timeline_title = timeline_title
-                )
-                
-                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
-
-                course_multi_page.meta_tags.set(meta_tag_objs)
+                )             
 
                 for key, value in checkbox_fields.items():
                     if value:
@@ -5719,6 +5760,11 @@ class AddCourseMultiPageView(BaseCourseMultiPageView, CreateView):
                 for field, handler in relationship_handlers.items():
                     objects = handler(request, company, course)
                     getattr(course_multi_page, field).set(objects)
+
+                if course_multi_page:
+                    if meta_tags:
+                        meta_tag_objects = MetaTag.objects.filter(slug__in = updating_meta_tags)
+                        course_multi_page.meta_tags.set(meta_tag_objects)
 
                 messages.success(request, "Success! Created course multipage")
                 return redirect(self.get_success_url())
@@ -5859,7 +5905,7 @@ class UpdateCourseMultiPageView(BaseCourseMultiPageView, UpdateView):
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
 
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             url_type = url_type.strip() if url_type else None
 
@@ -5902,6 +5948,7 @@ class UpdateCourseMultiPageView(BaseCourseMultiPageView, UpdateView):
 
             course = self.get_course(course_slug)
 
+            updating_meta_tags = []
             with transaction.atomic():
 
                 multipage = self.get_object()
@@ -5912,6 +5959,18 @@ class UpdateCourseMultiPageView(BaseCourseMultiPageView, UpdateView):
                 
                 cleaned_form = form.cleaned_data
                 description = cleaned_form.get("description")
+
+                for tag in meta_tags:
+                    if not MetaTag.objects.filter(slug = tag).exists():
+
+                        new_tag, created = MetaTag.objects.get_or_create(name = tag.strip())
+
+                        if not new_tag.slug in updating_meta_tags:
+                            updating_meta_tags.append(new_tag.slug)
+
+                    else:
+                        if not tag in updating_meta_tags:
+                            updating_meta_tags.append(tag)
 
                 multipage.course = course
                 multipage.summary = summary
@@ -5929,10 +5988,6 @@ class UpdateCourseMultiPageView(BaseCourseMultiPageView, UpdateView):
                 multipage.bullet_title = bullet_title
                 multipage.tag_title = tag_title
                 multipage.timeline_title = timeline_title                
-
-                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
-                
-                multipage.meta_tags.set(meta_tag_objs)
 
                 for key, value in checkbox_fields.items():
                     assigning_value = False
@@ -5960,6 +6015,9 @@ class UpdateCourseMultiPageView(BaseCourseMultiPageView, UpdateView):
                     getattr(multipage, field).set(objects)
 
                 multipage.save()
+
+                meta_tag_objects = MetaTag.objects.filter(slug__in = updating_meta_tags)
+                multipage.meta_tags.set(meta_tag_objects)
 
                 messages.success(request, "Success! Updated course multipage")
                 return redirect(self.get_success_url())
@@ -7368,7 +7426,7 @@ class AddServiceDetailView(BaseServiceDetailView, CreateView):
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
 
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -7545,7 +7603,7 @@ class UpdateServiceDetailView(BaseServiceDetailView, UpdateView):
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
 
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -8076,7 +8134,7 @@ class AddServiceMultiPageView(BaseServiceMultiPageView, CreateView):
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
 
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -8303,7 +8361,7 @@ class UpdateServiceMultiPageView(BaseServiceMultiPageView, UpdateView):
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
 
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             url_type = url_type.strip() if url_type else None
 
@@ -9754,7 +9812,7 @@ class AddRegistrationDetailPageView(BaseRegistrationDetailPageView, CreateView):
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
             
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -9921,7 +9979,7 @@ class UpdateRegistrationDetailPageView(BaseRegistrationDetailPageView, UpdateVie
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
             
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             vertical_title = vertical_title.strip() if vertical_title else None
             horizontal_title = horizontal_title.strip() if horizontal_title else None
@@ -10451,7 +10509,7 @@ class AddRegistrationMultiPageView(BaseRegistrationMultiPageView, CreateView):
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
 
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             url_type = url_type.strip() if url_type else None
 
@@ -10679,7 +10737,7 @@ class UpdateRegistrationMultiPageView(BaseRegistrationMultiPageView, UpdateView)
             meta_title = meta_title.strip() if meta_title else None
             meta_description = meta_description.strip() if meta_description else None
 
-            meta_tags = [tag.strip() for tag in meta_tags if tag]
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
 
             url_type = url_type.strip() if url_type else None
 
@@ -12304,11 +12362,7 @@ class DeleteTestimonialView(BaseTestimonialView, DeleteView):
 class BaseBlogView(AdminBaseView):
     model = Blog
     success_url = redirect_url = reverse_lazy('superadmin:blogs')
-    slug_url_kwarg = 'slug'
-    fields = [
-        "title", "image", "blog_type", "course", "product", "service", "registration_sub_type", "content",
-        "summary", "meta_tags", "meta_description"
-        ]
+    slug_url_kwarg = 'slug'    
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -12325,6 +12379,7 @@ class BaseBlogView(AdminBaseView):
 class AddBlogView(BaseBlogView, CreateView):
     template_name = "admin_blogs/add.html"
     success_url = redirect_url = reverse_lazy('superadmin:add_blogs')
+    form_class = BlogContentForm
 
     def get_courses(self, course_slugs):
         return Course.objects.filter(slug__in = course_slugs)
@@ -12342,12 +12397,15 @@ class AddBlogView(BaseBlogView, CreateView):
         context = super().get_context_data(**kwargs)
 
         context["add_blog_page"] = True
-        context["types"] = ("General", "Education", "Product", "Registration", "Service")        
+        context["types"] = ("General", "Education", "Product", "Registration", "Service")
+        context["tags"] = MetaTag.objects.all().order_by("name")
 
         return context
 
     def post(self, request, *args, **kwargs):
         try:
+            form = self.get_form()
+
             title = request.POST.get("title")
             image = request.FILES.get("image")
             blog_type = request.POST.get("type")
@@ -12357,17 +12415,22 @@ class AddBlogView(BaseBlogView, CreateView):
             product_slugs = request.POST.getlist("product")
             service_slugs = request.POST.getlist("service")
             registration_sub_type_slugs = request.POST.getlist("registration_sub_type")
-            meta_tags = request.POST.get("meta_tags")
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
             summary = request.POST.get("summary")
-            content = request.POST.get("content")        
+            
+            content = None
+
+            if form.is_valid():
+                cleaned_form = form.cleaned_data
+                content = cleaned_form.get("content")
 
             title = title.strip() if title else None        
             blog_type = blog_type.strip() if blog_type else None            
-            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
             meta_description = meta_description.strip() if meta_description else None
             summary = summary.strip() if summary else None
-            content = content.strip() if content else None            
+            content = content.strip() if content else None
 
             required_fields = {
                 "Title": title,
@@ -12398,94 +12461,104 @@ class AddBlogView(BaseBlogView, CreateView):
 
             company = self.get_company(company_slug, blog_type) if blog_type != "General" else None
 
-            if blog_type != "General" and not company:
-                messages.error(request, "Invalid Company")
-                return redirect(self.redirect_url)
-            
-            courses = self.get_courses(course_slugs) if blog_type == "Education" else []
-            products = self.get_products(product_slugs) if blog_type == "Product" else []
-            services = self.get_services(service_slugs) if blog_type == "Service" else []
-            registration_sub_types = self.get_registration_sub_types(registration_sub_type_slugs) if blog_type == "Registration" else []
+            updating_meta_tags = []
+            with transaction.atomic():
+                for tag in meta_tags:
+                    if not MetaTag.objects.filter(slug = tag).exists():
 
-            if blog_type == "Education":
-                for course in courses:
-                    if Blog.objects.filter(
-                        title = title, blog_type = blog_type, company = company, course = course
-                    ).exists():
-                        messages.warning(request, "Similar blog already exists")
-                        return redirect(self.redirect_url)
-                    Blog.objects.create(
-                        title = title, image = image, blog_type = blog_type, company = company, course = course, content = content,
-                        summary = summary, meta_tags = meta_tags, meta_description = meta_description
-                    )
+                        new_tag, created = MetaTag.objects.get_or_create(name = tag.strip())
 
-                messages.success(request, "Success! Created Blog")
-                return redirect(self.success_url)
+                        if not new_tag.slug in updating_meta_tags:
+                            updating_meta_tags.append(new_tag.slug)
 
-            elif blog_type == "Product":
-                for product in products:
-                    if Blog.objects.filter(
-                        title = title, blog_type = blog_type, company = company, product = product
-                    ).exists():
-                        messages.warning(request, "Similar blog already exists")
-                        return redirect(self.redirect_url)
-                    Blog.objects.create(
-                        title = title, image = image, blog_type = blog_type, company = company, product = product, content = content,
-                        summary = summary, meta_tags = meta_tags, meta_description = meta_description
-                    )
+                    else:
+                        if not tag in updating_meta_tags:
+                            updating_meta_tags.append(tag)
 
-                messages.success(request, "Success! Created Blog")
-                return redirect(self.success_url)
-
-            elif blog_type == "Service":
-                for service in services:
-                    if Blog.objects.filter(
-                        title = title, blog_type = blog_type, company = company, service = service
-                    ).exists():
-                        messages.warning(request, "Similar blog already exists")
-                        return redirect(self.redirect_url)
-                    Blog.objects.create(
-                        title = title, image = image, blog_type = blog_type, company = company, service = service, content = content,
-                        summary = summary, meta_tags = meta_tags, meta_description = meta_description
-                    )
-
-                messages.success(request, "Success! Created Blog")
-                return redirect(self.success_url)
-
-            elif blog_type == "Registration":
-                for registration_sub_type in registration_sub_types:
-                    if Blog.objects.filter(
-                        title = title, blog_type = blog_type, company = company, registration_sub_type = registration_sub_type
-                    ).exists():
-                        messages.warning(request, "Similar blog already exists")
-                        return redirect(self.redirect_url)
-                    Blog.objects.create(
-                        title = title, image = image, blog_type = blog_type, company = company, registration_sub_type = registration_sub_type, content = content,
-                        summary = summary, meta_tags = meta_tags, meta_description = meta_description
-                    )
-
-                messages.success(request, "Success! Created Blog")
-                return redirect(self.success_url)
-
-            else:
-                if Blog.objects.filter(
-                    title = title, blog_type = blog_type
-                ).exists():
-                    messages.warning(request, "Similar blog already exists")
+                if blog_type != "General" and not company:
+                    messages.error(request, "Invalid Company")
                     return redirect(self.redirect_url)
+                
+                courses = self.get_courses(course_slugs) if blog_type == "Education" else []
+                products = self.get_products(product_slugs) if blog_type == "Product" else []
+                services = self.get_services(service_slugs) if blog_type == "Service" else []
+                registration_sub_types = self.get_registration_sub_types(registration_sub_type_slugs) if blog_type == "Registration" else []
 
-                Blog.objects.create(
-                    title = title, image = image, blog_type = blog_type, content = content,
-                    summary = summary, meta_tags = meta_tags, meta_description = meta_description
-                )
+                blog = None
 
-                messages.success(request, "Success! Created Blog")
-                return redirect(self.success_url)
+                if blog_type == "Education":
+                    for course in courses:
+                        if Blog.objects.filter(
+                            title = title, blog_type = blog_type, company = company, course = course
+                        ).exists():
+                            messages.warning(request, "Similar blog already exists")
+                            return redirect(self.redirect_url)
+                        blog = Blog.objects.create(
+                            title = title, image = image, blog_type = blog_type, company = company, course = course, content = content,
+                            summary = summary, meta_description = meta_description
+                        )
+
+                elif blog_type == "Product":
+                    for product in products:
+                        if Blog.objects.filter(
+                            title = title, blog_type = blog_type, company = company, product = product
+                        ).exists():
+                            messages.warning(request, "Similar blog already exists")
+                            return redirect(self.redirect_url)
+                        blog = Blog.objects.create(
+                            title = title, image = image, blog_type = blog_type, company = company, product = product, content = content,
+                            summary = summary, meta_description = meta_description
+                        )
+
+                elif blog_type == "Service":
+                    for service in services:
+                        if Blog.objects.filter(
+                            title = title, blog_type = blog_type, company = company, service = service
+                        ).exists():
+                            messages.warning(request, "Similar blog already exists")
+                            return redirect(self.redirect_url)
+                        blog = Blog.objects.create(
+                            title = title, image = image, blog_type = blog_type, company = company, service = service, content = content,
+                            summary = summary, meta_description = meta_description
+                        )
+
+                elif blog_type == "Registration":
+                    for registration_sub_type in registration_sub_types:
+                        if Blog.objects.filter(
+                            title = title, blog_type = blog_type, company = company, registration_sub_type = registration_sub_type
+                        ).exists():
+                            messages.warning(request, "Similar blog already exists")
+                            return redirect(self.redirect_url)
+                        blog = Blog.objects.create(
+                            title = title, image = image, blog_type = blog_type, company = company, registration_sub_type = registration_sub_type, content = content,
+                            summary = summary, meta_description = meta_description
+                        )                
+
+                else:
+                    if Blog.objects.filter(
+                        title = title, blog_type = blog_type
+                    ).exists():
+                        messages.warning(request, "Similar blog already exists")
+                        return redirect(self.redirect_url)
+
+                    blog = Blog.objects.create(
+                        title = title, image = image, blog_type = blog_type, content = content,
+                        summary = summary, meta_description = meta_description
+                    )                
+
+                if blog:
+                    if meta_tags:
+                        meta_tag_objects = MetaTag.objects.filter(slug__in = updating_meta_tags)
+                        blog.meta_tags.set(meta_tag_objects)
+
+                    messages.success(request, "Success! Created Blog")
+                    return redirect(self.success_url)
         
         except Exception as e:
             logger.exception(f"Error in post function of AddBlogView in superadmin app: {e}")
             messages.error(request, "Failed! An unexpected error occurred")
-            return redirect(self.redirect_url)
+
+        return redirect(self.redirect_url)
 
 
 class ListBlogView(BaseBlogView, ListView):
@@ -12498,6 +12571,7 @@ class UpdateBlogView(BaseBlogView, UpdateView):
     template_name = "admin_blogs/update.html"
     success_url = redirect_url = reverse_lazy('superadmin:blogs')
     context_object_name = "blog"
+    form_class = BlogContentForm
 
     def get_course(self, course_slug):
         try:
@@ -12552,10 +12626,14 @@ class UpdateBlogView(BaseBlogView, UpdateView):
         context["services"] = Service.objects.filter(company = self.object.company, category = self.object.service.category, sub_category = self.object.service.sub_category) if self.object.blog_type == "Service" else None
         context["products"] = Product.objects.filter(company = self.object.company, category = self.object.product.category, sub_category = self.object.product.sub_category) if self.object.blog_type == "Product" else None
 
+        context["tags"] = MetaTag.objects.all().order_by("name")
+ 
         return context
 
     def post(self, request, *args, **kwargs):
         try:
+            form = self.get_form()
+
             title = request.POST.get("title")
             image = request.FILES.get("image")
             blog_type = request.POST.get("type")
@@ -12565,17 +12643,23 @@ class UpdateBlogView(BaseBlogView, UpdateView):
             product_slug = request.POST.get("product")
             service_slug = request.POST.get("service")
             registration_sub_type_slug = request.POST.get("registration_sub_type")
-            meta_tags = request.POST.get("meta_tags")
+
+            meta_tags = request.POST.getlist("meta_tag")
             meta_description = request.POST.get("meta_description")
             summary = request.POST.get("summary")
-            content = request.POST.get("content")
+
+            content = None
+
+            if form.is_valid():
+                cleaned_form = form.cleaned_data
+                content = cleaned_form.get("content")
 
             title = title.strip() if title else None        
             blog_type = blog_type.strip() if blog_type else None            
-            meta_tags = meta_tags.strip() if meta_tags else None
+            meta_tags = [tag.strip() for tag in meta_tags if tag.strip()]
             meta_description = meta_description.strip() if meta_description else None
             summary = summary.strip() if summary else None
-            content = content.strip() if content else None            
+            content = content.strip() if content else None
 
             required_fields = {
                 "Title": title,
@@ -12637,7 +12721,20 @@ class UpdateBlogView(BaseBlogView, UpdateView):
 
             self.object = self.get_object()
 
+            updating_meta_tags = []
             with transaction.atomic():
+                for tag in meta_tags:
+                    if not MetaTag.objects.filter(slug = tag).exists():
+
+                        new_tag, created = MetaTag.objects.get_or_create(name = tag.strip())
+
+                        if not new_tag.slug in updating_meta_tags:
+                            updating_meta_tags.append(new_tag.slug)
+
+                    else:
+                        if not tag in updating_meta_tags:
+                            updating_meta_tags.append(tag)
+
                 self.object.title = title
                 self.object.blog_type = blog_type
 
@@ -12649,34 +12746,26 @@ class UpdateBlogView(BaseBlogView, UpdateView):
                 self.object.summary = summary
                 self.object.content = content
                 self.object.meta_description = meta_description
-                self.object.meta_tags = meta_tags
                 self.object.company = company
 
                 if image:
-                    self.object.image = image
+                    self.object.image = image                
 
-                similar_blog = Blog.objects.filter(
+                if Blog.objects.filter(
                     title = title, blog_type = blog_type, company = company, course = course, product = product, service = service, registration_sub_type = registration_sub_type
-                ).first()
-
-                if similar_blog:
-                    similar_msg = "Similar blog already exists"
-
-                    if similar_blog.slug == self.object.slug and summary == self.object.summary and content == self.object.content and meta_description == self.object.meta_description and meta_tags == self.object.meta_tags:
-                        similar_msg = "No changes detected"                        
-                        if image and self.object.image != image:
-                            similar_msg = ""                    
-                    
-                    if similar_msg:
-                        messages.warning(request, similar_msg)
-                        return redirect(self.get_redirect_url())
+                    ).exclude(slug = self.object.slug).exists():
+                    messages.warning(request, "Similar blog already exists")
+                    return redirect(self.get_redirect_url())
 
                 self.object.course = course
                 self.object.product = product
                 self.object.service = service 
                 self.object.registration_sub_type = registration_sub_type    
 
-                self.object.save()
+                self.object.save()                
+
+                meta_tag_objects = MetaTag.objects.filter(slug__in = updating_meta_tags)
+                self.object.meta_tags.set(meta_tag_objects)
 
                 messages.success(request, "Success! Blog Updated")
                 return redirect(self.success_url)   
@@ -12764,25 +12853,45 @@ class BaseMetaTagView(AdminBaseView):
 
 
 class AddMetaTagView(BaseMetaTagView, CreateView):
-    fields = ["name"]
+    template_name = "meta_tag/add.html"
+    form_class = MetaTagDescriptionForm
 
     def post(self, request, *args, **kwargs):
-        name = request.POST.get("name")
+        try:
+            name = request.POST.get("name")            
+            meta_title = request.POST.get("meta_title")
+            meta_description = request.POST.get("meta_description")
 
-        name = name.strip() if name else None
+            name = name.strip() if name else None
+            meta_title = meta_title.strip() if meta_title else None
+            meta_description = meta_description.strip() if meta_description else None
 
-        if not name:
-            messages.error(request, "Failed! Name is required")
-            return redirect(self.redirect_url)
+            if not name or not meta_description:
+                required_field = "Meta Description" if "Name" else "Name"
 
-        meta_tag, created = self.model.objects.get_or_create(name = name)
+                messages.error(request, f"Failed! {required_field} is required")
+                return redirect(self.redirect_url)
+            
+            form = self.get_form()
 
-        if not created:
-            messages.warning(request, "Failed! Similar meta tag already exists")
-            return redirect(self.redirect_url)
+            description = form.cleaned_data.get("description").strip() if form.is_valid() else None            
 
-        messages.success(request, "Success! Created Meta Tag")
-        return redirect(self.success_url)
+            with transaction.atomic():
+
+                meta_tag, created = self.model.objects.get_or_create(name = name, defaults = {"description": description, "meta_title": meta_title, "meta_description": meta_description})
+
+                if not created:
+                    messages.warning(request, "Failed! Similar meta tag already exists")
+                    return redirect(self.redirect_url)
+
+                messages.success(request, "Success! Created Meta Tag")
+                return redirect(self.success_url)
+            
+        except Exception as e:
+            logger.exception(f"Error in post function of AddMetaTagView")
+            
+        messages.error(request, "Failed! An unexpected error occurred")
+        return redirect(self.redirect_url)
     
 
 class MetaTagListView(BaseMetaTagView, ListView):
@@ -12799,27 +12908,50 @@ class MetaTagListView(BaseMetaTagView, ListView):
 
 
 class UpdateMetaTagView(BaseMetaTagView, UpdateView):
-    fields = ["name"]
+    template_name = "meta_tag/update.html"
+    form_class = MetaTagDescriptionForm
+    context_object_name = "meta_tag"
 
     def post(self, request, *args, **kwargs):
-        name = request.POST.get("name")
-        name = name.strip() if name else None
+        try:
+            name = request.POST.get("name")            
+            meta_title = request.POST.get("meta_title")
+            meta_description = request.POST.get("meta_description")
 
-        if not name:
-            messages.error(request, "Failed! Name is required")
-            return redirect(self.redirect_url)
+            name = name.strip() if name else None
+            meta_title = meta_title.strip() if meta_title else None
+            meta_description = meta_description.strip() if meta_description else None
 
-        self.object = self.get_object()
-        
-        if MetaTag.objects.filter(name = name).exclude(slug = self.object.slug).exists():
-            messages.warning(request, "Failed! Similar meta tag already exists")
-            return redirect(self.redirect_url)
+            if not name or not meta_description:
+                required_field = "Meta Description" if "Name" else "Name"
 
-        self.object.name = name
-        self.object.save()    
+                messages.error(request, f"Failed! {required_field} is required")
+                return redirect(self.redirect_url)
 
-        messages.success(request, "Success! Updated Meta Tag")
-        return redirect(self.success_url)
+            form = self.get_form()
+            description = form.cleaned_data.get("description").strip() if form.is_valid() else None            
+
+            self.object = self.get_object()
+            
+            with transaction.atomic():
+                if MetaTag.objects.filter(name = name).exclude(slug = self.object.slug).exists():
+                    messages.warning(request, "Failed! Similar meta tag already exists")
+                    return redirect(self.redirect_url)
+
+                self.object.name = name
+                self.object.meta_title = meta_title
+                self.object.meta_description = meta_description
+                self.object.description = description
+                self.object.save()    
+
+                messages.success(request, "Success! Updated Meta Tag")
+                return redirect(self.success_url)
+            
+        except Exception as e:
+            logger.exception(f"Error in post function of UpdateMetaTagView: {e}")
+
+        messages.error(request, "Failed! An unexpected error occurred")
+        return redirect(self.redirect_url)
 
 
 class DeleteMetaTagView(BaseMetaTagView, UpdateView):

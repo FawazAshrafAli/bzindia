@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import DetailView, View
 from django.http import JsonResponse, Http404
+from blog.models import Blog
 import logging
 
 from company.models import Company
@@ -10,17 +11,20 @@ from base.views import BaseView
 logger = logging.getLogger(__name__)
 
 class CompanyBaseView(BaseView):
+    def get_company(self, company_slug):
+        try:
+            return get_object_or_404(Company, slug = company_slug)
+        except Http404:
+            return None
+
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         context["company_page"] = True
+        context["slider_blogs"] = Blog.objects.filter(is_published = True).order_by("?")[:3]
 
         return context
-
-# class CompanyHomePageView(DetailView):
-#     model = Company
-#     template_name = "product_company/home.html"
-#     context_object_name = "company"
 
 
 def get_company(request, slug):

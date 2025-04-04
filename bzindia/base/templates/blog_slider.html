@@ -8,7 +8,7 @@
      <p class="flip"><span class="deg1"></span><span class="deg2"></span><span class="deg3"></span></p>
      <div class="row" style="padding-bottom:25px;">
 
-      {% for blog in slider_blogs %}
+      {% for blog in slider_blogs|slice:":3" %}
       <div class="col col-md-4 col-12">
        <article class="white_back_bx bodr_radius_25px">
           <figure class="featured-media">

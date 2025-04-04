@@ -63,8 +63,8 @@
 													</label>
 												</td>
 												<td>
-													<a href="#" class="avatar blog-obj" data-bs-toggle="modal" data-bs-target="#blog-detail-modal" data-title="{{blog.title}}" data-type="{{blog.blog_type}}" {% if blog_type != "General" %}data-object="{{blog.get_object}}"{% endif %} data-summary="{{blog.summary}}" data-desciption="{{blog.description}}" data-meta-description="{{blog.meta_description}}" data-meta-tags="{{blog.meta_tags}}" {% if blog.company %}data-company="{{blog.company.name}}"{% endif %} data-content="{{blog.content}}" data-is-published="{% if blog.is_published %}Yes{% else %}No{% endif %}" {% if blog.is_published %}data-published-date="{{blog.published_date}}"{% endif %} {% if blog.image %}data-image-url="{{blog.image.url}}" data-image-name="{{blog.get_image_name}}"{% endif %} ><img alt="" src="{% if blog.image %}{{blog.image.url}}{% else %}{% static 'assets/img/c-logo2.png' %}{% endif %}"></a>
-													<a href="#" class="blog-obj" data-bs-toggle="modal" data-bs-target="#blog-detail-modal" data-title="{{blog.title}}" data-type="{{blog.blog_type}}" {% if blog_type != "General" %}data-object="{{blog.get_object}}"{% endif %} data-summary="{{blog.summary}}" data-desciption="{{blog.description}}" data-meta-description="{{blog.meta_description}}" data-meta-tags="{{blog.meta_tags}}" {% if blog.company %}data-company="{{blog.company.name}}"{% endif %} data-content="{{blog.content}}" data-is-published="{% if blog.is_published %}Yes{% else %}No{% endif %}" {% if blog.is_published %}data-published-date="{{blog.published_date}}"{% endif %} {% if blog.image %}data-image-url="{{blog.image.url}}" data-image-name="{{blog.get_image_name}}"{% endif %}>{{blog.title}}</a>
+													<a href="#" class="avatar blog-obj" data-bs-toggle="modal" data-bs-target="#blog-detail-modal" data-title="{{blog.title}}" data-type="{{blog.blog_type}}" {% if blog_type != "General" %}data-object="{{blog.get_object}}"{% endif %} data-summary="{{blog.summary}}" data-desciption="{{blog.description}}" data-meta-description="{{blog.meta_description}}" data-meta-tags="{{ blog.get_meta_tags}}" {% if blog.company %}data-company="{{blog.company.name}}"{% endif %} data-content="{{blog.content}}" data-is-published="{% if blog.is_published %}Yes{% else %}No{% endif %}" {% if blog.is_published %}data-published-date="{{blog.published_date}}"{% endif %} {% if blog.image %}data-image-url="{{blog.image.url}}" data-image-name="{{blog.get_image_name}}"{% endif %} ><img alt="" src="{% if blog.image %}{{blog.image.url}}{% else %}{% static 'assets/img/c-logo2.png' %}{% endif %}"></a>
+													<a href="#" class="blog-obj" data-bs-toggle="modal" data-bs-target="#blog-detail-modal" data-title="{{blog.title}}" data-type="{{blog.blog_type}}" {% if blog_type != "General" %}data-object="{{blog.get_object}}"{% endif %} data-summary="{{blog.summary}}" data-desciption="{{blog.description}}" data-meta-description="{{blog.meta_description}}" data-meta-tags="{{blog.get_meta_tags}}" {% if blog.company %}data-company="{{blog.company.name}}"{% endif %} data-content="{{blog.content}}" data-is-published="{% if blog.is_published %}Yes{% else %}No{% endif %}" {% if blog.is_published %}data-published-date="{{blog.published_date}}"{% endif %} {% if blog.image %}data-image-url="{{blog.image.url}}" data-image-name="{{blog.get_image_name}}"{% endif %}>{{blog.title}}</a>
 												</td>
 												<td>{{blog.blog_type}}</td>
 												<td>{{blog.company.name}} {% if not blog.company %}None{% endif %}</td>
@@ -135,7 +135,7 @@
 	</div><!-- modal-dialog -->
 </div><!-- modal -->
 
-<!-- Detail Modal -->
+<!-- Detail Modal Start -->
 <div class="modal right fade" id="blog-detail-modal" tabindex="-1" role="dialog" aria-modal="true">
 	<div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -216,7 +216,7 @@
         </div><!-- modal-content -->
     </div><!-- modal-dialog -->
 </div>
-<!-- Detail Modal -->
+<!-- Detail Modal End -->
 
 <!-- Publish Blog Modal -->
 <!-- Modal -->
@@ -411,7 +411,7 @@
 
 			if (metaTags) {
                 $('#meta-tags').html(metaTags);
-            }
+            }			
 
 			if (isPublished) {
                 $('#is-published').html(isPublished);

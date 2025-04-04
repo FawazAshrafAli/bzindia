@@ -2,6 +2,8 @@ from django.db import models
 from django.utils.text import slugify
 from django.contrib.auth.models import User
 from ckeditor.fields import RichTextField
+from datetime import datetime
+from django.db.models import Avg
 
 from company.models import Company
 from locations.models import UniqueState
@@ -244,6 +246,20 @@ class Product(models.Model):
         db_table = "products"
         ordering = ["name"]
 
+    @property
+    def reviews(self):
+        return Review.objects.filter(product__slug = self.slug)
+
+    @property
+    def rating(self):
+        reviews = Review.objects.filter(product = self).values_list("rating", flat=True)        
+        
+        return reviews.aggregate(Avg('rating'))['rating__avg'] if reviews else 0
+
+    @property
+    def rating_count(self):
+        return Review.objects.filter(product = self).count()  
+
 
 class Faq(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_faq_company")
@@ -321,7 +337,7 @@ class Review(models.Model):
 
     class Meta:
         db_table = "reviews"
-        ordering = ["created"]
+        ordering = ["created"]    
 
 
 class Enquiry(models.Model):

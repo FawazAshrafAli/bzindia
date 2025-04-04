@@ -110,7 +110,7 @@ class RegistrationDetail(models.Model):
     
     class Meta:
         db_table = "registration_detail"
-        ordering = ["-created"]
+        ordering = ["-created"]    
 
 
 class Faq(models.Model):

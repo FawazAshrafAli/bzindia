@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.text import slugify
 from locations.models import UniquePlace
 from ckeditor.fields import RichTextField
+from django.db.models import Avg
 
 from base.models import MetaTag
 
@@ -76,6 +77,11 @@ class Company(models.Model):
     email = models.EmailField(max_length=254)
     description = RichTextField(null=True, blank=True)
 
+    facebook = models.URLField(max_length=500, null=True, blank=True)
+    twitter = models.URLField(max_length=500, null=True, blank=True)
+    linkedin = models.URLField(max_length=500, null=True, blank=True)
+    youtube = models.URLField(max_length=500, null=True, blank=True)
+
     meta_title = models.CharField(max_length=100)
     meta_tags = models.ManyToManyField(MetaTag)
     meta_description = models.TextField()
@@ -137,6 +143,27 @@ class Company(models.Model):
         tag_list = [tag.name for tag in self.meta_tags.all()]
 
         return ", ".join(tag_list)
+    
+    @property
+    def social_media_links(self):
+        social_media_fields = [self.facebook, self.twitter, self.linkedin, self.youtube]
+
+        print([link for link in social_media_fields if link])
+
+        return [link for link in social_media_fields if link]
+
+    
+    @property
+    def rating(self):
+        TestimonialModel = Testimonial
+        if self.type == "Education":
+            from educational.models import Testimonial as CourseTestimonial
+
+            TestimonialModel = CourseTestimonial
+
+        testimonials = TestimonialModel.objects.filter(company = self).values_list("rating", flat=True)        
+        
+        return testimonials.aggregate(Avg('rating'))['rating__avg'] if testimonials else 0
 
 
 class Client(models.Model):

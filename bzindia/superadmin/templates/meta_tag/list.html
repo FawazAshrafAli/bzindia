@@ -58,12 +58,14 @@
 														<span class="checkmark"></span>
 													</label>
 												</td>												
-												<td>{{meta_tag.name}}</td>												
+												<td>
+													<a href="#" class="meta-tag-obj" data-bs-toggle="modal" data-bs-target="#meta-tag-detail-modal" data-name="{{meta_tag.name}}" data-description="{{meta_tag.description}}" data-meta-title="{{meta_tag.meta_title}}" data-meta-description="{{meta_tag.meta_description}}">{{meta_tag.name}}</a>
+												</td>
 												<td class="text-center">
 													<div class="dropdown dropdown-action">
 														<a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="material-icons">more_vert</i></a>
 														<div class="dropdown-menu dropdown-menu-right">															
-															<a class="dropdown-item edit-meta-tag-btn" href="#" data-bs-toggle="modal" data-bs-target="#update_meta_tag_modal" data-name="{{meta_tag.name}}" data-slug="{{meta_tag.slug}}">Edit This Meta Tag</a>
+															<a class="dropdown-item edit-meta-tag-btn" href="{% url 'superadmin:update_meta_tag' meta_tag.slug %}">Edit This Meta Tag</a>
 															<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete-meta_tag-modal" data-name="{{meta_tag.name}}" data-slug="{{meta_tag.slug}}" >Remove This Meta Tag</a>
 														</div>
 													</div>
@@ -155,6 +157,52 @@
 </div><!-- modal -->
 <!-- Meta Tag Modal (End) -->
 
+<!-- Detail Modal Start -->
+<div class="modal right fade" id="meta-tag-detail-modal" tabindex="-1" role="dialog" aria-modal="true">
+	<div class="modal-dialog" role="document">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <div class="row w-100">
+                    <div class="col-md-7 account d-flex">
+                        <div class="company_img">
+                        </div>
+                    </div>                    
+                  </div>
+                <button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
+              </div>
+
+            <div class="modal-body">
+                <div class="row" style="background: #eaeaea;">
+                    <div class="col-md-12">
+                        <h4 style="margin: 8px 0;">Meta Tag: <span id="name"></span></h4>
+                    </div>
+                </div>
+                <br>      
+                <table class="table">
+                    <tbody>
+						<tr>
+							<td class="border-0">Description</td>
+							<td class="border-0" id="description"></td>
+						</tr>						
+						<tr>
+							<td class="border-0">Meta Title</td>
+							<td class="border-0" id="meta-title"></td>
+						</tr>			
+						<tr>
+							<td class="border-0">Meta Description</td>
+							<td class="border-0" id="meta-description"></td>
+						</tr>
+                    </tbody>
+                  </table>
+                <hr>
+            </div>
+
+        </div><!-- modal-content -->
+    </div><!-- modal-dialog -->
+</div>
+<!-- Detail Modal End -->
+
 {% endblock modal %}
 
 {% block scripts %}
@@ -182,6 +230,20 @@
 
 			$('#name-input').val(name);
 			$('#meta-tag-updation-form').prop('action', actionUrl);
+		});
+
+		$(document).on('click', '.meta-tag-obj', function () {
+			const name = $(this).data("name");
+			const description = $(this).data("description");
+			const metaTitle = $(this).data("meta-title");
+			const metaDescription = $(this).data("meta-description");
+
+			$("#name, #desciption, #meta-title, #meta-desciption").empty();
+
+			$('#name').html(name);
+			$('#description').html(description);
+			$('#meta-title').html(metaTitle);
+			$('#meta-description').html(metaDescription);
 		});
 	});
 </script>

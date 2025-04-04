@@ -5,8 +5,9 @@ import logging
 
 from superadmin.views import BaseEducationCompanyView
 
-from .models import Program, Specialization, Course, Testimonial
+from .models import Program, Specialization, Course, Testimonial, Faq, CourseDetail
 from company.models import Company, Client
+from base.models import MetaTag
 
 from company.views import CompanyBaseView
     
@@ -134,19 +135,74 @@ class GetCourseView(BaseEducationCompanyView, View):
             }, status=500)
         
 
-class HomeView(CompanyBaseView, DetailView):
+class BaseEducationView(CompanyBaseView):
     model = Company
-    template_name = "education/home.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        company_slug = self.kwargs.get('slug')
+        self.company = self.get_company(company_slug)
+
+        context.update({
+            "company": self.company,
+
+            "testimonials": Testimonial.objects.filter(company = self.company).order_by("order")[:12],
+            "courses": Course.objects.filter(company = self.company).order_by("?")[:12],
+
+            "clients": Client.objects.filter(company = self.company).order_by("?")[:12],
+            "programs": Program.objects.filter(company = self.company).order_by("?")[:12],
+        })
+
+        return context
+        
+
+class HomeView(BaseEducationView, DetailView):
+    template_name = "education/home/home.html"
     context_object_name = "company"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)        
+
+        context.update({
+            "education_home_page": True,
+            "tags": MetaTag.objects.filter(company = self.company).order_by("?"),                                
+            "faqs": Faq.objects.filter(company = self.company).order_by("?")[:5]
+        })
+        
+        return context
+    
+
+class CourseDetailView(BaseEducationView, DetailView):
+    model = CourseDetail
+    template_name = "education/detail/detail.html"
+    context_object_name = "detail"
+    slug_url_kwarg = 'slug'
+
+    def get_object(self):
+        try:
+            return get_object_or_404(self.model, course__slug = self.kwargs.get(self.slug_url_kwarg))
+        except Http404:
+            return None
+        
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         self.object = self.get_object()
 
-        context["courses"] = Course.objects.filter(company = self.object).order_by("?")
-        context["clients"] = Client.objects.filter(company = self.object).order_by("?")
-        context["testimonials"] = Testimonial.objects.filter(company = self.object).order_by("order")
-        context["nearby_courses"] = Course.objects.all().order_by("?")
+        self.company = self.object.company
+
+        context.update({
+            "company": self.company,
+            "education_detail_page": True,
+            "courses": Course.objects.filter(company = self.company).order_by("?")[:12],
+            "faqs": Faq.objects.filter(company = self.company, course = self.object.course).order_by("?")[:5],
+            "testimonials": Testimonial.objects.filter(company = self.company).order_by("order")[:12],
+            "clients": Client.objects.filter(company = self.company).order_by("?")[:12],
+            "programs": Program.objects.filter(company = self.company).order_by("?")[:12],
+            "tags": self.object.meta_tags.all()
+        })
+
+
 
         return context

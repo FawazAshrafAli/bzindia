@@ -1,8 +1,14 @@
 
 {% extends "admin_base/base.html" %}
 {% load static %}
+{% load crispy_forms_tags %}
 
 {% block title %}Add Blogs{% endblock title %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'w3/css/chosen-style.css' %}">
+<link rel="stylesheet" href="{% static 'w3/css/main-color.css' %}" id="colors">
+{% endblock styles %}
 
 {% block content %}  
 <!-- Page Content -->
@@ -65,13 +71,11 @@
                         <div class="row">
                             <div class="col-sm-12 mb-3">
                                 <label for="meta-tag-input">Meta Tags <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="meta-tag-input" name="meta_tags" placeholder="Meta Tags (Sperate with comma for multiple tags)" required>
-                                <div class="invalid-feedback">
-                                    Please provide the meta tags.
-                                </div>
-                                <div class="valid-feedback">
-                                    Looks good!
-                                </div>
+                                <select data-placeholder="Select Meta Tags" class="chosen-select" name="meta_tag" multiple>
+                                    {% for tag in tags %}
+                                    <option value="{{tag.slug}}">{{tag.name}}</option>
+                                    {% endfor %}									
+								</select>
                             </div>                            
                         </div>
 
@@ -101,14 +105,16 @@
                         </div>
                         <div class="row">
                             <div class="col-sm-12 mb-3">
-                                <label for="content-input">Content <span class="text-danger">*</span></label>
+                                {{form.media}}
+                                {{form.content|as_crispy_field}}
+                                {% comment %} <label for="content-input">Content <span class="text-danger">*</span></label>
                                 <textarea class="froala-editor" name="content" id="content-input" placeholder="Content" required></textarea>
                                 <div class="invalid-feedback">
                                     Please provide the content.
                                 </div>
                                 <div class="valid-feedback">
                                     Looks good!
-                                </div>
+                                </div> {% endcomment %}
                             </div>                            
                         </div>                        
 
@@ -602,7 +608,28 @@
             getServices(selectedCompany, selectedSubCategory);
         });
 
-        intializeFroala();
+        // Function for adding new meta tags
+        $(document).on('input', '.search-field input', function () {
+            const text = $(this).val().trim();
+
+            if (text.endsWith(',')) {
+                const tag = text.replace(',', '');
+
+                const newOption = `<option value="${tag}" selected>${tag}</option>`;
+
+                const optionExists = $('select[name="meta_tag"] option').filter(function() {
+                    return $(this).val().toLowerCase() === tag.toLowerCase() | $(this).html().toLowerCase() === tag.toLowerCase();
+                }).length > 0;
+
+                if (!optionExists) {
+                    $('select[name="meta_tag"]').append(newOption);
+    
+                    $('.chosen-select').trigger("chosen:updated");
+                }
+
+                $(this).val('');
+            }
+        });
     });
 </script>
 {% endblock scripts %}

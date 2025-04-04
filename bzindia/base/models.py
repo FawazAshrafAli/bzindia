@@ -1,8 +1,13 @@
 from django.db import models
 from django.utils.text import slugify
+from ckeditor.fields import RichTextField
 
 class MetaTag(models.Model):
-    name = models.CharField(max_length=150)
+    name = models.CharField(max_length=150, unique=True)
+    description = RichTextField(null=True, blank=True)
+
+    meta_title = models.CharField(max_length=250, null=True, blank=True)
+    meta_description = models.TextField(null=True, blank=True)
 
     slug = models.SlugField(null=True, blank=True)
 
@@ -13,6 +18,9 @@ class MetaTag(models.Model):
         return self.name
     
     def save(self, *args, **kwargs):
+        if not self.meta_title:
+            self.meta_title = f"{self.name} - BZ India"
+
         if not self.slug:
             base_slug = slugify(self.name)
 

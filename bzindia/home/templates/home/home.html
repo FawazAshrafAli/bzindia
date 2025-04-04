@@ -1,6 +1,302 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block schemas %}
+<script type="application/ld+json">
+  {% for registration_detail in registration_details|slice:":10" %}
+  {
+    "@context": "http://schema.org",
+    "@type": "GovernmentService",
+    "name": "{{registration_detail.sub_type.name}}",
+    "serviceType": "Service Type {{forloop.counter}}",
+    "provider": {
+      "@type": "Organization",
+      "name": "{{registration_detail.company.name}}",
+      "url": "https://{{request.get_host}}/{{registration_detail.company.type.name}}/{{registration_detail.company.slug}}"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "{{registration_detail.price}}",
+      "priceCurrency": "INR",
+      "availability": "http://schema.org/InStock",
+      "url": "https://{{request.get_host}}/registration/{{registration_detail.slug}}"
+    },
+    "description": "{{registration_detail.sub_type.description}}",
+    "image": "https://{{request.get_host}}/{% if registration_detail.image %}{{registration_detail.image.url}}{% else %}#{% endif %}",
+    "areaServed": {
+      "@type": "Place",
+      "name": "Area Served"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.5",
+      "reviewCount": "20"
+    }
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}  
+  </script>
+
+<script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "ItemList",
+    "itemListElement": [
+      {% for product in products|slice:":10" %}
+      {
+        "@type": "Product",
+        "name": "{{product.name}}",
+        "image": "https://{{request.get_host}}/{{product.image.url}}",
+        "description": "{{product.description}}",
+        "sku": "{{product.sku}}",
+        "url": "https://{{request.get_host}}/product/{{product.slug}}",
+        "category": "{{product.category.name}}", // Add the category here
+        "offers": {
+          "@type": "Offer",
+          "price": "{{product.price}}",
+          "priceCurrency": "INR",
+          "availability": "http://schema.org/InStock",
+          "priceValidUntil": "2024-12-31",
+          "hasMerchantReturnPolicy": {
+            "@type": "MerchantReturnPolicy",
+            "name": "Return Policy",
+            "description": "No cancellations & Refunds are entertained. Please visit our return policy page for more details.",
+            "url": "https://{{request.get_host}}/return-policy",
+            "applicableCountry": "IN",
+            "returnPolicyCategory": "https://schema.org/NoRefundsReturnPolicy"
+          },
+          "eligibleRegion": {
+            "@type": "Country",
+            "name": "IN"
+          },
+          "eligibleTransactionVolume": {
+            "@type": "PriceSpecification",
+            "priceCurrency": "INR",
+            "minPrice": "100.00"
+          }
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "{{product.rating}}",
+          "reviewCount": "{{product.rating_count}}"
+        },
+        "review": [
+          {% for review in product.reviews.all|slice:":3" %}
+          {
+            "@type": "Review",
+            "author": {
+              "@type": "Person",
+              "name": "{{review.user.username}}"
+            },
+            "datePublished": "{{review.created.date|date:'Y-m-d'}}",
+            "reviewBody": "{{review.text}}",
+            "reviewRating": {
+              "@type": "Rating",
+              "ratingValue": "{{review.rating}}"
+            }
+          }{% if not forloop.last %},{% endif %}
+          {% endfor %}
+          
+        ]
+      }{% if not forloop.last %},{% endif %}
+      {% endfor %}      
+    ]
+  }
+</script>
+ 
+
+<script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "ItemList",
+  "itemListElement": [
+    {% for service in services|slice:":10" %}
+    {
+      "@type": "ListItem",
+      "position": {{forloop.counter}},
+      "item": {
+        "@type": "Service",
+        "provider": {
+          "@type": "Organization",
+          "name": "{{service.company.name}}",
+          "url": "https://{{request.get_host}}/company/{{service.company.slug}}",
+          "logo": "https://{{request.get_host}}{% if service.company.logo %}{{service.company.logo.url}}{% else %}#{% endif %},
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Business Bay",
+            "addressLocality": "Dubai",
+            "addressRegion": "Dubai",
+            "postalCode": "12345",
+            "addressCountry": "IN"
+          },
+          "location": {
+            "@type": "Place",
+            "geo": {
+              "@type": "GeoCoordinates",
+              "latitude": "25.197197",
+              "longitude": "55.274376"
+            }
+          }
+        },
+        "name": "{{service.name}}",
+        "description": "{{service.description}}",
+        "image": "https://{{request.get_host}}/{% if service.image %}{{service.image.url}}{% else %}#{% endif %}",
+        "url": "https://{{request.get_host}}/service/{{service.slug}}"
+      }
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+    // Add more products and services provided by companies as needed
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "Training Courses",
+  "description": "A list of available training courses",
+  "itemListElement": [
+    {% for course in courses|slice:":10" %}
+    {
+      "@type": "Course",
+      "name": "{{course.name}}",
+      "description": "{{course.description}}",
+      "provider": {
+        "@type": "Organization",
+        "name": "{{course.company.name}}"
+      },
+      "image": "https://{{request.get_host}}/{% if course.image %}{{course.image.url}}{% else %}#{% endif %}",
+      "hasCourseInstance": {
+        "@type": "CourseInstance",
+        "courseMode": ["{{course.mode}}"],
+        "endDate": "2019-03-21",
+        "startDate": "2019-02-15",
+        "courseWorkload": "PT3H"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "{{course.price}}",
+        "priceCurrency": "INR",
+        "availability": "http://schema.org/InStock",
+        "category": "{{course.program.name}}"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "{{course.rating}}",
+        "bestRating": "5",
+        "ratingCount": "{{course.rating_count}}"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": "12.9716",
+        "longitude": "77.5946"
+      }
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}    
+  ]
+}
+</script>
+ 
+
+
+<script type="application/ld+json">
+	{
+	  "@context": "http://schema.org",
+	  "@type": "WebSite",
+	  "url": "https://www.bzindia.in/",
+	  "potentialAction": {
+		"@type": "SearchAction",
+		"target": "https://www.bzindia.in/?state=&district=&block=&pincode=&from=googlesl",
+		"query-input": "required name=search_term_string"
+	  }
+	}
+	</script>
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Your Company Name",
+    "description": "Description of your company",
+    "logo": "URL to your company logo",
+    "url": "URL of your company website",
+    "memberOf": [
+      {
+        "@type": "Organization",
+        "name": "Category or Group 1"
+      },
+      {
+        "@type": "Organization",
+        "name": "Category or Group 2"
+      }
+    ],
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Clients",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "item": {
+            "@type": "Organization",
+            "name": "Client 1 Name",
+            "url": "URL to Client 1",
+            "logo": "URL to Client 1 Logo"
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "item": {
+            "@type": "Organization",
+            "name": "Client 2 Name",
+            "url": "URL to Client 2",
+            "logo": "URL to Client 2 Logo"
+          }
+        }
+        // Add more clients as needed
+      ]
+    }
+  }
+  </script>
+  
+<script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "ItemList",
+    "itemListElement": [
+      {% for company in companies|slice:":12" %}
+      {
+        "@type": "ListItem",
+        "position": {{forloop.counter}},
+        "item": {
+          "@type": "Organization",
+          "name": "{{company.name}}",
+          "url": "https://{{request.get_host}}/company/{{company.slug}}",
+          "logo": "https://{{request.get_host}}/{% if company.logo %}{{company.logo.url}}{% else %}#{% endif %}",
+          "description": "{{company.description|safe}}"
+        }
+      }{% if not forloop.last %},{% endif %}
+      {% endfor %}      
+      // Add more companies as needed
+    ]
+  }
+  </script>
+
+<script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "WebSite",
+    "name": "BZindia",
+    "url": "https://www.bzindia.in/"
+  }
+  </script> 
+
+
+{% endblock schemas %}
+
 {% block content %}
 <!--banner-slider start -->
 <section class="bg-half" style="background-image: url(/static/images/city-4667143_1920.jpg);" data-aos="fade-in">
@@ -190,7 +486,7 @@
         <h3>ONLINE REGISTRATION IN INDIA</h3>
         <p class="flip"><span class="deg1"></span><span class="deg2"></span><span class="deg3"></span></p>
         <div class="offerd-service">
-          {% for sub_type in registration_sub_types %}
+          {% for registration_detail in registration_details|slice:":10" %}
           <div class="offerd-service_padd">
             <div>
               <a href="#">
@@ -200,8 +496,8 @@
                       <img src="{% static 'images/Company-Registration-India.svg' %}" alt="">
                     </div>
                     <div class="offerd-srvs-clm-text">
-                       <h5>{{sub_type.name}}</h5>
-                      <span>{{sub_type.type__name}}</span>
+                       <h5>{{registration_detail.sub_type.name}}</h5>
+                      <span>{{registration_detail.sub_type.type__name}}</span>
                     </div>
                   </div>
                 </div>
@@ -342,7 +638,7 @@
         <h3>OUR COURSES</h3>
         <p class="flip"><span class="deg1"></span><span class="deg2"></span><span class="deg3"></span></p>
         <div class="offerd-service">
-          {% for course in courses %}
+          {% for course in courses|slice:":10" %}
           <div class="offerd-service_padd">
             <div>
               <a href="#">
@@ -494,7 +790,7 @@
    
         <div class="offerd-service" style="padding-bottom: 30px;">
 
-          {% for service in services %}
+          {% for service in services|slice:":10" %}
           <div style="padding: 5px;">
             <div class="position_relative img-scale max_size">
               <figure class="picher_doc">
@@ -641,7 +937,7 @@
       <p class="flip"><span class="deg1"></span><span class="deg2"></span><span class="deg3"></span></p>
       <div class="offerd-service">
         
-        {% for product in products|slice:":4" %}
+        {% for product in products|slice:":10" %}
         <div style="padding: 5px;">
           <div class="product-grid">
               <div class="product-image" style="height: 263px;">
@@ -875,26 +1171,9 @@ For every goods and product, everyone has to pay the tax and the main fundamenta
   <div class="row">
     <div class="col-md-12 col-sm-12 col-xs-12">
   <div class="tags_cloud">
-<a href="#" title="Alliance">Alliance</a>
-<a href="#" title="Alliance College">Alliance College</a>
-<a href="#" title="Alliance College of Liberal Arts">Alliance College of Liberal Arts</a>
-<a href="#" title="Alliance School of Business">Alliance School of Business</a>
-<a href="#" title="Allied Health &amp; Science Colleges in Bangalore">Allied Health &amp; Science Colleges in Bangalore</a>
-<a href="#" title="Allied Health &amp; Science Colleges in Karnataka">Allied Health &amp; Science Colleges in Karnataka</a>
-<a href="#" title="Allied Health And Sciences">Allied Health And Sciences</a>
-<a href="#" title="Allied Health And Sciences Bangalore">Allied Health And Sciences Bangalore</a>
-<a href="#" title="Allied Health And Sciences Colleges in Bangalore">Allied Health And Sciences Colleges in Bangalore</a>
-<a href="#" title="Allied Health And Sciences Colleges in Karnataka">Allied Health And Sciences Colleges in Karnataka</a>
-<a href="#" title="Allied Health And Sciences Karnataka">Allied Health And Sciences Karnataka</a>
-<a href="#" title="Allied Health Science">Allied Health Science</a>
-<a href="#" title="Allied Health Sciences">Allied Health Sciences</a>
-<a href="#" title="Allied Health Sciences Colleges">Allied Health Sciences Colleges</a>
-<a href="#" title="Allied Health Sciences Colleges in Bangalore">Allied Health Sciences Colleges in Bangalore</a>
-<a href="#" title="Allied Health Sciences Colleges in India">Allied Health Sciences Colleges in India</a>
-<a href="#" title="Allied Health Sciences Colleges in Karnataka">Allied Health Sciences Colleges in Karnataka</a>
-<a href="#" title="Allied Health Sciences Colleges in Mangalore">Allied Health Sciences Colleges in Mangalore</a>
-<a href="#" title="Allied Health Sciences Colleges in Mysore">Allied Health Sciences Colleges in Mysore</a>
-<a href="#" title="Allied Health Sciences Colleges Karnataka">Allied Health Sciences Colleges Karnataka</a>
+    {% for tag in tags %}
+    <a href="#" title="{{tag.name}}">{{tag.name}}</a>
+    {% endfor %}
 </div>
 </div>
 </div>
@@ -986,150 +1265,10 @@ For every goods and product, everyone has to pay the tax and the main fundamenta
   </section>
 
 
-<section class="destination_main">
-<div class="destination_sub_bx">
-
-
-    <div class="container">
-     <h2 style="text-align:center;">FIND NEARBY DESTINATION</h2>
-         <p class="flip"><span class="deg1"></span><span class="deg2"></span><span class="deg3"></span></p>
-<div class="row">
-
-
-      <div class="nearby-destinations" style="padding-bottom: 30px;">
-       
-        {% for attraction in attractions %}
-        <div style="padding: 5px;">
-          <div class="position_relative img-scale max_size">
-            <figure class="picher_doc">
-              <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
-              <div class="opacity-medium bg-extra-black"></div>
-              <div class="date_top">
-                <span><a href="#" tabindex="0">{{attraction.attraction_type}}</a></span>
-              </div>
-              <div class="inner_text">
-                <h3 class="show_tital">{{attraction.name}}</h3>
-                
-                <p class="display_block">
-                  A Rich Heritage &amp; Brand History
-                </p>
-              
-                <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
-              </div>
-            </figure>
-          </div>
-        </div>
-        {% endfor %}
-
-  {% comment %} <div style="padding: 5px;">
-  <div class="position_relative img-scale max_size">
-    <figure class="picher_doc">
-      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
-      <div class="opacity-medium bg-extra-black"></div>
-      <div class="date_top">
-<span><a href="#" tabindex="0">Waterfalls</a></span>
-</div>
-      <div class="inner_text">
-        <h3 class="show_tital">Big bugets for startup</h3>
-
-        <p class="display_block">
-          A Rich Heritage &amp; Brand History
-        </p>
-      
-        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
-      </div>
-    </figure>
-  </div></div>
-
-  <div style="padding: 5px;">
-  <div class="position_relative img-scale max_size">
-    <figure class="picher_doc">
-      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
-      <div class="opacity-medium bg-extra-black"></div>
-      <div class="date_top">
-<span><a href="#" tabindex="0">Waterfalls</a></span>
-</div>
-      <div class="inner_text">
-        <h3 class="show_tital">Big bugets for startup</h3>
-
-        <p class="display_block">
-          A Rich Heritage &amp; Brand History
-        </p>
-      
-        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
-      </div>
-    </figure>
-  </div></div>
-
-  <div style="padding: 5px;">
-  <div class="position_relative img-scale max_size">
-    <figure class="picher_doc">
-      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
-      <div class="opacity-medium bg-extra-black"></div>
-      <div class="date_top">
-<span><a href="#" tabindex="0">Waterfalls</a></span>
-</div>
-      <div class="inner_text">
-        <h3 class="show_tital">Big bugets for startup</h3>
-
-        <p class="display_block">
-          A Rich Heritage &amp; Brand History
-        </p>
-      
-        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
-      </div>
-    </figure>
-  </div></div>
-
-  <div style="padding: 5px;">
-  <div class="position_relative img-scale max_size">
-    <figure class="picher_doc">
-      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
-      <div class="opacity-medium bg-extra-black"></div>
-      <div class="date_top">
-<span><a href="#" tabindex="0">Waterfalls</a></span>
-</div>
-      <div class="inner_text">
-        <h3 class="show_tital">Big bugets for startup</h3>
-
-        <p class="display_block">
-          A Rich Heritage &amp; Brand History
-        </p>
-      
-        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
-      </div>
-    </figure>
-  </div></div>
-
-  <div style="padding: 5px;">
-  <div class="position_relative img-scale max_size">
-    <figure class="picher_doc">
-      <img src="{% static 'images/Automation-Training-Institute-in-India.webp' %}" alt="">
-      <div class="opacity-medium bg-extra-black"></div>
-      <div class="date_top">
-<span><a href="#" tabindex="0">Waterfalls</a></span>
-</div>
-      <div class="inner_text">
-        <h3 class="show_tital">Big bugets for startup</h3>
-
-        <p class="display_block">
-          A Rich Heritage &amp; Brand History
-        </p>
-      
-        <a href="#" class="btn btn-text">Read More <i class="fa fa-arrow-circle-right"></i></a>
-      </div>
-    </figure>
-  </div></div> {% endcomment %}
- 
- 
-        </div>
-        <a href="#" class="primary_button" style="margin: 0 auto;">VIEW MORE</a>
-          </div>
-    </div>
-    </div>
-  </section>
+  {% include "destination_slider.html" %}
 
 
   {% include "blog_slider.html" %}
 
-{% endblock content %}
+
+  {% endblock content %}

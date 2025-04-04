@@ -88,7 +88,7 @@
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
-                            </div>                                                        
+                            </div>                        
                         </div>
                         
                         <div class="form-row">
@@ -147,7 +147,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="phone2-input">Contact Number 2 <span class="text-danger">*</span></label>
-                                <input type="tel" name="phone2" id="phone2-input" class="form-control" placeholder="Contact Number 1" value="{{company.phone2}}" required>
+                                <input type="tel" name="phone2" id="phone2-input" class="form-control" placeholder="Contact Number 2" value="{{company.phone2}}" required>
                                 <span class="form-text text-muted">eg: 9876543210</span>
                                 <div class="invalid-feedback">
                                     Please enter a valid contact number. It can include numbers, spaces, dashes, or start with + for international format.
@@ -182,6 +182,34 @@
                                     </div>
                                 </div>
                             </div>                        
+                        </div>                        
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title mb-0">Social Media</h4>
+                    </div>
+                    <div class="card-body">                    
+                        <div class="form-group row">
+                            <div class="col-md-6 mb-3">
+                                <label for="facebook-input">Facebook</label>
+                                <input type="url" name="facebook" id="facebook-input" class="form-control" placeholder="Facebook Link" value="{{company.facebook}}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="twitter-input">X (Twitter)</label>
+                                <input type="url" name="twitter" id="twitter-input" class="form-control" placeholder="X (Twitter) Link" value="{{company.twitter}}">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-6 mb-3">
+                                <label for="linkedin-input">LinkedIn</label>
+                                <input type="url" name="linkedin" id="linkedin-input" class="form-control" placeholder="LinkedIn Link" value="{{company.linkedin}}">
+                            </div>              
+                            <div class="col-md-6 mb-3">
+                                <label for="youtube-input">Youtube</label>
+                                <input type="url" name="youtube" id="youtube-input" class="form-control" placeholder="Youtube Link" value="{{company.youtube}}">
+                            </div>         
                         </div>                        
                     </div>
                 </div>

@@ -68,7 +68,7 @@ def get_locations(top_left, bottom_right, api_key, opencage_cache):
 
             with transaction.atomic():            
                 if not RetestedCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
-                    if request_count <= 10000:
+                    if request_count <= 6667:
                         try:
                             logger.info(f"Querying Coordinates: ({latitude}, {longitude})")
                             response = requests.get(f"{base_url}?q={latitude}+{longitude}&key={api_key}")
@@ -213,8 +213,8 @@ def get_uae_locations(top_left, bottom_right, api_key, opencage_cache):
 def get_ksa_locations(top_left, bottom_right, api_key, opencage_cache):
     base_url = 'https://api.opencagedata.com/geocode/v1/json'
 
-    lat_step = 0.7
-    lon_step = 0.7
+    lat_step = 0.07
+    lon_step = 0.07
 
     latitude = top_left[0]
     

@@ -152,6 +152,7 @@
                                     <input type="radio" class="form-check-input" name="url_type" id="slug-filtered" value="slug_filtered" checked required><label class="form-check-label" for="slug-filtered">Slug Filtered</label>
                                 </div>
                             </div>
+                            <small class="text-muted">Preview: <span id="current-url-preview">https://bzindia.in/category/registration-location-name(Location/Coutry/State/District)</span></small>
                         </div>
 
                         <div class="task-infos">
@@ -1019,6 +1020,16 @@
         
 
         $('#type-dropdown').on('change', () => getSubTypes());
+
+        $('input[name="url_type"]').on('change', function () {
+            const currentUrlType = $(this).val();
+
+            if (currentUrlType === "location_filtered") {
+                $('#current-url-preview').html("https://bzindia.in/category/registration/state-name/district-or-location-name/");                
+            } else {
+                $('#current-url-preview').html("https://bzindia.in/category/registration-location-name(Location/Coutry/State/District)");
+            }
+        });
         
     });
 </script>

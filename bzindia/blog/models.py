@@ -1,12 +1,14 @@
 from django.db import models
 from django.utils.text import slugify
 from django.utils import timezone
+from ckeditor.fields import RichTextField
 
 from educational.models import Course
 from product.models import Product
 from service.models import Service
 from registration.models import RegistrationSubType
 from company.models import Company
+from base.models import MetaTag
 
 class Blog(models.Model):
     title = models.CharField(max_length=250)
@@ -21,10 +23,10 @@ class Blog(models.Model):
     registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE, null=True, blank=True)
 
     summary = models.TextField()
-    content = models.TextField()
+    content = RichTextField()
     meta_description = models.TextField()
     
-    meta_tags = models.CharField(max_length=500)
+    meta_tags = models.ManyToManyField(MetaTag)
 
     is_published = models.BooleanField(default=False)
 
@@ -50,7 +52,7 @@ class Blog(models.Model):
                 getattr(self.registration_sub_type, "name", "")
             )
 
-            base_slug = slugify(f"{self.title}-{self.type}-{topic}")
+            base_slug = slugify(f"{self.title}-{self.blog_type}-{topic}")
 
             slug = base_slug
             count = 1
@@ -103,3 +105,12 @@ class Blog(models.Model):
             return self.registration_sub_type.name
         else:
             return None
+        
+    @property
+    def get_meta_tags(self):
+        if not self.meta_tags.exists():
+            return ""
+
+        tag_list = [tag.name for tag in self.meta_tags.all()]
+
+        return ", ".join(tag_list)

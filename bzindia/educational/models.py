@@ -1,10 +1,14 @@
 from django.db import models
 from django.utils.text import slugify
 from ckeditor.fields import RichTextField
+from django.db.models import Avg
+from django.utils import timezone
+from datetime import datetime, timedelta
 
 from company.models import Company
 from locations.models import UniquePlace, UniqueDistrict, UniqueState
 from base.models import MetaTag
+
 
 class Program(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
@@ -120,6 +124,56 @@ class Course(models.Model):
             return self.image.name.replace('course/', '')
         return None
 
+    @property
+    def description(self):
+        try:
+            detail_page = CourseDetail.objects.get(course = self)
+
+            return detail_page.summary
+        
+        except CourseDetail.DoesNotExist:
+            return ""
+        
+    @property
+    def rating(self):
+        testimonials = Testimonial.objects.filter(course = self).values_list("rating", flat=True)        
+        
+        return testimonials.aggregate(Avg('rating'))['rating__avg'] if testimonials else 0
+
+    @property
+    def rating_count(self):
+        return Testimonial.objects.filter(course = self).count()
+    
+    @property
+    def starting_date(self):
+        today = timezone.now().date()
+
+        starting_year = today.year
+        starting_month = 6
+        starting_day = 1
+
+        if today.month >= 6:
+            starting_year += 1
+            starting_month = 1
+
+        row_starting_date = f"{starting_day}/{starting_month}/{starting_year}"
+
+        starting_date = datetime.strptime(row_starting_date, "%d/%m/%Y")
+
+        return starting_date
+    
+    @property
+    def ending_date(self):
+        starting_date = self.starting_date
+        duration_in_days = self.duration * 30
+
+        ending_date = starting_date + timedelta(days=duration_in_days)
+
+        return ending_date
+
+
+
+         
 
 class Feature(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
@@ -248,7 +302,8 @@ class Table(models.Model):
     
     class Meta:
         db_table = "table"
-        ordering = ["created"]    
+        ordering = ["created"]
+
 
 
 class BulletPoints(models.Model):
@@ -273,7 +328,6 @@ class Tag(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
 
     tag = models.CharField(max_length=250)
-    link = models.URLField(max_length=200)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -312,7 +366,6 @@ class CourseDetail(models.Model):
     description = RichTextField()
 
     meta_title = models.CharField(max_length=100)
-    # meta_tags = models.CharField(max_length=250)
     meta_tags = models.ManyToManyField(MetaTag)
     meta_description = models.TextField()
 
@@ -349,6 +402,8 @@ class CourseDetail(models.Model):
     hide_bullets = models.BooleanField(default=False)
     hide_tags = models.BooleanField(default=False)
     hide_timeline = models.BooleanField(default=False)
+
+    hide_support_languages = models.BooleanField(default=False)
 
     slug = models.SlugField(null=True, blank=True)
 
@@ -400,6 +455,22 @@ class CourseDetail(models.Model):
         tag_list = [tag.name for tag in self.meta_tags.all()]
 
         return ", ".join(tag_list)
+    
+    @property
+    def toc(self):
+        options = {
+            self.vertical_title: self.hide_vertical_tab,
+            self.horizontal_title: self.hide_vertical_tab,
+            self.table_title: self.hide_table,
+            self.bullet_title: self.hide_bullets,
+            self.tag_title: self.hide_tags,
+            self.timeline_title: self.hide_timeline
+        }
+
+        toc = [title for title, hidden in options.items() if not hidden]
+
+        return toc
+
 
 
 class Enquiry(models.Model):
