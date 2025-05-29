@@ -40,6 +40,10 @@ class Category(models.Model):
     @property
     def sub_categories(self):
         return SubCategory.objects.filter(category = self).values("name", "slug")
+    
+    @property
+    def detail_pages(self):
+        return ServiceDetail.objects.filter(service__category = self).values("service__name", "slug")
 
 class SubCategory(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="service_sub_category_company")
@@ -122,6 +126,10 @@ class Service(models.Model):
         
         return None
 
+    @property
+    def description(self):
+        service_detail = ServiceDetail.objects.filter(service = self).first()
+        return service_detail.summary if service_detail else ""
 
 class Feature(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="service_feature_company")

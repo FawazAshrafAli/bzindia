@@ -203,7 +203,7 @@
                                             </div>
                                         </div>
                                   </div>
-                                  <div class="tasks__item crms-task-item active">
+                                  {% comment %} <div class="tasks__item crms-task-item active">
                                     <div class="accordion-header js-accordion-header">Vertical Tab</div> 
                                       <div class="accordion-body js-accordion-body">
                                         <div class="accordion-body__contents" id="vertical-tab-main-div">
@@ -253,8 +253,8 @@
                                             </div>
                                         </div>
                                     </div>
-                                  </div>
-                                  <div class="tasks__item crms-task-item active">
+                                  </div> {% endcomment %}
+                                  {% comment %} <div class="tasks__item crms-task-item active">
                                     <div class="accordion-header js-accordion-header">Horizontal Tab</div> 
                                       <div class="accordion-body js-accordion-body">
                                         <div class="accordion-body__contents" id="horizontal-tab-main-div">
@@ -300,8 +300,8 @@
                                             </div>
                                         </div>
                                     </div>
-                                  </div>
-                                    <div class="tasks__item crms-task-item active">
+                                  </div> {% endcomment %}
+                                    {% comment %} <div class="tasks__item crms-task-item active">
                                         <div class="accordion-header js-accordion-header">Table</div> 
                                         <div class="accordion-body js-accordion-body">
                                             <div class="accordion-body__contents">
@@ -332,16 +332,16 @@
                                                 </table>
                                             </div>
                                         </div>
-                                    </div>
+                                    </div> {% endcomment %}
                                     <div class="tasks__item crms-task-item active">
                                         <div class="accordion-header js-accordion-header">Bullet Points</div> 
                                         <div class="accordion-body js-accordion-body">
                                             <div class="accordion-body__contents">
                                                 <div class="row">
-                                                    <div class="col-md-6 mb-3">
+                                                    {% comment %} <div class="col-md-6 mb-3">
                                                         <label>Title <span class="text-danger">*</span></label>
                                                         <input type="text" class="form-control" placeholder="Title of Bullet Points" name="bullet_title" required>
-                                                    </div>
+                                                    </div> {% endcomment %}
                                                     <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
                                                         <label for="hide-bullets">
                                                             <input type="checkbox" class="form-control-checkbox" id="hide-bullets" name="hide_bullets" {% if detail_page.hide_bullets %}checked{% endif %}>&nbsp;Hide Bullet Points
@@ -432,6 +432,10 @@
 
                                     
                                 </div>
+                                <br>
+                                    <div class="text-center">
+                                        <label><input type="checkbox" class="form-control-checkbox" name="hide_support_languages" {% if detail_page.hide_support_languages %}checked{% endif %}>&nbsp;Hide Support Languages</label>
+                                    </div>
                                 </div>                                
                             </div>
                           </div>

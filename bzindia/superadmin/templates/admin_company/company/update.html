@@ -64,7 +64,7 @@
                             
                         </div>                        
                         <div class="form-row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="company-type-dropdown">Company Type <span class="text-danger">*</span></label>
                                 <select class="form-control" id="company-type-dropdown" name="type" required>
                                     <option value="" hidden disabled selected>Select Company Type</option>
@@ -78,8 +78,12 @@
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
-                            </div>                            
-                            <div class="col-md-6 mb-3">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="sub-type-input">Sub Type <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="sub-type-input" name="sub_type" placeholder="Sub Type" value="{{company.sub_type}}" required>                                
+                            </div>
+                            <div class="col-md-4 mb-3">
                                 <label for="slug-input">Slug <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="slug-input" name="slug" placeholder="Slug" value="{{company.slug}}" required>
                                 <div class="invalid-feedback">
@@ -240,6 +244,20 @@
                                 <textarea class="form-control" rows="3" id="meta-description-input" name="meta_description" placeholder="Meta Description" required>{% if company.meta_description %}{{company.meta_description}}{% endif %}</textarea>
                             </div>                        
                         </div>                        
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title mb-0">Home Content</h4>
+                    </div>
+                    <div class="card-body">  
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                {{form.media}}
+                                {{form.footer_content|as_crispy_field}}
+                            </div>
+                        </div>
                     </div>
                 </div>
 

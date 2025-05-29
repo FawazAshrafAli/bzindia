@@ -8,6 +8,22 @@ from registration.models import MultiPage as RegistrationMultiPage, Registration
 from company.models import Company
 from blog.models import Blog
 from base.models import MetaTag
+from home.models import HomeContent
+from custom_pages.models import AboutUs
+
+from ckeditor.widgets import CKEditorWidget
+
+class HomeContentForm(forms.ModelForm):
+    class Meta:
+        model = HomeContent
+        fields = ["title", "description", "meta_title", "meta_description", "footer_text"]
+
+        widgets = {
+            "title": forms.TextInput(attrs={"placeholder": "Title"}),
+            "meta_title": forms.TextInput(attrs={"placeholder": "Meta Title"}),
+            "meta_description": forms.Textarea(attrs={"placeholder": "Meta Description", "rows": 3})
+        }
+
 
 class CourseMultiPageDescriptionForm(forms.ModelForm):
     description = forms.CharField(widget=CKEditorWidget())
@@ -76,7 +92,7 @@ class RegistrationDetailPageDescriptionForm(forms.ModelForm):
 class CompanyForm(forms.ModelForm):
     class Meta:
         model = Company
-        fields = ["description"]
+        fields = ["description", "footer_content"]
 
 
 class BlogContentForm(forms.ModelForm):
@@ -89,3 +105,11 @@ class MetaTagDescriptionForm(forms.ModelForm):
     class Meta:
         model = MetaTag
         fields = ["description"]
+
+
+class AboutUsContentForm(forms.ModelForm):
+    content = forms.CharField(widget=CKEditorWidget())
+
+    class Meta:
+        model = AboutUs
+        fields = ["content"]

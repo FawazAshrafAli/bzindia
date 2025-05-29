@@ -1,10 +1,13 @@
 from django.db import models
 from django.utils.text import slugify
 from ckeditor.fields import RichTextField
+from datetime import datetime
+from django.db.models import Avg
 
 from company.models import Company
 from locations.models import UniqueState
 from base.models import MetaTag
+from company.models import Testimonial
 
 class RegistrationType(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
@@ -41,6 +44,10 @@ class RegistrationType(models.Model):
     @property
     def sub_categories(self):
         return RegistrationSubType.objects.filter(type = self).values("name", "slug")
+    
+    @property
+    def detail_pages(self):
+        return RegistrationDetailPage.objects.filter(registration_sub_type__type = self).values("registration_sub_type__name", "slug")
 
 
 class RegistrationSubType(models.Model):
@@ -76,8 +83,18 @@ class RegistrationSubType(models.Model):
         db_table = "registration_sub_type"
         ordering = ["name"]
 
+    @property
+    def price(self):
+        registrations = Registration.objects.filter(sub_type = self, price__isnull = False)
 
-class RegistrationDetail(models.Model):
+        return registrations.first().price if registrations else None
+    
+    @property
+    def get_absolute_url(self):
+        return f'/registrations/{self.slug}'
+
+
+class Registration(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
 
     sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
@@ -97,7 +114,7 @@ class RegistrationDetail(models.Model):
             slug = base_slug
             count = 1
             
-            while RegistrationDetail.objects.filter(slug = slug).exists():
+            while Registration.objects.filter(slug = slug).exists():
                 slug = f"{base_slug}-{count}"
                 count += 1
 
@@ -109,7 +126,7 @@ class RegistrationDetail(models.Model):
         return f"{self.company.name}-{self.sub_type.name}"
     
     class Meta:
-        db_table = "registration_detail"
+        db_table = "registrations"
         ordering = ["-created"]    
 
 
@@ -414,6 +431,8 @@ class RegistrationDetailPage(models.Model):
     hide_tags = models.BooleanField(default=False)
     hide_timeline = models.BooleanField(default=False)
 
+    hide_support_languages = models.BooleanField(default=False)
+
     slug = models.SlugField(null=True, blank=True)
 
     created = models.DateTimeField(auto_now_add=True)
@@ -428,7 +447,7 @@ class RegistrationDetailPage(models.Model):
             slug = base_slug
             count = 1
 
-            while RegistrationDetail.objects.filter(slug = slug).exists():
+            while Registration.objects.filter(slug = slug).exists():
                 slug = f"{base_slug}-{count}"
                 count += 1
 
@@ -464,11 +483,62 @@ class RegistrationDetailPage(models.Model):
         tag_list = [tag.name for tag in self.meta_tags.all()]
 
         return ", ".join(tag_list)
+    
+    @property
+    def toc(self):
+        options = {
+            self.vertical_title: self.hide_vertical_tab,
+            self.horizontal_title: self.hide_horizontal_tab,
+            self.table_title: self.hide_table,
+            self.bullet_title: self.hide_bullets,
+            self.tag_title: self.hide_tags,
+            self.timeline_title: self.hide_timeline
+        }
+
+        toc = [title for title, hidden in options.items() if not hidden]
+
+        return toc
+    
+    @property
+    def published(self):
+        if self.created:
+            return datetime.strftime(self.created, "%Y-%m-%d")
+        return None
+    
+    @property
+    def modified(self):
+        if self.updated:
+            return datetime.strftime(self.updated, "%Y-%m-%d")
+        return None
+    
+    @property
+    def faqs(self):
+        return Faq.objects.filter(company = self.company, registration_sub_type = self.registration_sub_type)
+    
+    @property
+    def testimonials(self):
+        return Testimonial.objects.filter(company = self.company).order_by("order")
+    
+    @property
+    def blogs(self):
+        from blog.models import Blog
+        return Blog.objects.filter(company = self.company, registration_sub_type = self.registration_sub_type)
+    
+    @property
+    def price(self):
+        registrations = Registration.objects.filter(sub_type = self.registration_sub_type, price__isnull = False)
+
+        if registrations:
+            return registrations.first().price
+        
+        return None
+
 
 
 class MultiPageFeature(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_registration_multipage_feature")
-    registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    # registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    title = models.CharField(max_length = 250)
 
     feature = models.CharField(max_length=250)
 
@@ -476,7 +546,7 @@ class MultiPageFeature(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.company.name}-{self.registration_sub_type.name}"
+        return f"{self.title}-{self.company.name}"
     
     class Meta:
         db_table = "registration_multipage_features"
@@ -485,7 +555,8 @@ class MultiPageFeature(models.Model):
 
 class MultiPageVerticalBullet(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_registration_multipage_vertical_bullet")
-    registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    # registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    title = models.CharField(max_length = 250)
 
     heading = models.CharField(max_length=250, null=True, blank=True)
     sub_heading = models.CharField(max_length=250, null=True, blank=True)
@@ -496,7 +567,7 @@ class MultiPageVerticalBullet(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.company.name}-{self.registration_sub_type.name}"
+        return f"{self.title}-{self.company.name}"
     
     class Meta:
         db_table = "registration_multipage_vertical_bullets"
@@ -505,7 +576,8 @@ class MultiPageVerticalBullet(models.Model):
 
 class MultiPageVerticalTab(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_registration_multipage_vertical_tab")
-    registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    # registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    title = models.CharField(max_length = 250)
     
     heading = models.CharField(max_length=250, null=True, blank=True)
     sub_heading = models.CharField(max_length=250, null=True, blank=True)
@@ -516,7 +588,7 @@ class MultiPageVerticalTab(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.company.name}-{self.registration_sub_type.name}"
+        return f"{self.title}-{self.company.name}"
     
     class Meta:
         db_table = "registration_multipage_vertical_tabs"
@@ -525,7 +597,8 @@ class MultiPageVerticalTab(models.Model):
 
 class MultiPageHorizontalBullet(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_registration_multipage_horizontal_bullet")
-    registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    # registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    title = models.CharField(max_length = 250)
 
     heading = models.CharField(max_length=250, null=True, blank=True)
 
@@ -535,7 +608,7 @@ class MultiPageHorizontalBullet(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.company.name}-{self.registration_sub_type.name}"
+        return f"{self.title}-{self.company.name}"
     
     class Meta:
         db_table = "registration_multipage_horizontal_bullets"
@@ -544,7 +617,8 @@ class MultiPageHorizontalBullet(models.Model):
 
 class MultiPageHorizontalTab(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_registration_multipage_horizontal_tab")
-    registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    # registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    title = models.CharField(max_length = 250)
 
     heading = models.CharField(max_length=250, null=True, blank=True)
     summary = models.TextField(blank=True, null=True)
@@ -554,7 +628,7 @@ class MultiPageHorizontalTab(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.company.name}-{self.registration_sub_type.name}"
+        return f"{self.title}-{self.company.name}"
     
     class Meta:
         db_table = "registration_multipage_horizontal_tabs"
@@ -562,7 +636,8 @@ class MultiPageHorizontalTab(models.Model):
 
 class MultiPageTableData(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_registration_multipage_table_data")
-    registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    # registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    title = models.CharField(max_length = 250)
 
     heading = models.CharField(max_length=250)
     data = models.CharField(max_length=250)
@@ -571,7 +646,7 @@ class MultiPageTableData(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.company.name}-{self.registration_sub_type.name}"
+        return f"{self.title}-{self.company.name}"
     
     class Meta:
         db_table = "registration_multipage_table_data"
@@ -580,7 +655,8 @@ class MultiPageTableData(models.Model):
 
 class MultiPageTable(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_registration_multipage_table")
-    registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    # registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    title = models.CharField(max_length = 250)
 
     heading = models.CharField(max_length=250)
     datas = models.ManyToManyField(MultiPageTableData)
@@ -589,7 +665,7 @@ class MultiPageTable(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.company.name}-{self.registration_sub_type.name}"
+        return f"{self.title}-{self.company.name}"
     
     class Meta:
         db_table = "registration_multipage_table"
@@ -598,7 +674,8 @@ class MultiPageTable(models.Model):
 
 class MultiPageBulletPoint(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_registration_multipage_bullets")
-    registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    # registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    title = models.CharField(max_length = 250)
 
     bullet_point = models.CharField(max_length=250)
 
@@ -606,7 +683,7 @@ class MultiPageBulletPoint(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.company.name}-{self.registration_sub_type.name}"
+        return f"{self.title}-{self.company.name}"
     
     class Meta:
         db_table = "registration_multipage_bullet_points"
@@ -615,7 +692,8 @@ class MultiPageBulletPoint(models.Model):
 
 class MultiPageTag(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_registration_multipage_tag")
-    registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    # registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    title = models.CharField(max_length = 250)
 
     tag = models.CharField(max_length=250)
     # link = models.URLField(max_length=200)
@@ -624,7 +702,7 @@ class MultiPageTag(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.company.name}-{self.registration_sub_type.name}"
+        return f"{self.title}-{self.company.name}"
     
     class Meta:
         db_table = "registration_multipage_tags"
@@ -633,7 +711,8 @@ class MultiPageTag(models.Model):
 
 class MultiPageTimeline(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_registration_multipage_timeline")
-    registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    # registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    title = models.CharField(max_length = 250)
 
     heading = models.CharField(max_length=250)
     summary = models.TextField()
@@ -642,7 +721,7 @@ class MultiPageTimeline(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.company.name}-{self.registration_sub_type.name}"
+        return f"{self.title}-{self.company.name}"
     
     class Meta:
         db_table = "registration_multipage_timelines"
@@ -651,16 +730,33 @@ class MultiPageTimeline(models.Model):
 
 class MultiPageFaq(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_registration_multipage_faq")
-    registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    # registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    title = models.CharField(max_length = 250)
 
     question = models.CharField(max_length=250)
     answer = models.TextField()
 
+    slug = models.SlugField(null=True, blank=True, max_length=500)
+
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.company.name}-{self.registration_sub_type.name}")
+            slug = base_slug
+
+            count = 1
+            while MultiPageFaq.objects.filter(slug = slug).exists():
+                slug = f"{base_slug}-{count}"
+                count += 1
+
+            self.slug = slug
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.company.name}-{self.registration_sub_type.name}"
+        return f"{self.title}-{self.company.name}"
     
     class Meta:
         db_table = "registration_multipage_faqs"
@@ -669,7 +765,8 @@ class MultiPageFaq(models.Model):
 
 class MultiPage(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_registration_multipage")
-    registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    registration = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE)
+    title = models.CharField(max_length = 250)
 
     summary = models.TextField(null=True, blank=True)
     description = RichTextField()
@@ -679,6 +776,9 @@ class MultiPage(models.Model):
     meta_description = models.TextField()
 
     url_type = models.CharField(max_length=50, default="slug_filtered")
+
+    registration_region = models.CharField(max_length=250, default="all")
+    available_states = models.ManyToManyField(UniqueState)
 
     features = models.ManyToManyField(MultiPageFeature)
 
@@ -704,7 +804,7 @@ class MultiPage(models.Model):
 
     # Timeline
     timeline_title = models.CharField(max_length=250, null=True, blank=True)
-    timelines = models.ManyToManyField(MultiPageTimeline)
+    timelines = models.ManyToManyField(MultiPageTimeline, related_name="registration_multipage_states")
 
     # Faqs
     faqs = models.ManyToManyField(MultiPageFaq)
@@ -718,6 +818,8 @@ class MultiPage(models.Model):
     hide_timeline = models.BooleanField(default=False)
     hide_faqs = models.BooleanField(default=False)
 
+    hide_support_languages = models.BooleanField(default=False)
+
     slug = models.SlugField(null=True, blank=True)
 
     created = models.DateTimeField(auto_now_add=True)
@@ -725,23 +827,26 @@ class MultiPage(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.meta_title:
-            self.meta_title = f"{self.registration_sub_type.name} - {self.company.name}"
+            self.meta_title = f"{self.title} - {self.company.name}"
 
-        if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.registration_sub_type.name}")
-            slug = base_slug
-            count = 1
+        base_slug = slugify(self.title)
+        slug = base_slug
+        count = 1
 
-            while MultiPage.objects.filter(slug = slug).exists():
-                slug = f"{base_slug}-{count}"
-                count += 1
+        while MultiPage.objects.filter(slug = slug).exclude(pk = self.pk).exists():
+            slug = f"{base_slug}-{count}"
+            count += 1
 
-            self.slug = slug
+        if self.url_type != "slug_filtered":
+            slug = slug.replace("-in-place_name", "").replace("-in-district_name", "").replace("-in-state_name", "").replace("-place_name", "").replace("-district_name", "").replace("-state_name", "")
+
+        self.slug = slug
+
 
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.company.name}-{self.registration_sub_type.name}"
+        return f"{self.title}-{self.company.name}"
     
     class Meta:
         db_table = "registration_multipages"
@@ -768,3 +873,49 @@ class MultiPage(models.Model):
         tag_list = [tag.name for tag in self.meta_tags.all()]
 
         return ", ".join(tag_list)
+    
+    @property
+    def toc(self):
+        options = {
+            self.vertical_title: self.hide_vertical_tab,
+            self.horizontal_title: self.hide_horizontal_tab,
+            self.table_title: self.hide_table,
+            self.bullet_title: self.hide_bullets,
+            self.tag_title: self.hide_tags,
+            self.timeline_title: self.hide_timeline
+        }
+
+        toc = [title for title, hidden in options.items() if not hidden]
+
+        return toc
+    
+    @property
+    def published(self):
+        if self.created:
+            return datetime.strftime(self.created, "%Y-%m-%d")
+        return None
+    
+    @property
+    def modified(self):
+        if self.updated:
+            return datetime.strftime(self.updated, "%Y-%m-%d")
+        return None
+    
+    @property
+    def blogs(self):
+        from blog.models import Blog
+        return Blog.objects.filter(company = self.company, registration_sub_type = self.registration_sub_type)
+    
+    @property
+    def testimonials(self):
+        return Testimonial.objects.filter(company = self.company).order_by("order")
+    
+    @property
+    def rating(self):
+        testimonials = Testimonial.objects.filter(company = self.company).values_list("rating", flat=True)        
+        
+        return testimonials.aggregate(Avg('rating'))['rating__avg'] if testimonials else 0
+
+    @property
+    def rating_count(self):
+        return Testimonial.objects.filter(company = self.company).count()

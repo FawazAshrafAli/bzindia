@@ -62,6 +62,10 @@
         width: 35px;
         height: 35px;
     }
+
+    #state-dropdown-section {
+        display: none;
+    }
 </style>
 <link rel="stylesheet" href="{% static 'w3/css/chosen-style.css' %}">
 <link rel="stylesheet" href="{% static 'w3/css/main-color.css' %}" id="colors">
@@ -80,37 +84,19 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="program-dropdown" >Program <span class="text-danger">*</span></label>
-                                <select class="form-control" id="program-dropdown" name="program" required>
-                                    <option value="" hidden disabled selected>Select Program</option>
-                                    {% for program in programs %}
-                                    <option value="{{program.slug}}" {% if multipage.course.program.slug == program.slug %}selected{% endif %}>{{program.name}}</option>
-                                    {% endfor %}                                    
-                                </select>
-                                <div class="invalid-feedback">
-                                    Please provide the program.
-                                </div>
-                                <div class="valid-feedback">
-                                    Looks good!
-                                </div>
+                            <div class="col-sm-6">
+                                <label class="col-form-label">Title</label>
+                                <input class="form-control"  type="text" id="title-input" name="title" placeholder="Title" value="{% if multipage.title %}{{multipage.title}}{% endif %}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="course-dropdown" >Course <span class="text-danger">*</span></label>
-                                <select class="form-control" id="course-dropdown" name="course" required>
-                                    <option value="" hidden disabled selected>Select Course</option>
+                            <div class="col-sm-6">
+                                <label for="course-dropdown" class="form-label">Course <span class="text-danger">*</span></label>
+                                <select class="form-control" name="course" required>
+                                    <option value="" disabled hidden {% if not multipage.course %} selected {% endif %}>Select Course</option>
                                     {% for course in courses %}
-                                    <option value="{{course.slug}}" {% if multipage.course.slug == course.slug %}selected{% endif %}>{{course.name}}</option>
-                                    {% endfor %}                                    
-                                </select>
-                                <div class="invalid-feedback">
-                                    Please provide the course.
-                                </div>
-                                <div class="valid-feedback">
-                                    Looks good!
-                                </div>
-                            </div>                 
-                            
+                                    <option value="{{course.slug}}" {% if course.slug == multipage.course.slug %}selected{% endif %}>{{course.name}}</option>
+                                    {% endfor %}									
+								</select>
+                            </div>
                         </div>             
 
                         <div class="form-group row">
@@ -150,7 +136,7 @@
                         </div>
 
                         <div class="form-group row">
-                            <div class="col-sm-12">
+                            <div class="col-sm-6">
                                 <label for="url-type-radio" class="col-form-label">URL Type</label><br>
                                 <div class="form-check form-check-inline">
                                     <input type="radio" class="form-check-input" name="url_type" id="location-filtered" value="location_filtered" {% if multipage.url_type == "location_filtered" %}checked{% endif %} required><label class="form-check-label" for="location-filtered">Location Filtered</label>
@@ -158,8 +144,29 @@
                                 <div class="form-check form-check-inline">
                                     <input type="radio" class="form-check-input" name="url_type" id="slug-filtered" value="slug_filtered" {% if multipage.url_type == "slug_filtered" %}checked{% endif %} required><label class="form-check-label" for="slug-filtered">Slug Filtered</label>
                                 </div>
+                                <br>
+                                <small class="text-muted">Preview: <span id="current-url-preview">{% if multipage.url_type == "location_filtered" %}https://bzindia.in/category/course/state-name/district-or-location-name/{% else %}https://bzindia.in/category/course-location-name(Location/Coutry/State/District){% endif %}</span></small>
                             </div>
-                            <small class="text-muted">Preview: <span id="current-url-preview">{% if multipage.url_type == "location_filtered" %}https://bzindia.in/category/course/state-name/district-or-location-name/{% else %}https://bzindia.in/category/course-location-name(Location/Coutry/State/District){% endif %}</span></small>
+                            <div class="col-sm-6">
+                                <label for="course-region-input" class="col-form-label">Course Region</label><br>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" name="course_region" id="all-state-selection" value="all" {% if multipage.course_region == "all" %}checked{% endif %} required><label class="form-check-label" for="all-state-selection">All States</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" name="course_region" id="selected-state-selection" value="selected" {% if multipage.course_region == "selected" %}checked{% endif %} required><label class="form-check-label" for="selected-state-selection">Selected States</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row" id="state-dropdown-section" {% if multipage.course_region != "all" %}style="display: block;"{% endif %}>                   
+                            <div class="col-sm-12">
+                                <label for="state-dropdown" class="form-label">Available States <span class="text-danger">*</span></label>
+                                <select data-placeholder="Select States" class="chosen-select" name="available_states" id="state-dropdown" multiple>
+                                    {% for state in states %}
+                                    <option value="{{state.slug}}" {% if state in multipage.available_states.all %}selected{% endif %}>{{state.name}}</option>
+                                    {% endfor %}									
+								</select>
+                            </div>
                         </div>
 
                         <div class="task-infos">
@@ -629,38 +636,38 @@
             const programDropdown = $('#program-dropdown').val();
             const specializationDropdown = $('#specialization-dropdown').val();
 
-            const modeDropdown = $('#mode-dropdown').val();                                  
+            // // const modeDropdown = $('#mode-dropdown').val();                                  
             
-            let duration = $('#duration-input').val();
-            if (duration) {
-                duration = duration.trim();
-            }
+            // let duration = $('#duration-input').val();
+            // if (duration) {
+            //     duration = duration.trim();
+            // }
 
-            let price = $('#price-input').val();
-            if (price) {
-                price = price.trim();
-            }            
+            // let price = $('#price-input').val();
+            // if (price) {
+                // price = price.trim();
+            // }            
 
-            if (!name) {
-                $('#name-input').removeClass('is-valid').addClass('is-invalid');
-                $('#name-input').focus();
-                formValid = false;
+            // if (!name) {
+            //     $('#name-input').removeClass('is-valid').addClass('is-invalid');
+            //     $('#name-input').focus();
+            //     formValid = false;
 
-            } else {
-                $('#name-input').removeClass('is-invalid').addClass('is-valid');
-                $('#name-input').blur();
+            // } else {
+            //     $('#name-input').removeClass('is-invalid').addClass('is-valid');
+            //     $('#name-input').blur();
                 
-            }            
+            // }            
 
-            if (!programDropdown) {
-                $('#program-dropdown').addClass('is-invalid');
-                $('#program-dropdown').focus();
-                formValid = false;
-            } else {
-                $('#program-dropdown').addClass('is-valid');
-                $('#program-dropdown').blur();
+            // if (!programDropdown) {
+            //     $('#program-dropdown').addClass('is-invalid');
+            //     $('#program-dropdown').focus();
+            //     formValid = false;
+            // } else {
+            //     $('#program-dropdown').addClass('is-valid');
+            //     $('#program-dropdown').blur();
                 
-            }
+            // }
 
             if (!specializationDropdown) {
                 $('#specialization-dropdown').addClass('is-invalid');
@@ -672,37 +679,37 @@
                 
             }
 
-            if (!modeDropdown) {
-                $('#mode-dropdown').addClass('is-invalid');
-                $('#mode-dropdown').focus();
-                formValid = false;
-            } else {
-                $('#mode-dropdown').addClass('is-valid');
-                $('#mode-dropdown').blur();
+            // if (!modeDropdown) {
+            //     $('#mode-dropdown').addClass('is-invalid');
+            //     $('#mode-dropdown').focus();
+            //     formValid = false;
+            // } else {
+            //     $('#mode-dropdown').addClass('is-valid');
+            //     $('#mode-dropdown').blur();
                 
-            }            
+            // }            
             
-            if (duration && !durationPattern.test(duration)) {
-                $('#duration-input').removeClass('is-valid').addClass('is-invalid');
-                $('#duration-input').focus();
-                formValid = false;
+            // if (duration && !durationPattern.test(duration)) {
+            //     $('#duration-input').removeClass('is-valid').addClass('is-invalid');
+            //     $('#duration-input').focus();
+            //     formValid = false;
 
-            } else {
-                $('#duration-input').removeClass('is-invalid').remove('is-valid');
-                $('#duration-input').blur();
+            // } else {
+            //     $('#duration-input').removeClass('is-invalid').remove('is-valid');
+            //     $('#duration-input').blur();
                 
-            }
+            // }
 
-            if (!price || !pricePattern.test(price)) {
-                $('#price-input').removeClass('is-valid').addClass('is-invalid');
-                $('#price-input').focus();
-                formValid = false;
+            // if (!price || !pricePattern.test(price)) {
+            //     $('#price-input').removeClass('is-valid').addClass('is-invalid');
+            //     $('#price-input').focus();
+            //     formValid = false;
 
-            } else {
-                $('#price-input').removeClass('is-invalid').addClass('is-valid');
-                $('#price-input').blur();
+            // } else {
+            //     $('#price-input').removeClass('is-invalid').addClass('is-valid');
+            //     $('#price-input').blur();
                 
-            }
+            // }
             
             if (formValid == true) {
                 $('#add-course-form').submit()
@@ -1214,10 +1221,7 @@
             if (event.key === "Enter") {
                 event.preventDefault();
             }
-        });
-
-        // Get Courses
-        $('#program-dropdown').on('change', () => getCourses());
+        });        
 
         // Function for adding new meta tag
         $(document).on('input', '.search-field input', function () {
@@ -1249,6 +1253,18 @@
                 $('#current-url-preview').html("https://bzindia.in/category/course/state-name/district-or-location-name/");                
             } else {
                 $('#current-url-preview').html("https://bzindia.in/category/course-location-name(Location/Coutry/State/District)");
+            }
+        });
+
+        $('input[name="course_region"]').on('change', function () {
+            if ($(this).val() != "all") {
+                $('#state-dropdown-section').show();
+                $('#state-dropdown').prop("required", true);
+                
+            } else {
+                $('#state-dropdown-section').hide();
+                $('#state-dropdown').prop("required", false);
+
             }
         });
         

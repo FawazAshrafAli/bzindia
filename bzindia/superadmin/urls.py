@@ -91,8 +91,11 @@ from .views import (
     AddBlogView, ListBlogView, UpdateBlogView, DeleteBlogView,
     PublishBlogView, UnPublishBlogView,
 
-    # Meta TaTagsgs,
+    # Meta Tag
     MetaTagListView, AddMetaTagView, UpdateMetaTagView, DeleteMetaTagView,
+
+    # Home Content
+    HomeContentView,
     )
 
 app_name = "superadmin"
@@ -190,7 +193,7 @@ urlpatterns = [
     path('add_course_multipage/<str:slug>', AddCourseMultiPageView.as_view(), name="add_course_multipage"),
     path('update_course_multipage/<str:slug>/<str:multipage_slug>', UpdateCourseMultiPageView.as_view(), name="update_course_multipage"),
     path('course_multipages/<str:slug>', CourseMultiPageListView.as_view(), name="course_multipages"),
-    path('course_multipage/<str:slug>/<str:course_slug>', CourseMultiPageDetailView.as_view(), name="course_multipage"),
+    path('course_multipage/<str:slug>/<str:multipage_slug>', CourseMultiPageDetailView.as_view(), name="course_multipage"),
     path('delete_course_multipage/<str:slug>/<str:multipage_slug>', DeleteCourseMultiPageView.as_view(), name="delete_course_multipage"),
 
     # Service Company
@@ -263,7 +266,8 @@ urlpatterns = [
     path('add_registration_multipage/<str:slug>', AddRegistrationMultiPageView.as_view(), name="add_registration_multipage"),
     path('update_registration_multipage/<str:slug>/<str:multipage_slug>', UpdateRegistrationMultiPageView.as_view(), name="update_registration_multipage"),
     path('registration_multipages/<str:slug>', RegistrationMultiPageListView.as_view(), name="registration_multipages"),
-    path('registration_multipage/<str:slug>/<str:registration_sub_type_slug>', RegistrationMultiPageDetailView.as_view(), name="registration_multipage"),
+    # path('registration_multipage/<str:slug>/<str:registration_sub_type_slug>', RegistrationMultiPageDetailView.as_view(), name="registration_multipage"),
+    path('registration_multipage/<str:slug>/<str:multipage_slug>', RegistrationMultiPageDetailView.as_view(), name="registration_multipage"),
     path('delete_registration_multipage/<str:slug>/<str:multipage_slug>', DeleteRegistrationMultiPageView.as_view(), name="delete_registration_multipage"),
 
     # Directory
@@ -334,4 +338,7 @@ urlpatterns = [
     path('add_meta_tag/', AddMetaTagView.as_view(), name="add_meta_tag"),
     path('update_meta_tag/<str:slug>', UpdateMetaTagView.as_view(), name="update_meta_tag"),
     path('delete_meta_tag/<str:slug>', DeleteMetaTagView.as_view(), name="delete_meta_tag"),
+
+    # Home
+    path('home_main_content/', HomeContentView.as_view(), name="home_main_content"),
 ]

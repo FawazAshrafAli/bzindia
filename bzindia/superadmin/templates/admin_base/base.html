@@ -481,6 +481,10 @@
 										<li><a href="{% url 'superadmin:add_meta_tag' %}"> <span>Add Meta Tag</span></a></li>
 									</li>
 								</ul>
+							</li>							
+
+							<li> 
+								<a href="{% url 'superadmin:home_main_content' %}" {% if home_content_page %}class="active"{% endif %} ><i class="fa fa-font"></i> <span>Home Content</span></a>
 							</li>
 														
 							<li> 
@@ -871,7 +875,8 @@
         <!-- <script src="{% static 'assets/js/dynamicActive.js' %}"></script> -->
 
 		<!-- Chosen Select -->
-		<script type="text/javascript" src="{% static 'w3/scripts/chosen.min.js' %}"></script>
+		{% comment %} <script type="text/javascript" src="{% static 'w3/scripts/chosen.min.js' %}"></script> {% endcomment %}
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.jquery.min.js"></script>
 		<script type="text/javascript" src="{% static 'w3/scripts/custom.js' %}"></script>
 		
 		<script>

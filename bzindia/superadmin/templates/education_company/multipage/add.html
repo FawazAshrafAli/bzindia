@@ -61,6 +61,10 @@
         width: 35px;
         height: 35px;
     }
+
+    #state-dropdown-section {
+        display: none;
+    }
 </style>
 
 <link rel="stylesheet" href="{% static 'w3/css/chosen-style.css' %}">
@@ -79,36 +83,20 @@
                         <h4 class="card-title mb-0" >Course Name</h4>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="program-dropdown" >Program <span class="text-danger">*</span></label>
-                                <select class="form-control" id="program-dropdown" name="program" required>
-                                    <option value="" hidden disabled selected>Select Program</option>
-                                    {% for program in programs %}
-                                    <option value="{{program.slug}}">{{program.name}}</option>
-                                    {% endfor %}                                    
-                                </select>
-                                <div class="invalid-feedback">
-                                    Please provide the program.
-                                </div>
-                                <div class="valid-feedback">
-                                    Looks good!
-                                </div>
+                        <div class="row">                            
+                            <div class="col-sm-6">
+                                <label class="col-form-label">Title</label>
+                                <input class="form-control"  type="text" id="title-input" name="title" placeholder="Title" required>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="course-dropdown" >Course <span class="text-danger">*</span></label>
-                                <select class="form-control" id="course-dropdown" name="course" required>
-                                    <option value="" hidden disabled selected>Select Course</option>
-
-                                </select>
-                                <div class="invalid-feedback">
-                                    Please provide the course.
-                                </div>
-                                <div class="valid-feedback">
-                                    Looks good!
-                                </div>
-                            </div>                 
-                            
+                            <div class="col-sm-6">
+                                <label for="course-dropdown" class="form-label">Course <span class="text-danger">*</span></label>
+                                <select class="form-control" name="course" required>
+                                    <option value="" disabled hidden selected>Select Course</option>
+                                    {% for course in courses %}
+                                    <option value="{{course.slug}}">{{course.name}}</option>
+                                    {% endfor %}									
+								</select>
+                            </div>
                         </div>             
 
                         <div class="form-group row">
@@ -148,16 +136,36 @@
                         </div>
 
                         <div class="form-group row">
-                            <div class="col-sm-12">
+                            <div class="col-sm-6">
                                 <label for="url-type-radio" class="col-form-label">URL Type</label><br>
                                 <div class="form-check form-check-inline">
                                     <input type="radio" class="form-check-input" name="url_type" id="location-filtered" value="location_filtered" required><label class="form-check-label" for="location-filtered">Location Filtered</label>
                                 </div>
                                 <div class="form-check form-check-inline">
                                     <input type="radio" class="form-check-input" name="url_type" id="slug-filtered" value="slug_filtered" checked required><label class="form-check-label" for="slug-filtered">Slug Filtered</label>
+                                </div><br>
+                                <small class="text-muted">Preview: <span id="current-url-preview">https://bzindia.in/category/course-location-name(Location/Coutry/State/District)</span></small>
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="course-region-input" class="col-form-label">Course Region</label><br>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" name="course_region" id="all-state-selection" value="all" checked required><label class="form-check-label" for="all-state-selection">All States</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" name="course_region" id="selected-state-selection" value="selected"  required><label class="form-check-label" for="selected-state-selection">Selected States</label>
                                 </div>
                             </div>
-                            <small class="text-muted">Preview: <span id="current-url-preview">https://bzindia.in/category/course-location-name(Location/Coutry/State/District)</span></small>
+                        </div>
+
+                        <div class="form-group row" id="state-dropdown-section">
+                            <div class="col-sm-12">
+                                <label for="state-dropdown" class="form-label">Available States <span class="text-danger">*</span></label>
+                                <select data-placeholder="Select States" class="chosen-select" name="available_states" id="state-dropdown" multiple>
+                                    {% for state in states %}
+                                    <option value="{{state.slug}}" >{{state.name}}</option>
+                                    {% endfor %}									
+								</select>
+                            </div>
                         </div>
 
                         <div class="task-infos">
@@ -1024,8 +1032,6 @@
         });
         
 
-        $('#program-dropdown').on('change', () => getCourses());
-
         // Function for adding new meta tags
         $(document).on('input', '.search-field input', function () {
             const text = $(this).val().trim();
@@ -1056,6 +1062,18 @@
                 $('#current-url-preview').html("https://bzindia.in/category/course/state-name/district-or-location-name/");                
             } else {
                 $('#current-url-preview').html("https://bzindia.in/category/course-location-name(Location/Coutry/State/District)");
+            }
+        });
+
+        $('input[name="course_region"]').on('change', function () {
+            if ($(this).val() != "all") {
+                $('#state-dropdown-section').show();
+                $('#state-dropdown').prop("required", true);
+                
+            } else {
+                $('#state-dropdown-section').hide();
+                $('#state-dropdown').prop("required", false);
+
             }
         });
         

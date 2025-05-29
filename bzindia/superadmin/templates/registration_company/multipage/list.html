@@ -20,7 +20,7 @@
 											<span class="checkmark"></span>
 										</label>
 									</th>
-									<th>Registration Name</th>									
+									<th>Title</th>									
 									<th class="text-center">Actions</th>
 								</tr>
 							</thead>
@@ -34,7 +34,8 @@
 										</label>
 									</td>
 									<td>										
-										<a href="{% url 'superadmin:registration_multipage' current_company.slug multipage.registration_sub_type.slug %}" >{{multipage.registration_sub_type.name}}</a>
+										{% comment %} <a href="{% url 'superadmin:registration_multipage' current_company.slug multipage.registration_sub_type.slug %}" >{{multipage.registration_sub_type.name}}</a> {% endcomment %}
+										<a href="{% url 'superadmin:registration_multipage' current_company.slug multipage.slug %}" >{{multipage.title}}</a>
 									</td>									
 									
 									<td class="text-center">
