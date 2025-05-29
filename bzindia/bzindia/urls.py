@@ -35,9 +35,22 @@ urlpatterns = [
     path('education/', include('educational.urls', namespace="education")),
     path('registration/', include('registration.urls', namespace="registration")),
     path('blog/', include('blog.urls', namespace="blog")),
+    path('base/', include('base.urls', namespace="base")),
 
     # api-urls
     path('company_api/', include('company_api.urls', namespace="company_api")),
+    path('registration_api/', include('registration_api.urls', namespace="registration_api")),
+    path('course_api/', include('course_api.urls', namespace="course_api")),
+    path('service_api/', include('service_api.urls', namespace="service_api")),
+    path('product_api/', include('product_api.urls', namespace="product_api")),
+    path('meta_tag_api/', include('meta_tag_api.urls', namespace="meta_tag_api")),
+    path('destination_api/', include('destination_api.urls', namespace="destination_api")),
+    path('blog_api/', include('blog_api.urls', namespace="blog_api")),
+    path('location_api/', include('location_api.urls', namespace="location_api")),
+    path('home_api/', include('home_api.urls', namespace="home_api")),
+    path('contact_api/', include('contact_api.urls', namespace="contact_api")),
+    path('custom_pages_api/', include('custom_pages_api.urls', namespace="custom_pages_api")),
+    path('meta_api/', include('meta_api.urls', namespace="meta_api")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])

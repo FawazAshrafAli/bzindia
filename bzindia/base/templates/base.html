@@ -487,6 +487,117 @@ for (let i = 0; i < acc.length; i++) {
       });
     
     </script>
+
+    <script>
+      function updateServiceSchema (service_schema) {
+
+        // Remove old schema if exists
+        $('#service-schema').remove();
+        
+        // Add new schema
+        $('head').append(
+          '<script type="application/ld+json" id="service-schema">' + 
+          JSON.stringify(service_schema) + 
+          '</' + 'script>'
+        );
+      }
+
+      function setLocalPincode(key, value) {
+        const twentyFourHoursInMs = 24 * 60 * 60 * 1000; // 86400000 ms
+        const item = {
+            value: value,
+            expiry: Date.now() + twentyFourHoursInMs
+        };
+        localStorage.setItem(key, JSON.stringify(item));
+      }
+      
+      function getLocalPincode(key) {
+        const itemStr = localStorage.getItem(key);
+        
+        if (!itemStr) return null;
+        
+        const item = JSON.parse(itemStr);
+        
+        if (Date.now() > item.expiry) {
+          localStorage.removeItem(key);
+          return null;
+        }
+        
+        return item.value;
+      }
+
+      function getPlaces(latitude, longitude) {
+        if (!latitude || !longitude) {
+          console.error("Error: Bad Request")
+          return
+        }
+        
+        let actionUrl = `{% url 'base:get_pincode' 'dummyLatitude' 'dummyLongitude' %}`
+        .replace('dummyLatitude', latitude).replace('dummyLongitude', longitude);
+
+        let storedPincode =  getLocalPincode('bzindia_pincode');
+
+        if (storedPincode) {
+          actionUrl = `{% url 'base:get_places' 'dummyPincode' %}`
+          .replace('dummyPincode', storedPincode);
+        }
+
+        $.ajax({
+          type: "GET",
+          url: actionUrl,
+          dataType: "json",
+
+          success: response => {
+            if (response.places) {
+              $('.local-cscs, .local-post-offices, .local-police-stations, .local-courts, .local-banks, .local-destinations').empty();
+              response.places.forEach(place => {
+                $('.local-cscs').append(`<a class="anchor" href="#">CSCs in ${place.name}</a>`);
+                $('.local-post-offices').append(`<a class="anchor" href="#">Post Offices in ${place.name}</a>`);
+                $('.local-police-stations').append(`<a class="anchor" href="#">Police Stations in ${place.name}</a>`);
+                $('.local-courts').append(`<a class="anchor" href="#">Judicial Courts in ${place.name}</a>`);
+                $('.local-banks').append(`<a class="anchor" href="#">Banks in ${place.name}</a>`);
+                $('.local-destinations').append(`<a class="anchor" href="#">Destinations in ${place.name}</a>`);
+              });
+
+            }
+
+            if (response.pincode) {         
+              setLocalPincode('bzindia_pincode', response.pincode);
+            }
+
+            if (response.district) {
+                $('.district-name').html(response.district);
+            }
+
+            if (response.place && response.district && response.state && response.pincode) {
+              updateServiceSchema(response.service_schema);
+            }
+
+
+            if (response.failed) {
+              console.error("Error: ", response.message);
+            }
+
+            
+          },
+
+          error: error => console.error("Error: ", error),
+        });
+      }
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+              const latitude = position.coords.latitude;
+              const longitude = position.coords.longitude;
+              
+              if (latitude && longitude) {
+                getPlaces(latitude, longitude);
+              }
+          }
+        )
+      }
+    </script>
   
 </body>
 

@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from django.utils.text import slugify
 from django.utils import timezone
 from ckeditor.fields import RichTextField
@@ -114,3 +115,29 @@ class Blog(models.Model):
         tag_list = [tag.name for tag in self.meta_tags.all()]
 
         return ", ".join(tag_list)
+    
+    @property
+    def category(self):
+        for category in (self.course, self.product, self.service, self.registration_sub_type):
+            if category:
+                return category.name
+
+        return None
+    
+    @property
+    def category_slug(self):
+        for category in (self.course, self.product, self.service, self.registration_sub_type):
+            if category:
+                return category.slug
+
+        return None
+    
+    @property
+    def get_absolute_url(self):
+        return f"https://bzindia/blogs/{self.slug}"
+    
+    @property
+    def category_count(self):
+
+        return Blog.objects.filter(Q(course__name = self.category) | Q(product__name = self.category) | Q(service__name = self.category) | Q(registration_sub_type__name = self.category)).count()
+    

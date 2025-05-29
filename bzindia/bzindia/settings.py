@@ -16,7 +16,6 @@ import os
 from dotenv import load_dotenv
 
 
-
 load_dotenv()
 
 OPENCAGE_API_KEY = os.getenv('OPENCAGE_API_KEY')
@@ -52,6 +51,7 @@ INSTALLED_APPS = [
     'ckeditor',
     'crispy_forms',
     'crispy_bootstrap5',
+    'corsheaders',
 
     # apps
     'base',
@@ -71,11 +71,25 @@ INSTALLED_APPS = [
 
     # apis
     'company_api',
+    'registration_api',
+    'course_api',
+    'service_api',
+    'product_api',
+    'meta_tag_api',
+    'destination_api',
+    'blog_api',
+    'location_api',
+    'home_api',
+    'contact_api',
+    'custom_pages_api'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+
+    'corsheaders.middleware.CorsMiddleware',
+
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -172,6 +186,10 @@ MEDIA_URL = '/media/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+        # Or use JWT from djangorestframework-simplejwt
+    ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
@@ -218,7 +236,7 @@ CACHES = {
 }
 
 # Crispy Forms
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_ALLOWED_TEMPLATE_PACKS = ["bootstrap5"]
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # Ckedits
@@ -237,3 +255,12 @@ CKEDITOR_CONFIGS = {
         'allowedContent': True,  # This allows all content, including tables
     },
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+SITE_URL = 'http://localhost:5005'
