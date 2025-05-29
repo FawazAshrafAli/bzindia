@@ -2,6 +2,7 @@ from django.http import JsonResponse, HttpResponse, Http404
 from django.core.cache import cache
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.views.generic import View
 
 import logging
 import requests
@@ -18,7 +19,7 @@ from .models import (
     UniqueState, UniqueDistrict, UniquePlace,
 
     AndmanAndNicobarTestedCoordinates, UaeCoordinates, KsaCoordinates,    
-    UaeLocationData, KsaLocationData
+    UaeLocationData, KsaLocationData, PlacePincode, PlaceCoordinate
     )
 
 logger = logging.getLogger(__name__)
@@ -115,6 +116,7 @@ def get_locations(top_left, bottom_right, api_key, opencage_cache):
 
                         except Exception as e:
                             logger.info(f"An Unexpected Error occured: {e}")
+                            
                             time.sleep(2)
                             break
                 
@@ -213,8 +215,8 @@ def get_uae_locations(top_left, bottom_right, api_key, opencage_cache):
 def get_ksa_locations(top_left, bottom_right, api_key, opencage_cache):
     base_url = 'https://api.opencagedata.com/geocode/v1/json'
 
-    lat_step = 0.07
-    lon_step = 0.07
+    lat_step = 0.02
+    lon_step = 0.02
 
     latitude = top_left[0]
     
@@ -226,7 +228,7 @@ def get_ksa_locations(top_left, bottom_right, api_key, opencage_cache):
 
             if not KsaCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
                 with transaction.atomic():            
-                    if request_count <= 10000:
+                    if request_count <= 6666:
                         try:
                             logger.info(f"Querying Coordinates: ({latitude}, {longitude})")
 
@@ -248,22 +250,18 @@ def get_ksa_locations(top_left, bottom_right, api_key, opencage_cache):
                                 components = first_result.get("components", {})
                                 formatted = first_result.get("formatted")
 
-                                country = components.get("country")
+                                country = components.get("country")                    
 
                                 if str(country).lower() in {"kingdom of saudi arabia", "saudi arabia", "ksa"}:
                                     road = components.get("road")
                                     address = formatted.replace(f"{road},", "").strip() if road else formatted
 
-                                    location, created = KsaLocationData.objects.get_or_create(                                        
-                                        address= address,                                        
-                                        defaults={
-                                            "json_data": data,
-                                            "requested_latitude": latitude,
-                                            "requested_longitude": longitude
-                                            }
-                                    )
+                                    if not KsaLocationData.objects.filter(address= address).exists():
 
-                                    if created:
+                                        KsaLocationData.objects.create(                                        
+                                            address = address, json_data = data, requested_latitude = latitude, requested_longitude = longitude                                            
+                                        )
+
                                         logger.info(f"Place created: '{address}'\n")
                             
                             KsaCoordinates.objects.get_or_create(latitude=latitude, longitude=longitude)
@@ -274,7 +272,8 @@ def get_ksa_locations(top_left, bottom_right, api_key, opencage_cache):
                             continue
 
                         except Exception as e:
-                            logger.info(f"An Unexpected Error occured: {e}")
+                            # logger.info(f"An Unexpected Error occured: {e}")
+                            logger.exception(f"An Unexpected Error occured: {e}")
                             time.sleep(2)
                             continue
                 
@@ -615,4 +614,106 @@ def populate_unique_places():
     print(f"\nCompleted!")
 
 
+# def update_places(self):
+#     for place in UniquePlace.objects.select_related("district", "state"):
+#         # Single query instead of two
+#         place_queryset = Place.objects.filter(
+#             name=place.name,
+#             district__name=place.district.name,
+#             state__name=place.state.name
+#         ).values("pincode", "latitude", "longitude")
 
+#         pincode_set = set()
+#         coordinate_set = set()
+
+#         for entry in place_queryset:
+#             pincode_set.add(entry["pincode"])
+#             coordinate_set.add((entry["latitude"], entry["longitude"]))
+
+#         updating_pincode_set = set()
+#         updating_coordinate_set = set()
+
+#         # Handle pincodes
+#         for pincode in pincode_set:
+#             place_pincode_obj, _ = PlacePincode.objects.get_or_create(
+#                 place=place, pincode=pincode
+#             )
+#             updating_pincode_set.add(place_pincode_obj)
+
+#         # Handle coordinates
+#         for lat, lng in coordinate_set:
+#             place_coordinate_obj, _ = PlaceCoordinate.objects.get_or_create(
+#                 place=place, latitude=lat, longitude=lng
+#             )
+#             updating_coordinate_set.add(place_coordinate_obj)
+
+#         # Apply ManyToMany updates
+#         place.pincodes.set(updating_pincode_set)
+#         place.coordinates.set(updating_coordinate_set)
+
+from collections import defaultdict
+from django.db import transaction
+
+def update_places():
+    # Step 1: Index all Place records in memory
+    print("Loading all Place records into memory...")
+    place_index = defaultdict(lambda: {"pincodes": set(), "coordinates": set()})
+    for pl in Place.objects.filter(state__name = "Kerala").select_related("district", "state").values(
+        "name", "district__name", "state__name", "pincode", "latitude", "longitude"
+    ):
+        key = (pl["name"], pl["district__name"], pl["state__name"])
+        place_index[key]["pincodes"].add(pl["pincode"])
+        place_index[key]["coordinates"].add((pl["latitude"], pl["longitude"]))
+
+    print(f"Indexed {len(place_index)} place groups.")
+
+    # Step 2: Process UniquePlaces with minimal DB hits
+    unique_places = UniquePlace.objects.select_related("district", "state").prefetch_related("pincodes", "coordinates")
+
+    new_pincodes = []
+    new_coordinates = []
+    place_pincode_map = defaultdict(list)
+    place_coordinate_map = defaultdict(list)
+
+    print("Processing UniquePlaces...")
+    for place in unique_places:
+        key = (place.name, place.district.name, place.state.name)
+        data = place_index.get(key)
+        if not data:
+            continue
+
+        for pincode in data["pincodes"]:
+            new_pincodes.append(PlacePincode(place=place, pincode=pincode))
+            place_pincode_map[place].append(pincode)
+
+        for lat, lng in data["coordinates"]:
+            new_coordinates.append(PlaceCoordinate(place=place, latitude=lat, longitude=lng))
+            place_coordinate_map[place].append((lat, lng))
+
+    print("Bulk creating PlacePincode and PlaceCoordinate objects...")
+
+    # Step 3: Bulk create (ignore duplicates)
+    with transaction.atomic():
+        PlacePincode.objects.bulk_create(new_pincodes, ignore_conflicts=True)
+        PlaceCoordinate.objects.bulk_create(new_coordinates, ignore_conflicts=True)
+
+    print("Re-fetching created pincode and coordinate objects...")
+
+    # Step 4: Re-fetch related objects to set M2M
+    pincode_objs = PlacePincode.objects.filter(place__in=unique_places)
+    coordinate_objs = PlaceCoordinate.objects.filter(place__in=unique_places)
+
+    pincode_lookup = defaultdict(list)
+    for pp in pincode_objs:
+        pincode_lookup[pp.place_id].append(pp)
+
+    coordinate_lookup = defaultdict(list)
+    for pc in coordinate_objs:
+        coordinate_lookup[pc.place_id].append(pc)
+
+    print("Updating M2M relations in bulk...")
+    for place in unique_places:
+        place.pincodes.set(pincode_lookup[place.id])
+        place.coordinates.set(coordinate_lookup[place.id])
+
+    print("Update complete.")

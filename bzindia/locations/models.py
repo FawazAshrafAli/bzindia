@@ -164,9 +164,9 @@ class UniqueDistrict(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.name}-{self.state.name}")
+            base_slug = slugify(f"{self.name}")
             slug = base_slug
-            count = 1
+            count = 2
             while UniqueDistrict.objects.filter(slug = slug).exists():
                 slug = f"{base_slug}-{count}"
                 count += 1
@@ -183,10 +183,25 @@ class UniqueDistrict(models.Model):
         ordering = ["name"]
 
 
+class PlaceCoordinate(models.Model):
+    place = models.ForeignKey("UniquePlace", on_delete=models.CASCADE)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+
+class PlacePincode(models.Model):
+    place = models.ForeignKey("UniquePlace", on_delete=models.CASCADE)
+    pincode = models.PositiveIntegerField(blank=True, null=True)
+
+
 class UniquePlace(models.Model):
     name = models.CharField(max_length=150)
     district = models.ForeignKey(UniqueDistrict, on_delete=models.CASCADE)
     state = models.ForeignKey(UniqueState, on_delete=models.CASCADE)
+
+    pincodes = models.ManyToManyField(PlacePincode)
+
+    coordinates = models.ManyToManyField(PlaceCoordinate)    
     
     slug = models.SlugField(blank=True, null=True, max_length=500)
 
@@ -195,10 +210,10 @@ class UniquePlace(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.name}-{self.district.name}-{self.state.name}")
+            base_slug = slugify(self.name)
             slug = base_slug
-            count = 1
-            while Place.objects.filter(slug = slug).exists():
+            count = 2
+            while UniquePlace.objects.filter(slug = slug).exists():
                 slug = f"{base_slug}-{count}"
                 count += 1
 

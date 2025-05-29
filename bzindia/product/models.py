@@ -39,6 +39,10 @@ class Category(models.Model):
     @property
     def sub_categories(self):
         return SubCategory.objects.filter(category = self).values("name", "slug")
+    
+    @property
+    def detail_pages(self):
+        return ProductDetailPage.objects.filter(product__category = self).values("product__name", "slug")
 
 
 class SubCategory(models.Model):
@@ -259,7 +263,11 @@ class Product(models.Model):
     @property
     def rating_count(self):
         return Review.objects.filter(product = self).count()  
-
+    
+    @property
+    def get_absolute_url(self):
+        return f'/products/{self.slug}'
+    
 
 class Faq(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_faq_company")
@@ -300,7 +308,8 @@ class Review(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="review_company")
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    email = models.EmailField(max_length=254, null=True, blank=True)
 
     review_by = models.TextField(null=True, blank=True)
 
@@ -394,118 +403,118 @@ class Feature(models.Model):
         ordering = ["created"]
 
 
-class VerticalBullet(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_vertical_bullet_company")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+# class VerticalBullet(models.Model):
+#     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_vertical_bullet_company")
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
-    heading = models.CharField(max_length=250, null=True, blank=True)
-    sub_heading = models.CharField(max_length=250, null=True, blank=True)
+#     heading = models.CharField(max_length=250, null=True, blank=True)
+#     sub_heading = models.CharField(max_length=250, null=True, blank=True)
 
-    bullet = models.CharField(max_length=250)
+#     bullet = models.CharField(max_length=250)
 
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+#     created = models.DateTimeField(auto_now_add=True)
+#     updated = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
+#     def __str__(self):
+#         return f"{self.company.name}-{self.product.name}"
     
-    class Meta:
-        db_table = "product_vertical_bullets"
-        ordering = ["created"]
+#     class Meta:
+#         db_table = "product_vertical_bullets"
+#         ordering = ["created"]
 
 
-class VerticalTab(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_vertical_tab_company")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+# class VerticalTab(models.Model):
+#     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_vertical_tab_company")
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     
-    heading = models.CharField(max_length=250, null=True, blank=True)
-    sub_heading = models.CharField(max_length=250, null=True, blank=True)
-    summary = models.TextField(blank=True, null=True)
-    bullets = models.ManyToManyField(VerticalBullet)
+#     heading = models.CharField(max_length=250, null=True, blank=True)
+#     sub_heading = models.CharField(max_length=250, null=True, blank=True)
+#     summary = models.TextField(blank=True, null=True)
+#     bullets = models.ManyToManyField(VerticalBullet)
 
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+#     created = models.DateTimeField(auto_now_add=True)
+#     updated = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
+#     def __str__(self):
+#         return f"{self.company.name}-{self.product.name}"
     
-    class Meta:
-        db_table = "product_vertical_tabs"
-        ordering = ["created"]
+#     class Meta:
+#         db_table = "product_vertical_tabs"
+#         ordering = ["created"]
 
 
-class HorizontalBullet(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_horizontal_bullet_company")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+# class HorizontalBullet(models.Model):
+#     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_horizontal_bullet_company")
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
-    heading = models.CharField(max_length=250, null=True, blank=True)
+#     heading = models.CharField(max_length=250, null=True, blank=True)
 
-    bullet = models.CharField(max_length=250)
+#     bullet = models.CharField(max_length=250)
 
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+#     created = models.DateTimeField(auto_now_add=True)
+#     updated = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
+#     def __str__(self):
+#         return f"{self.company.name}-{self.product.name}"
     
-    class Meta:
-        db_table = "product_horizontal_bullets"
-        ordering = ["created"]
+#     class Meta:
+#         db_table = "product_horizontal_bullets"
+#         ordering = ["created"]
 
 
-class HorizontalTab(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_horizontal_tab_company")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+# class HorizontalTab(models.Model):
+#     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_horizontal_tab_company")
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
-    heading = models.CharField(max_length=250, null=True, blank=True)
-    summary = models.TextField(blank=True, null=True)
-    bullets = models.ManyToManyField(HorizontalBullet)
+#     heading = models.CharField(max_length=250, null=True, blank=True)
+#     summary = models.TextField(blank=True, null=True)
+#     bullets = models.ManyToManyField(HorizontalBullet)
 
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+#     created = models.DateTimeField(auto_now_add=True)
+#     updated = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
+#     def __str__(self):
+#         return f"{self.company.name}-{self.product.name}"
     
-    class Meta:
-        db_table = "product_horizontal_tabs"
-        ordering = ["created"]
+#     class Meta:
+#         db_table = "product_horizontal_tabs"
+#         ordering = ["created"]
 
 
-class TableData(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_table_data_company")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+# class TableData(models.Model):
+#     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_table_data_company")
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
-    heading = models.CharField(max_length=250)
-    data = models.CharField(max_length=250)
+#     heading = models.CharField(max_length=250)
+#     data = models.CharField(max_length=250)
 
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+#     created = models.DateTimeField(auto_now_add=True)
+#     updated = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
+#     def __str__(self):
+#         return f"{self.company.name}-{self.product.name}"
     
-    class Meta:
-        db_table = "product_table_data"
-        ordering = ["created"]
+#     class Meta:
+#         db_table = "product_table_data"
+#         ordering = ["created"]
 
 
-class Table(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_table_company")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+# class Table(models.Model):
+#     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_table_company")
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
-    heading = models.CharField(max_length=250)
-    datas = models.ManyToManyField(TableData)
+#     heading = models.CharField(max_length=250)
+#     datas = models.ManyToManyField(TableData)
 
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+#     created = models.DateTimeField(auto_now_add=True)
+#     updated = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
+#     def __str__(self):
+#         return f"{self.company.name}-{self.product.name}"
     
-    class Meta:
-        db_table = "product_table"
-        ordering = ["created"]    
+#     class Meta:
+#         db_table = "product_table"
+#         ordering = ["created"]    
 
 
 class BulletPoint(models.Model):
@@ -575,19 +584,19 @@ class ProductDetailPage(models.Model):
     features = models.ManyToManyField(Feature)
 
     # Verical Tab
-    vertical_title = models.CharField(max_length=250, null=True, blank=True)
-    vertical_tabs = models.ManyToManyField(VerticalTab)
+    # vertical_title = models.CharField(max_length=250, null=True, blank=True)
+    # vertical_tabs = models.ManyToManyField(VerticalTab)
 
     # Horizontal Tab
-    horizontal_title = models.CharField(max_length=250, null=True, blank=True)
-    horizontal_tabs = models.ManyToManyField(HorizontalTab)
+    # horizontal_title = models.CharField(max_length=250, null=True, blank=True)
+    # horizontal_tabs = models.ManyToManyField(HorizontalTab)
 
     # Table
-    table_title = models.CharField(max_length=250, null=True, blank=True)
-    tables = models.ManyToManyField(Table)
+    # table_title = models.CharField(max_length=250, null=True, blank=True)
+    # tables = models.ManyToManyField(Table)
 
     # Bullet Point
-    bullet_title = models.CharField(max_length=250, null=True, blank=True)
+    # bullet_title = models.CharField(max_length=250, null=True, blank=True)
     bullet_points = models.ManyToManyField(BulletPoint)
 
     # Tag
@@ -599,12 +608,14 @@ class ProductDetailPage(models.Model):
     timelines = models.ManyToManyField(Timeline)
 
     hide_features = models.BooleanField(default=False)
-    hide_vertical_tab = models.BooleanField(default=False)
-    hide_horizontal_tab = models.BooleanField(default=False)
-    hide_table = models.BooleanField(default=False)
+    # hide_vertical_tab = models.BooleanField(default=False)
+    # hide_horizontal_tab = models.BooleanField(default=False)
+    # hide_table = models.BooleanField(default=False)
     hide_bullets = models.BooleanField(default=False)
     hide_tags = models.BooleanField(default=False)
     hide_timeline = models.BooleanField(default=False)
+
+    hide_support_languages = models.BooleanField(default=False)
 
     buy_now_action = models.CharField(max_length=50, default="whatsapp")
     whatsapp = models.CharField(max_length=20, blank=True, null=True)
@@ -639,18 +650,18 @@ class ProductDetailPage(models.Model):
         db_table = "product_details"
         ordering = ["created"]
 
-    @property
-    def get_data(self):        
-        rows = []
-        tables = self.tables.all()
+    # @property
+    # def get_data(self):        
+    #     rows = []
+    #     tables = self.tables.all()
 
-        for table in tables:
-            data = [data.data for data in table.datas.all()]
-            rows.append(data)
+    #     for table in tables:
+    #         data = [data.data for data in table.datas.all()]
+    #         rows.append(data)
 
-        transposed_data = list(map(list, zip(*rows)))
+    #     transposed_data = list(map(list, zip(*rows)))
 
-        return transposed_data
+    #     return transposed_data
     
     @property
     def get_meta_tags(self):
@@ -660,6 +671,17 @@ class ProductDetailPage(models.Model):
         tag_list = [tag.name for tag in self.meta_tags.all()]
 
         return ", ".join(tag_list)
+    
+    @property
+    def toc(self):
+        options = {            
+            self.tag_title: self.hide_tags,
+            self.timeline_title: self.hide_timeline
+        }
+
+        toc = [title for title, hidden in options.items() if not hidden]
+
+        return toc
 
 
 
@@ -913,6 +935,8 @@ class MultiPage(models.Model):
     hide_tags = models.BooleanField(default=False)
     hide_timeline = models.BooleanField(default=False)
     hide_faqs = models.BooleanField(default=False)
+
+    hide_support_languages = models.BooleanField(default=False)
 
     buy_now_action = models.CharField(max_length=50, default="whatsapp")
     whatsapp = models.CharField(max_length=20, blank=True, null=True)

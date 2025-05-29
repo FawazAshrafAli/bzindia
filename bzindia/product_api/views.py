@@ -1,0 +1,182 @@
+from rest_framework import viewsets, status, serializers
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+
+from django.shortcuts import get_object_or_404
+from django.http import Http404
+from django.db.models import Q
+
+from company_api.serializers import CompanySerializer
+from .serializers import (
+    ProductCategorySerializer, DetailSerializer, ProductSerializer, 
+    EnquirySerializer, ProductSubCategorySerializer
+    )
+from product.models import (
+    ProductDetailPage, Category, Product, Enquiry, SubCategory
+    )
+from company.models import Company
+from .paginations import ProductDetailPagination
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+class ProductCompanyViewSet(viewsets.ModelViewSet):
+    serializer_class = CompanySerializer
+    queryset = Company.objects.filter(type__name = "Product").order_by("name")
+    lookup_field = "slug"
+
+
+class ProductViewset(viewsets.ModelViewSet):
+    serializer_class = ProductSerializer
+
+    def get_queryset(self):
+        company_slug = self.kwargs.get("company_slug")        
+
+        if company_slug:
+            return Product.objects.filter(company__slug = company_slug)
+        
+        return Product.objects.none()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+
+class ProductDetailViewset(viewsets.ReadOnlyModelViewSet):
+    serializer_class = DetailSerializer
+    pagination_class = ProductDetailPagination
+    lookup_field = "slug"
+
+    def get_queryset(self):
+        company_slug = self.kwargs.get("company_slug")
+
+        q = self.request.query_params.get("q")
+        catalog = self.request.query_params.get("catalog")
+        category = self.request.query_params.get("category")
+
+        if company_slug:
+            filters = {"company__slug": company_slug}
+            
+            if category:
+                filters["product__category__slug"] = category
+
+            if catalog:
+                filters["product__sub_category__slug"] = catalog
+
+            details = ProductDetailPage.objects.filter(**filters)
+
+            if q:
+                details = details.filter(
+                    Q(product__name__icontains = q) |
+                    Q(product__category__name__icontains = q) |
+                    Q(product__sub_category__name__icontains = q) |
+                    Q(product__brand__name__icontains = q)
+                )
+
+            return details
+        
+        return ProductDetailPage.objects.none()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
+
+class ProductCategoryViewSet(viewsets.ModelViewSet):
+    serializer_class = ProductCategorySerializer
+    
+    def get_queryset(self):
+        company_slug = self.kwargs.get("company_slug")
+
+        if company_slug:
+            return Category.objects.filter(company__slug = company_slug)
+        
+        return Category.objects.none()
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
+
+class ProductSubCategoryViewSet(viewsets.ModelViewSet):
+    serializer_class = ProductSubCategorySerializer
+    
+    def get_queryset(self):
+        company_slug = self.kwargs.get("company_slug")
+
+        if company_slug:
+            return SubCategory.objects.filter(company__slug = company_slug)
+        
+        return SubCategory.objects.none()
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
+
+class EnquiryViewSet(viewsets.ModelViewSet):
+    serializer_class = EnquirySerializer
+    http_method_names = ["post", "get"]
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return Enquiry.objects.filter(company__slug=self.kwargs.get("company_slug")) if self.kwargs.get("company_slug") else Enquiry.objects.none()
+
+    def create(self, request, *args, **kwargs):
+        response_data = {
+            "success": False,
+            "message": "Validation Failed",
+            "errors": None
+        }
+
+        try:
+            company_slug = self.kwargs.get("company_slug")
+            if not company_slug:
+                response_data["message"] = "Company identifier missing"
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+            
+            company = get_object_or_404(Company, slug = company_slug)
+            
+            enquiry_data = request.data.copy()
+            enquiry_data["company"] = company
+            serializer = self.get_serializer(data=enquiry_data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(company = company)
+
+            response_data.update({
+                "success": True,
+                "message": "Enquiry submitted successfully",
+                "data": serializer.data
+            })
+            return Response(response_data, status=status.HTTP_201_CREATED)
+
+        except Http404:
+            response_data.update({
+                "message": "Invalid company specified",
+                "error": "Company not found"
+            })
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        except serializers.ValidationError as e:
+            response_data.update({
+                "message": "Validation error",
+                "errors": e.detail
+            })
+            print(e)
+
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            logger.exception(
+                f"Enquiry submission error - Company: {company_slug}, "
+            )
+            response_data.update({
+                "message": "Server error processing your enquiry",
+                "error": "Internal server error"
+            })
+            return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

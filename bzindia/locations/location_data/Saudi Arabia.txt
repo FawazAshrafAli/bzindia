@@ -1,7 +1,7 @@
 Saudi Arabia
 
-# top_left = (32.2, 34.4) # fetched till 0.1 precision
-# bottom_right = (16.3, 55.7) # fetched till 0.1 precision
+# top_left = (32.2, 34.4) # fetched till 0.03 precision
+# bottom_right = (16.3, 55.7) # fetched till 0.03 precision
 
 Stage 1
 # top_left = (32.2, 34.4)
