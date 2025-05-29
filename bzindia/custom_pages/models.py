@@ -3,21 +3,16 @@ from company.models import Company
 from django.utils.timezone import now
 
 from django.utils.text import slugify
+from ckeditor.fields import RichTextField
 
 from locations.models import UniquePlace, UniqueDistrict, UniqueState
 
 class AboutUs(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
 
-    content = models.TextField(verbose_name="Content")
+    content = RichTextField()
 
-    # intro = models.TextField()
-    # mission = models.TextField(blank=True, null=True)
-    # vision = models.TextField(blank=True, null=True)
-    # history = models.TextField(blank=True, null=True)
-    # team_info = models.TextField(blank=True, null=True)
-
-    slug = models.SlugField(max_length=500)
+    slug = models.SlugField(max_length=500, blank=True, null=True)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -62,7 +57,7 @@ class ContactUs(models.Model):
     lat = models.DecimalField(max_digits=10, decimal_places=7)
     lon = models.DecimalField(max_digits=10, decimal_places=7)
 
-    slug = models.SlugField(max_length=500)
+    slug = models.SlugField(max_length=500, blank=True, null=True)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -86,6 +81,11 @@ class ContactUs(models.Model):
         db_table = "contact_us"
         ordering = ["company__name"]
 
+    @property
+    def address(self):
+        address = [self.place.name, self.district.name, self.state.name]
+        return ', '.join(address)
+
 
 class FAQ(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
@@ -93,7 +93,7 @@ class FAQ(models.Model):
     question = models.CharField(max_length=250)
     answer = models.TextField()
 
-    slug = models.SlugField(max_length=500)
+    slug = models.SlugField(max_length=500, blank=True, null=True)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -101,7 +101,7 @@ class FAQ(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.company.name)
+            base_slug = slugify(f"{self.question[:15]}-{self.company.name}")
             slug = base_slug
 
             count = 1
@@ -121,20 +121,15 @@ class FAQ(models.Model):
 class PrivacyPolicy(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
 
-    content = models.TextField(verbose_name="Content")
-
-    # information_collection = models.TextField(verbose_name="Information Collection", blank=True, null=True)
-    # use_of_information = models.TextField(verbose_name="Use of Information", blank=True, null=True)
-    # information_sharing = models.TextField(verbose_name="Information Sharing", blank=True, null=True)
-    # user_rights = models.TextField(verbose_name="User Rights", blank=True, null=True)
-    # cookies_tracking = models.TextField(verbose_name="Cookies and Tracking", blank=True, null=True)
+    content = RichTextField()
+    
     effective_date = models.DateField(verbose_name="Effective Date")
     last_updated = models.DateField(verbose_name="Last Updated", null=True, blank=True)
     is_active = models.BooleanField(default=True, verbose_name="Is Active")
 
     support_email = models.EmailField(max_length=254, null=True, blank=True)
 
-    slug = models.SlugField(max_length=500)
+    slug = models.SlugField(max_length=500, blank=True, null=True)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -162,7 +157,7 @@ class PrivacyPolicy(models.Model):
 class TermsAndConditions(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
 
-    content = models.TextField(help_text="Full text of the Terms and Conditions.")
+    content = RichTextField()
     
     version = models.CharField(max_length=20, help_text="Version number of the Terms and Conditions.")
     effective_date = models.DateField(default=now, help_text="The date when these terms became effective.")
@@ -200,9 +195,9 @@ class TermsAndConditions(models.Model):
 class ShippingAndDeliveryPolicy(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
 
-    content = models.TextField(verbose_name="Content")    
+    content = RichTextField()
 
-    slug = models.SlugField(max_length=500)
+    slug = models.SlugField(max_length=500, blank=True, null=True)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -229,9 +224,9 @@ class ShippingAndDeliveryPolicy(models.Model):
 class CancellationAndRefundPolicy(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
 
-    content = models.TextField(verbose_name="Content")    
+    content = RichTextField()
 
-    slug = models.SlugField(max_length=500)
+    slug = models.SlugField(max_length=500, blank=True, null=True)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)

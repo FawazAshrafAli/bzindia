@@ -1,0 +1,38 @@
+from django.db import models
+from django.utils.text import slugify
+
+from locations.models import UniqueState
+
+class Enquiry(models.Model):
+    name = models.CharField(max_length=250)
+    phone = models.CharField(max_length=20)
+    email = models.EmailField(max_length=254)
+    state = models.ForeignKey(UniqueState, on_delete=models.CASCADE, related_name="Enquiry_state")
+    comment = models.TextField()
+
+    slug = models.SlugField(null=True, blank=True, max_length=500)
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.email}")
+
+            slug = base_slug
+            count = 1
+
+            while Enquiry.objects.filter(slug = slug).exists():
+                slug = f"{base_slug}-{count}"
+                count += 1
+
+            self.slug = slug
+
+        super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = "enquiry"
+        ordering = ["created"]
+
+    def __str__(self):
+        return self.email
