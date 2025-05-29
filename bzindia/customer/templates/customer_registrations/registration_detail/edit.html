@@ -25,7 +25,7 @@
     <br>
 	<!-- Content Starts -->
     <div class="row">
-        {% include "base/message.html" %}
+        {% include "message.html" %}
         <div class="col-lg-12">
             <form method="post" action="{% url 'customer:update_registration' registration.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-registration-form" novalidate>
                 {% csrf_token %}

@@ -1,16 +1,19 @@
 from django.shortcuts import render
 import requests
+import os
 import pandas
 import time
 import sys
+from django.core.paginator import Paginator
 from django.views.generic import ListView
 from django.templatetags.static import static
 from django.db import IntegrityError
 from django.db.models import Q
 import logging
 import pandas
+from django.db import transaction
 
-from .models import PostOffice, PoliceStation, Bank, TouristAttraction, Court
+from .models import PostOffice, PoliceStation, Bank, Destination, Court
 
 logger = logging.getLogger(__name__)
 
@@ -291,17 +294,20 @@ def import_attractions():
                 latitude = element.get('lat')
                 longitude = element.get('lon')
 
-                if not (name or alternative_name) and not (latitude and longitude):
-                    continue
+                # if not (name or alternative_name) and not (latitude and longitude): # 09/05/2025
+                #     continue
                 
                 # Avoid duplicates
-                if TouristAttraction.objects.filter(
-                    Q(latitude=latitude) & Q(longitude=longitude)
+                if Destination.objects.filter(
+                    latitude=latitude,
+                    longitude=longitude
+                ).exclude(
+                    Q(latitude__isnull=True) | Q(longitude__isnull=True)
                 ).exists():
                     continue
 
                 # Create a new object
-                attractions.append(TouristAttraction(
+                attractions.append(Destination(
                     name=name,
                     latitude=latitude,
                     longitude=longitude,
@@ -388,7 +394,7 @@ def import_attractions():
                 ))
 
         # Bulk create objects
-        TouristAttraction.objects.bulk_create(attractions)
+        Destination.objects.bulk_create(attractions)
 
         logger.info(f"Successfully imported {len(attractions)} attractions into the database.")
     
@@ -488,3 +494,332 @@ def import_courts_data():
         logger.error("Invalid JSON response received from Overpass API.")
     except IntegrityError as e:
         logger.error(f"Database integrity error: {e}")
+
+
+def fetch_destination_locations(batch_size=100, buffer_size=10):
+    api_key = os.getenv("OPENCAGE_API_KEY_1")
+    base_url = 'https://api.opencagedata.com/geocode/v1/json'
+
+    destinations_qs = Destination.objects.filter(
+        Q(place__isnull=True) |
+        Q(district__isnull=True) |
+        Q(state__isnull=True) |
+        Q(pincode__isnull=True)
+    ).exclude(
+        latitude__isnull=True, longitude__isnull=True
+    ).order_by('id')  # Always order when paginating
+
+    total = destinations_qs.count()
+    logger.info(f"Found {total} destinations to update")
+
+    paginator = Paginator(destinations_qs, batch_size)
+    counting = 0
+
+    for page_number in paginator.page_range:
+        page = paginator.page(page_number)
+        updating_destinations = []
+
+        logger.info(f"Processing batch {page_number}/{paginator.num_pages} (Batch size: {batch_size})")
+
+        for destination in page.object_list:
+            latitude = destination.latitude
+            longitude = destination.longitude
+
+            try:
+                response = requests.get(
+                    base_url,
+                    params={'q': f'{latitude}+{longitude}', 'key': api_key},
+                    timeout=10
+                )
+                response.raise_for_status()
+
+                data = response.json()
+
+                if data.get("results"):
+                    components = data["results"][0].get("components", {})
+                    if components.get("country") == "India":
+
+                        place = components.get("hamlet") \
+                                or components.get("village") \
+                                or components.get("neighbourhood") \
+                                or components.get("suburb") \
+                                or components.get("town") \
+                                or components.get("city_district") \
+                                or components.get("municipality") \
+                                or components.get("city") \
+                                or components.get("county")
+
+                        state = components.get("state")
+                        district = components.get("state_district")
+                        pincode = components.get("postcode")
+
+                        if not district and components.get("suburb") and components.get("city"):
+                            district = components.get("city")
+
+                        if any([place, district, state, pincode]):
+                            destination.place = place or destination.place
+                            destination.district = district or destination.district
+                            destination.state = state or destination.state
+                            destination.pincode = pincode or destination.pincode
+
+                            updating_destinations.append(destination)
+                            counting += 1
+
+                            percentage = (counting / total) * 100 if total else 0
+                            logger.info(f"Progress: {percentage:.2f}%")
+
+                            # Flush buffer every `buffer_size` records
+                            if len(updating_destinations) >= buffer_size:
+                                with transaction.atomic():
+                                    Destination.objects.bulk_update(
+                                        updating_destinations, ["place", "district", "state", "pincode"]
+                                    )
+                                logger.info(f"Buffered update: {buffer_size} destinations updated")
+                                updating_destinations.clear()  # reset buffer
+
+                time.sleep(0.25)  # Respect API rate limit
+
+            except requests.exceptions.RequestException as e:
+                logger.error(f"API request error for ({latitude}, {longitude}): {e}")
+                if response.status_code == 429:
+                    retry_after = int(response.headers.get("Retry-After", 60))
+                    logger.warning(f"Rate limit exceeded. Sleeping for {retry_after} seconds...")
+                    time.sleep(retry_after)
+                else:
+                    logger.warning("Retrying after 5 seconds...")
+                    time.sleep(5)
+                continue
+
+            except Exception as e:
+                logger.error(f"Unexpected error: {e}")
+                time.sleep(5)
+                continue
+
+        # Flush remaining buffered updates after batch
+        if updating_destinations:
+            with transaction.atomic():
+                Destination.objects.bulk_update(
+                    updating_destinations, ["place", "district", "state", "pincode"]
+                )
+            logger.info(f"Final buffered update: {len(updating_destinations)} destinations updated for batch {page_number}")
+            updating_destinations.clear()
+
+    logger.info("Location fetching completed for all destinations!")
+
+def fetch_police_locations(batch_size=100, buffer_size=10):
+    api_key = os.getenv("OPENCAGE_API_KEY_2")
+    base_url = 'https://api.opencagedata.com/geocode/v1/json'
+
+    police_stations_qs = PoliceStation.objects.filter(
+        Q(city__isnull=True) |
+        Q(district__isnull=True) |
+        Q(state__isnull=True) |
+        Q(pincode__isnull=True)
+    ).exclude(
+        latitude__isnull=True, longitude__isnull=True
+    ).order_by('id')  # Always order when paginating
+
+    total = police_stations_qs.count()
+    logger.info(f"Found {total} police stations to update")
+
+    paginator = Paginator(police_stations_qs, batch_size)
+    counting = 0
+
+    for page_number in paginator.page_range:
+        page = paginator.page(page_number)
+        updating_police_stations = []
+
+        logger.info(f"Processing batch {page_number}/{paginator.num_pages} (Batch size: {batch_size})")
+
+        for police_station in page.object_list:
+            latitude = police_station.latitude
+            longitude = police_station.longitude
+
+            try:
+                response = requests.get(
+                    base_url,
+                    params={'q': f'{latitude}+{longitude}', 'key': api_key},
+                    timeout=10
+                )
+                response.raise_for_status()
+
+                data = response.json()
+
+                if data.get("results"):
+                    components = data["results"][0].get("components", {})
+                    if components.get("country") == "India":
+                        city = components.get("hamlet") \
+                                or components.get("village") \
+                                or components.get("neighbourhood") \
+                                or components.get("suburb") \
+                                or components.get("town") \
+                                or components.get("city_district") \
+                                or components.get("municipality") \
+                                or components.get("city") \
+                                or components.get("county")
+                        state = components.get("state")
+                        district = components.get("state_district")
+                        pincode = components.get("postcode")
+
+                        if not district and components.get("suburb") and components.get("city"):
+                            district = components.get("city")
+
+                        if any([city, district, state, pincode]):
+                            police_station.city = city or police_station.city
+                            police_station.district = district or police_station.district
+                            police_station.state = state or police_station.state
+                            police_station.pincode = pincode or police_station.pincode
+
+                            updating_police_stations.append(police_station)
+                            counting += 1
+
+                            percentage = (counting / total) * 100 if total else 0
+                            logger.info(f"Progress: {percentage:.2f}%")
+
+                            # Flush buffer every `buffer_size` records
+                            if len(updating_police_stations) >= buffer_size:
+                                with transaction.atomic():
+                                    PoliceStation.objects.bulk_update(
+                                        updating_police_stations, ["city", "district", "state", "pincode"]
+                                    )
+                                logger.info(f"Buffered update: {buffer_size} police stations updated")
+                                updating_police_stations.clear()  # reset buffer
+
+                time.sleep(0.25)  # Respect API rate limit
+
+            except requests.exceptions.RequestException as e:
+                logger.error(f"API request error for ({latitude}, {longitude}): {e}")
+                if response.status_code == 429:
+                    retry_after = int(response.headers.get("Retry-After", 60))
+                    logger.warning(f"Rate limit exceeded. Sleeping for {retry_after} seconds...")
+                    time.sleep(retry_after)
+                else:
+                    logger.warning("Retrying after 5 seconds...")
+                    time.sleep(5)
+                continue
+
+            except Exception as e:
+                logger.error(f"Unexpected error: {e}")
+                time.sleep(5)
+                continue
+
+        # Flush remaining buffered updates after batch
+        if updating_police_stations:
+            with transaction.atomic():
+                PoliceStation.objects.bulk_update(
+                    updating_police_stations, ["city", "district", "state", "pincode"]
+                )
+            logger.info(f"Final buffered update: {len(updating_police_stations)} police stations updated for batch {page_number}")
+            updating_police_stations.clear()
+
+    logger.info("Location fetching completed for all police stations!")
+
+def fetch_court_locations(batch_size=100, buffer_size=10):
+    api_key = os.getenv("OPENCAGE_API_KEY_3")
+    base_url = 'https://api.opencagedata.com/geocode/v1/json'
+
+    courts_qs = Court.objects.filter(
+        Q(city__isnull=True) |
+        Q(district__isnull=True) |
+        Q(state__isnull=True) |
+        Q(pincode__isnull=True)
+    ).exclude(
+        latitude__isnull=True, longitude__isnull=True
+    ).order_by('id')  # Always order when paginating
+
+    total = courts_qs.count()
+    logger.info(f"Found {total} courts to update")
+
+    paginator = Paginator(courts_qs, batch_size)
+    counting = 0
+
+    for page_number in paginator.page_range:
+        page = paginator.page(page_number)
+        updating_courts = []
+
+        logger.info(f"Processing batch {page_number}/{paginator.num_pages} (Batch size: {batch_size})")
+
+        for court in page.object_list:
+            latitude = court.latitude
+            longitude = court.longitude
+
+            try:
+                response = requests.get(
+                    base_url,
+                    params={'q': f'{latitude}+{longitude}', 'key': api_key},
+                    timeout=10
+                )
+                response.raise_for_status()
+
+                data = response.json()
+
+                if data.get("results"):
+                    components = data["results"][0].get("components", {})
+                    if components.get("country") == "India":
+
+                        city = components.get("hamlet") \
+                                or components.get("village") \
+                                or components.get("neighbourhood") \
+                                or components.get("suburb") \
+                                or components.get("town") \
+                                or components.get("city_district") \
+                                or components.get("municipality") \
+                                or components.get("city") \
+                                or components.get("county")
+
+                        state = components.get("state")
+                        district = components.get("state_district")
+                        pincode = components.get("postcode")
+
+                        if not district and components.get("suburb") and components.get("city"):
+                            district = components.get("city")
+
+                        if any([city, district, state, pincode]):
+                            court.city = city or court.city
+                            court.district = district or court.district
+                            court.state = state or court.state
+                            court.pincode = pincode or court.pincode
+
+                            updating_courts.append(court)
+                            counting += 1
+
+                            percentage = (counting / total) * 100 if total else 0
+                            logger.info(f"Progress: {percentage:.2f}%")
+
+                            # Flush buffer every `buffer_size` records
+                            if len(updating_courts) >= buffer_size:
+                                with transaction.atomic():
+                                    Court.objects.bulk_update(
+                                        updating_courts, ["city", "district", "state", "pincode"]
+                                    )
+                                logger.info(f"Buffered update: {buffer_size} courts updated")
+                                updating_courts.clear()  # reset buffer
+
+                time.sleep(0.25)  # Respect API rate limit
+
+            except requests.exceptions.RequestException as e:
+                logger.error(f"API request error for ({latitude}, {longitude}): {e}")
+                if response.status_code == 429:
+                    retry_after = int(response.headers.get("Retry-After", 60))
+                    logger.warning(f"Rate limit exceeded. Sleeping for {retry_after} seconds...")
+                    time.sleep(retry_after)
+                else:
+                    logger.warning("Retrying after 5 seconds...")
+                    time.sleep(5)
+                continue
+
+            except Exception as e:
+                logger.error(f"Unexpected error: {e}")
+                time.sleep(5)
+                continue
+
+        # Flush remaining buffered updates after batch
+        if updating_courts:
+            with transaction.atomic():
+                Court.objects.bulk_update(
+                    updating_courts, ["city", "district", "state", "pincode"]
+                )
+            logger.info(f"Final buffered update: {len(updating_courts)} courts updated for batch {page_number}")
+            updating_courts.clear()
+
+    logger.info("Location fetching completed for all courts!")

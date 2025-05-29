@@ -14,7 +14,7 @@ from locations.models import UniquePlace, UniqueState, UniqueDistrict
 from educational.models import Course, Program, Specialization, Faq as CourseFaq, Enquiry as CourseEnquiry, Testimonial as StudentTestimonial
 from product.models import Category as ProductCategory, Brand, Size, Color, Product, SubCategory as ProductSubCategory, Faq as ProductFaq
 from service.models import Service, Category as ServiceCategory, SubCategory as ServiceSubCategory, Enquiry as ServiceEnquiry, Faq as ServiceFaq
-from registration.models import RegistrationDetail, RegistrationType, RegistrationSubType, Faq as RegistrationFaq, Enquiry as RegistrationEnquiry
+from registration.models import Registration, RegistrationType, RegistrationSubType, Faq as RegistrationFaq, Enquiry as RegistrationEnquiry
 
 logger = logging.getLogger(__name__)
 
@@ -2022,7 +2022,7 @@ class DeleteServiceEnquiryView(BaseServiceEnquiryView, View):
 
 # Registration Company
 class BaseRegistrationView(BaseCustomerView, View):
-    model = RegistrationDetail
+    model = Registration
     success_url = redirect_url = reverse_lazy('customer:registrations')
     slug_url_kwarg = 'slug'
     
@@ -2041,7 +2041,7 @@ class BaseRegistrationView(BaseCustomerView, View):
         
 
 class ListRegistrationView(BaseRegistrationView, ListView):    
-    queryset = RegistrationDetail.objects.none()
+    queryset = Registration.objects.none()
     context_object_name = "registrations"
     template_name = "customer_registrations/registration_detail/list.html"
 
@@ -2061,7 +2061,7 @@ class ListRegistrationView(BaseRegistrationView, ListView):
         return context
 
 class AddRegistrationView(BaseRegistrationView, CreateView):
-    model = RegistrationDetail
+    model = Registration
     fields = ["company", "sub_type", "price", "time_required", "required_documents", "additional_info"]
     template_name = "customer_registrations/registration_detail/add.html"
     success_url = redirect_url = reverse_lazy('customer:add_registrations')

@@ -60,7 +60,7 @@
         <span class="menu-arrow"></span>
     </a>
     <ul class="sub-menus {% if product_faq_page %}d-block{% endif %}">
-        <li><a href="{% url 'customer:product_faqs' %}" {% if list_product_faqs %}class="active"{% endif %}>All FAQs</a></li>
-        <li><a href="{% url 'customer:add_product_faqs' %}">Add FAQ</a></li>									
+        {% comment %} <li><a href="{% url 'customer:product_faqs' %}" {% if list_product_faqs %}class="active"{% endif %}>All FAQs</a></li> {% endcomment %}
+        {% comment %} <li><a href="{% url 'customer:add_product_faqs' %}">Add FAQ</a></li>									 {% endcomment %}
     </ul>
 </li>

@@ -25,7 +25,7 @@
     <br>
 	<!-- Content Starts -->
     <div class="row">
-        {% include "base/message.html" %}
+        {% include "message.html" %}
         <div class="col-lg-12">
             <form method="post" action="{% url 'customer:update_service_faq' faq.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-service-faq-form">
                 {% csrf_token %}

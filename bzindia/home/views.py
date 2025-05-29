@@ -5,7 +5,7 @@ import logging
 from company.models import Company
 from product.models import Product, Category as ProductCategory
 from service.models import Service, Category as ServiceCategory
-from registration.models import RegistrationDetail
+from registration.models import Registration
 from educational.models import Course
 from blog.models import Blog
 from base.models import MetaTag
@@ -23,7 +23,7 @@ class HomeView(BaseView, TemplateView):
             context["home_page"] = True
             context["companies"] = Company.objects.all().order_by("name")
             context["courses"] = Course.objects.all().order_by("?")[:12]
-            context["registration_details"] = RegistrationDetail.objects.all().order_by("sub_type__name")[:12]
+            context["registration_details"] = Registration.objects.all().order_by("sub_type__name")[:12]
             context["services"] = Service.objects.all().order_by("?")[:12]
             context["products"] = Product.objects.all().order_by("?")[:12]
             context["slider_blogs"] = Blog.objects.filter(is_published = True).order_by("?")[:3]
