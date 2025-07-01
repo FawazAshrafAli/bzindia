@@ -49,11 +49,13 @@ class TestimonialSerializer(serializers.ModelSerializer):
 class CompanySerializer(serializers.ModelSerializer):
     logo_url = serializers.SerializerMethodField()
     favicon_url = serializers.SerializerMethodField()
-    company_type = serializers.CharField(source = "type.name", read_only=True)
+    company_type = serializers.CharField(source = "type.name", read_only=True)    
     blogs = BlogSerializer(many=True, read_only=True)
     faqs = FaqSerializer(many=True, read_only = True)
     meta_tags = MetaTagSerializer(many=True, read_only = True)
     clients = ClientSerializer(many=True, read_only=True)
+    social_media_links = serializers.SerializerMethodField()
+    type_slug = serializers.CharField(source = "type.slug", read_only=True)    
 
     class Meta:
         model = Company 
@@ -64,7 +66,8 @@ class CompanySerializer(serializers.ModelSerializer):
             "phone1", "phone2", "blogs", "faqs", "whatsapp", 
             "email", "meta_tags", "meta_description", 
             "favicon_url", "price_range", "twitter", "facebook",
-            "created", "updated", "clients", "rating"
+            "created", "updated", "clients", "rating", "social_media_links",
+            "sub_type", "type_slug"
         ]
 
     def get_logo_url(self, obj):
@@ -86,6 +89,12 @@ class CompanySerializer(serializers.ModelSerializer):
     def get_categories(self, obj):
         categories = obj.categories
         return list(categories) if categories else []   
+    
+    def get_social_media_links(self, obj):
+        if not obj:
+            return None
+        
+        return obj.social_media_links
     
 
 class CompanyTypeSerializer(serializers.ModelSerializer):

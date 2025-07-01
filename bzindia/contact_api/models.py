@@ -7,7 +7,8 @@ class Enquiry(models.Model):
     name = models.CharField(max_length=250)
     phone = models.CharField(max_length=20)
     email = models.EmailField(max_length=254)
-    state = models.ForeignKey(UniqueState, on_delete=models.CASCADE, related_name="Enquiry_state")
+    company_sub_type = models.CharField(max_length=250, blank=True, null=True)
+    state = models.ForeignKey(UniqueState, on_delete=models.CASCADE, related_name="enquiries")
     comment = models.TextField()
 
     slug = models.SlugField(null=True, blank=True, max_length=500)

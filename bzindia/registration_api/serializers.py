@@ -8,7 +8,7 @@ from registration.models import (
 
     MultiPageFeature, MultiPageFaq, MultiPage, MultiPageBulletPoint,
     MultiPageHorizontalBullet, MultiPageHorizontalTab, MultiPageTable,
-    MultiPageTableData, MultiPageTag, MultiPageTimeline,
+    MultiPageTag, MultiPageTimeline,
     MultiPageVerticalBullet, MultiPageVerticalTab
     )
 from locations.models import UniqueState

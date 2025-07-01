@@ -12,6 +12,13 @@ from django.conf import settings
 import logging
 from random import randint
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.exceptions import TokenError
+
 from superadmin.views import AdminBaseView
 from .models import EmailVerificationOtp
 
@@ -186,4 +193,52 @@ class VerifyEmailView(AdminBaseView, View):
             return JsonResponse({"status": "failed", "error_msg": "An unexpected error occured"}, status=500)
 
 
-    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def current_user(request):
+    print(request.user)
+    if request.user.is_authenticated:
+        return Response({
+            "username": request.user.username,
+            "email": request.user.email
+        }, status=200)
+    return Response({"detail": "Not authenticated"}, status=401)
+
+
+@api_view(["POST"])
+def user_login(request):
+    data = request.data
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not password:
+        return Response(
+            {"success": False, "message": "Email and password are required."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    user = authenticate(request, username=email.strip(), password=password)
+    if not user:
+        return Response(
+            {"success": False, "message": "Invalid credentials."},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    login(request, user)
+    print(request.user)
+    return Response({"success": True}, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def user_logout(request):
+    try:
+        refresh_token = request.data.get("refresh")
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+        return Response({"success": "Logged out successfully"}, status=205)
+    except TokenError as e:
+        # If token is already blacklisted or invalid
+        return Response({"error": "Token is invalid or already blacklisted"}, status=400)
+    except Exception as e:
+        print(f"Logout error: {e}")
+        return Response({"error": "Logout failed"}, status=400)

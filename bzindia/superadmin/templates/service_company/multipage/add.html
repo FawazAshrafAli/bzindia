@@ -58,6 +58,10 @@
         width: 35px;
         height: 35px;
     }
+
+    #state-dropdown-section {
+        display: none;
+    }
 </style>
 <link rel="stylesheet" href="{% static 'w3/css/chosen-style.css' %}">
 <link rel="stylesheet" href="{% static 'w3/css/main-color.css' %}" id="colors">
@@ -76,35 +80,12 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="category-dropdown" >Category <span class="text-danger">*</span></label>
-                                <select class="form-control" id="category-dropdown" name="category" required>
-                                    <option value="" hidden disabled selected>Select Category</option>
-                                    {% for category in categories %}
-                                    <option value="{{category.slug}}">{{category.name}}</option>
-                                    {% endfor %}                                    
-                                </select>
-                                <div class="invalid-feedback">
-                                    Please provide the category.
-                                </div>
-                                <div class="valid-feedback">
-                                    Looks good!
-                                </div>
+                            <div class="col-sm-6">
+                                <label class="col-form-label">Title</label>
+                                <input class="form-control"  type="text" id="title-input" name="title" placeholder="Title" required>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="sub-category-dropdown" >Sub Category <span class="text-danger">*</span></label>
-                                <select class="form-control" id="sub-category-dropdown" name="sub_category" required>
-                                    <option value="" hidden disabled selected>Select Sub Category</option>                                                                 
-                                </select>
-                                <div class="invalid-feedback">
-                                    Please provide the sub category.
-                                </div>
-                                <div class="valid-feedback">
-                                    Looks good!
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="service-dropdown" >Service <span class="text-danger">*</span></label>
+                            <div class="col-md-6 mb-3">
+                                <label for="service-dropdown" class="col-form-label">Service <span class="text-danger">*</span></label>
                                 <select class="form-control" id="service-dropdown" name="service" required>
                                     <option value="" hidden disabled selected>Select Service</option>
 
@@ -157,7 +138,7 @@
                         </div>
 
                         <div class="form-group row">
-                            <div class="col-sm-12">
+                            <div class="col-sm-6">
                                 <label for="url-type-radio" class="col-form-label">URL Type</label><br>
                                 <div class="form-check form-check-inline">
                                     <input type="radio" class="form-check-input" name="url_type" id="location-filtered" value="location_filtered" required><label class="form-check-label" for="location-filtered">Location Filtered</label>
@@ -165,8 +146,29 @@
                                 <div class="form-check form-check-inline">
                                     <input type="radio" class="form-check-input" name="url_type" id="slug-filtered" value="slug_filtered" checked required><label class="form-check-label" for="slug-filtered">Slug Filtered</label>
                                 </div>
+                                <br>
+                                <small class="text-muted">Preview: <span id="current-url-preview">https://bzindia.in/category/service-location-name(Location/Coutry/State/District)</span></small>
                             </div>
-                            <small class="text-muted">Preview: <span id="current-url-preview">https://bzindia.in/category/service-location-name(Location/Coutry/State/District)</span></small>
+                            <div class="col-sm-6">
+                                <label for="service-region-input" class="col-form-label">Service Region</label><br>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" name="service_region" id="all-state-selection" value="all" checked required><label class="form-check-label" for="all-state-selection">All States</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" name="service_region" id="selected-state-selection" value="selected"  required><label class="form-check-label" for="selected-state-selection">Selected States</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row" id="state-dropdown-section">
+                            <div class="col-sm-12">
+                                <label for="state-dropdown" class="form-label">Available States <span class="text-danger">*</span></label>
+                                <select data-placeholder="Select States" class="chosen-select" name="available_states" id="state-dropdown" multiple>
+                                    {% for state in states %}
+                                    <option value="{{state.slug}}" >{{state.name}}</option>
+                                    {% endfor %}									
+								</select>
+                            </div>
                         </div>
 
                         <div class="task-infos">
@@ -1031,11 +1033,29 @@
                 event.preventDefault();
             }
         });
-        
 
-        $('#category-dropdown').on('change', () => getSubCategories());
-        
-        $('#sub-category-dropdown').on('change', () => getServices());
+        // Function for adding new meta tags
+        $(document).on('input', '.search-field input', function () {
+            const text = $(this).val().trim();
+
+            if (text.endsWith(',')) {
+                const tag = text.replace(',', '');
+
+                const newOption = `<option value="${tag}" selected>${tag}</option>`;
+
+                const optionExists = $('select[name="meta_tag"] option').filter(function() {
+                    return $(this).val().toLowerCase() === tag.toLowerCase() | $(this).html().toLowerCase() === tag.toLowerCase();
+                }).length > 0;
+
+                if (!optionExists) {
+                    $('select[name="meta_tag"]').append(newOption);
+    
+                    $('.chosen-select').trigger("chosen:updated");
+                }
+
+                $(this).val('');
+            }
+        });
         
         $('input[name="url_type"]').on('change', function () {
             const currentUrlType = $(this).val();
@@ -1044,6 +1064,18 @@
                 $('#current-url-preview').html("https://bzindia.in/category/service/state-name/district-or-location-name/");                
             } else {
                 $('#current-url-preview').html("https://bzindia.in/category/service-location-name(Location/Coutry/State/District)");
+            }
+        });
+
+        $('input[name="service_region"]').on('change', function () {
+            if ($(this).val() != "all") {
+                $('#state-dropdown-section').show();
+                $('#state-dropdown').prop("required", true);
+                
+            } else {
+                $('#state-dropdown-section').hide();
+                $('#state-dropdown').prop("required", false);
+
             }
         });
     });

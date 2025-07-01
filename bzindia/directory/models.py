@@ -2,6 +2,9 @@ from django.db import models
 from django.utils.text import slugify
 import uuid
 
+from locations.models import UniquePlace, UniqueDistrict, UniqueState
+from registration.models import RegistrationSubType
+
 class PostOffice(models.Model):
     circle_name = models.CharField(max_length=150, null=True, blank=True)
     region_name = models.CharField(max_length=150, null=True, blank=True)
@@ -19,7 +22,7 @@ class PostOffice(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.pincode
+        return f"{self.pincode}"
     
     class Meta:
         db_table = "post_offices"
@@ -500,3 +503,49 @@ class Court(models.Model):
 
     class Meta:
         db_table="courts"
+
+
+class CscCenter(models.Model):
+    csc_id = models.CharField(max_length = 50, null=True, blank=True)
+
+    name = models.CharField(max_length=150)
+    slug = models.SlugField(blank=True, null=True, max_length=500)
+    
+    state = models.ForeignKey(UniqueState, on_delete=models.CASCADE, blank=True, null=True)
+    district = models.ForeignKey(UniqueDistrict, on_delete=models.CASCADE, blank=True, null=True)
+    place = models.ForeignKey(UniquePlace, on_delete=models.CASCADE, blank=True, null=True)
+    location = models.TextField()
+    pincode = models.CharField(max_length=15, blank=True, null=True)
+    landmark_or_building_name = models.CharField(max_length=100, null=True, blank=True)
+    street = models.CharField(max_length=500)
+    
+    logo = models.ImageField(upload_to='csc_center_logos/', blank=True, null=True)
+
+    description = models.TextField(null=True, blank=True)
+    owner = models.CharField(max_length=150, blank=True, null=True)
+    email = models.EmailField(max_length=100)
+    website = models.URLField(max_length=100, null=True, blank=True)
+    contact_number = models.CharField(max_length=20, null=True, blank=True)
+    mobile_number = models.CharField(max_length=20, null=True, blank=True)
+    whatsapp_number = models.CharField(max_length=100, null=True, blank=True)
+    registrations = models.ManyToManyField(RegistrationSubType)
+
+    latitude = models.CharField(max_length=100, null=True)
+    longitude = models.CharField(max_length=100, null=True)
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.name}-{self.place.name}-{self.district.name}-{self.state.name}")
+
+            slug = base_slug
+            count = 2
+            while CscCenter.objects.filter(slug = slug).exists():
+                slug = f"{base_slug}-{count}"
+                count += 1
+
+            self.slug = slug
+
+        super().save(*args, **kwargs)

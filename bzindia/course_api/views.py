@@ -23,6 +23,8 @@ from .serializers import (
 
 from company_api.serializers import CompanySerializer, ClientSerializer
 
+from .paginations import CoursePagination
+
 logger = logging.getLogger(__name__)
 
 class CourseApiViewset(viewsets.ModelViewSet):
@@ -34,12 +36,6 @@ class CourseApiViewset(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
-    
-
-class DetailViewset(viewsets.ModelViewSet):
-    serializer_class = DetailSerializer
-    queryset = CourseDetail.objects.all()
-    lookup_field = 'slug'    
 
 
 class InstituteCourseDetailViewSet(viewsets.ModelViewSet):
@@ -175,11 +171,18 @@ class EnquiryViewSet(viewsets.ModelViewSet):
 class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = DetailSerializer
     lookup_field = "slug"
+    pagination_class = CoursePagination
 
     def get_queryset(self):
         slug = self.kwargs.get("company_slug")
+        program = self.request.query_params.get("program")
 
         if slug:
-            return CourseDetail.objects.filter(company__slug = slug)
+            filters = {"company__slug": slug}
+
+            if program:
+                filters["course__program__name"] = program
+
+            return CourseDetail.objects.filter(**filters)
         
         return CourseDetail.objects.none()

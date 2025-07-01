@@ -34,7 +34,7 @@
 										</label>
 									</td>
 									<td>										
-										<a href="{% url 'superadmin:product_multipage' current_company.slug multipage.product.slug %}" >{{multipage.product.name|slice:100}}{% if multipage.product.name|length > 100 %}...{% endif %}</a>
+										<a href="{% url 'superadmin:product_multipage' current_company.slug multipage.slug %}" >{{multipage.title|slice:100}}{% if multipage.title|length > 100 %}...{% endif %}</a>
 									</td>									
 									
 									<td class="text-center">

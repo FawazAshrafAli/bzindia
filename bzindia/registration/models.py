@@ -500,7 +500,7 @@ class RegistrationDetailPage(models.Model):
         return toc
     
     @property
-    def published(self):
+    def published(self):        
         if self.created:
             return datetime.strftime(self.created, "%Y-%m-%d")
         return None
@@ -532,6 +532,10 @@ class RegistrationDetailPage(models.Model):
             return registrations.first().price
         
         return None
+    
+    @property
+    def image_count(self):        
+        return 0
 
 
 
@@ -919,3 +923,7 @@ class MultiPage(models.Model):
     @property
     def rating_count(self):
         return Testimonial.objects.filter(company = self.company).count()
+    
+    @property
+    def image_count(self):        
+        return 0

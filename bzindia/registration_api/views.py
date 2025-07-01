@@ -7,12 +7,14 @@ from django.http import Http404
 
 from .serializers import (
     SubTypeSerializer, DetailSerializer, TypeSerializer, 
-    EnquirySerializer, MultipageSerializer
+    EnquirySerializer
     )
 from company_api.serializers import CompanySerializer
 
 from registration.models import RegistrationSubType, RegistrationDetailPage, RegistrationType, Enquiry, MultiPage
 from company.models import Company
+
+from .paginations import RegistrationPagination
 
 import logging
 
@@ -51,12 +53,19 @@ class TypeViewSet(viewsets.ReadOnlyModelViewSet):
 class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = DetailSerializer
     lookup_field = "slug"
+    pagination_class = RegistrationPagination
 
     def get_queryset(self):
         slug = self.kwargs.get("company_slug")
+        registration_type = self.request.query_params.get("type")
 
         if slug:
-            return RegistrationDetailPage.objects.filter(company__slug = slug)
+            filters = {"company__slug": slug}  
+
+            if registration_type:       
+                filters["registration_sub_type__type__name"] = registration_type
+
+            return RegistrationDetailPage.objects.filter(**filters)
         
         return RegistrationDetailPage.objects.none()
 

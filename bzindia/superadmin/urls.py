@@ -157,7 +157,7 @@ urlpatterns = [
     path('add_product_multipage/<str:slug>', AddProductMultiPageView.as_view(), name="add_product_multipage"),
     path('update_product_multipage/<str:slug>/<str:multipage_slug>', UpdateProductMultiPageView.as_view(), name="update_product_multipage"),
     path('product_multipages/<str:slug>', ProductMultiPageListView.as_view(), name="product_multipages"),
-    path('product_multipage/<str:slug>/<str:product_slug>', ProductMultiPageDetailView.as_view(), name="product_multipage"),
+    path('product_multipage/<str:slug>/<str:multipage_slug>', ProductMultiPageDetailView.as_view(), name="product_multipage"),
     path('delete_product_multipage/<str:slug>/<str:multipage_slug>', DeleteProductMultiPageView.as_view(), name="delete_product_multipage"),
 
     # Education Company
@@ -266,7 +266,6 @@ urlpatterns = [
     path('add_registration_multipage/<str:slug>', AddRegistrationMultiPageView.as_view(), name="add_registration_multipage"),
     path('update_registration_multipage/<str:slug>/<str:multipage_slug>', UpdateRegistrationMultiPageView.as_view(), name="update_registration_multipage"),
     path('registration_multipages/<str:slug>', RegistrationMultiPageListView.as_view(), name="registration_multipages"),
-    # path('registration_multipage/<str:slug>/<str:registration_sub_type_slug>', RegistrationMultiPageDetailView.as_view(), name="registration_multipage"),
     path('registration_multipage/<str:slug>/<str:multipage_slug>', RegistrationMultiPageDetailView.as_view(), name="registration_multipage"),
     path('delete_registration_multipage/<str:slug>/<str:multipage_slug>', DeleteRegistrationMultiPageView.as_view(), name="delete_registration_multipage"),
 

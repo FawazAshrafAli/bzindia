@@ -654,11 +654,11 @@ def populate_unique_places():
 from collections import defaultdict
 from django.db import transaction
 
-def update_places():
+def update_places(selected_state):
     # Step 1: Index all Place records in memory
-    print("Loading all Place records into memory...")
+    print(f"Loading all Place of {selected_state} into memory...")
     place_index = defaultdict(lambda: {"pincodes": set(), "coordinates": set()})
-    for pl in Place.objects.filter(state__name = "Kerala").select_related("district", "state").values(
+    for pl in Place.objects.filter(state__name = selected_state).select_related("district", "state").values(
         "name", "district__name", "state__name", "pincode", "latitude", "longitude"
     ):
         key = (pl["name"], pl["district__name"], pl["state__name"])
@@ -717,3 +717,48 @@ def update_places():
         place.coordinates.set(coordinate_lookup[place.id])
 
     print("Update complete.")
+
+
+from utility.location import transliterate_place_name
+from django.db.models import Q
+from locations.models import UniquePlace
+
+def run_conversion():
+    # indian_script_regex = r'[\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F]'
+    
+
+    # indian_named_places = UniquePlace.objects.filter(name__regex=indian_script_regex, alt_name__isnull=True)
+
+    indian_named_places = UniquePlace.objects.filter(
+        ~Q(name__regex=r'^[\x00-\x7F]+'),
+        alt_name__isnull=True
+    )
+
+    length = indian_named_places.count()
+
+    print(f"🔎 Found {length} non-English place names")
+    
+    for place in indian_named_places:
+        print(place.name)
+
+    # updating_places = []
+
+    # for index, place in enumerate(indian_named_places):
+    #     percent_done = int((index + 1) * 100 / length)
+    #     print(f"\r🔄 Progress: {percent_done}% ({index + 1}/{length})", end="")
+
+    #     alt_name = transliterate_place_name(place.name)
+
+    #     # Only update if it changed
+    #     if not place.alt_name or place.alt_name != alt_name:
+    #         place.alt_name = alt_name
+    #         updating_places.append(place)
+
+    # if updating_places:
+    #     print(f"\n📝 Updating {len(updating_places)} places...")
+    #     UniquePlace.objects.bulk_update(updating_places, ["alt_name"])
+    #     print("✅ Update complete.")
+    # else:
+    #     print("☑️ Nothing to convert.")
+
+    # print("🏁 Conversion job completed.")

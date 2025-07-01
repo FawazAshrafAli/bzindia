@@ -45,9 +45,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
 
     # dependencies
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'ckeditor',
     'crispy_forms',
     'crispy_bootstrap5',
@@ -81,7 +83,8 @@ INSTALLED_APPS = [
     'location_api',
     'home_api',
     'contact_api',
-    'custom_pages_api'
+    'custom_pages_api',
+    'search_api'
 ]
 
 MIDDLEWARE = [
@@ -187,8 +190,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.TokenAuthentication',
-        # Or use JWT from djangorestframework-simplejwt
+        # 'rest_framework.authentication.SessionAuthentication',
+        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
@@ -261,6 +264,22 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
+CORS_ORIGIN_WHITELIST = [
+    "http://localhost:5173",  # or your frontend URL
+]
+
 CORS_ALLOW_CREDENTIALS = True
 
-SITE_URL = 'http://localhost:5005'
+SITE_URL = 'https://bzindia.in'
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "https://bzindia.in"
+]
+
+SIMPLE_JWT = {
+    "BLACKLIST_AFTER_ROTATION": True,
+    "ROTATE_REFRESH_TOKENS": True,
+}
+
+GEOIP_PATH = os.path.join(BASE_DIR, 'geoip')

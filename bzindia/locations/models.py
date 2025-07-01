@@ -156,7 +156,7 @@ class UniqueState(models.Model):
 
 class UniqueDistrict(models.Model):
     name = models.CharField(max_length=150)
-    state = models.ForeignKey(UniqueState, on_delete=models.CASCADE)
+    state = models.ForeignKey(UniqueState, on_delete=models.CASCADE, related_name = "districts")
     slug = models.SlugField(blank=True, null=True, max_length=500)
 
     created = models.DateTimeField(auto_now_add=True)
@@ -164,7 +164,7 @@ class UniqueDistrict(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.name}")
+            base_slug = slugify(self.name)
             slug = base_slug
             count = 2
             while UniqueDistrict.objects.filter(slug = slug).exists():
@@ -196,7 +196,9 @@ class PlacePincode(models.Model):
 
 class UniquePlace(models.Model):
     name = models.CharField(max_length=150)
-    district = models.ForeignKey(UniqueDistrict, on_delete=models.CASCADE)
+    alt_name = models.CharField(max_length=150, blank=True, null=True)
+
+    district = models.ForeignKey(UniqueDistrict, on_delete=models.CASCADE, related_name="places")
     state = models.ForeignKey(UniqueState, on_delete=models.CASCADE)
 
     pincodes = models.ManyToManyField(PlacePincode)
@@ -276,4 +278,53 @@ class KsaLocationData(models.Model):
 
     class Meta:
         db_table = "ksa_location_data"
+        ordering = ["created"]
+
+
+class PincodeAndCoordinate(models.Model):
+    place = models.ForeignKey(UniquePlace, on_delete=models.CASCADE, related_name="pincode_and_coordinates")
+    post_office_id = models.CharField(max_length=500)
+
+    pincode = models.PositiveIntegerField()
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
+
+    slug = models.SlugField(max_length=500, blank=True, null=True)
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.pincode} - {self.place.name} of {self.place.district.name}, {self.place.state.name}"
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.pincode}-{self.place.name}-{self.place.district.name}-{self.place.state.name}")
+
+            slug = base_slug
+            count = 1
+
+            while PincodeAndCoordinate.objects.filter(slug = slug).exists():
+                slug = f"{base_slug}-{count}"
+                count += 1
+
+            self.slug = slug
+        
+        super().save(*args, **kwargs)
+
+
+class IndiaLocationData(models.Model):
+    json_data = models.JSONField()
+
+    address = models.CharField(max_length=500)
+
+    place = models.OneToOneField(UniquePlace, on_delete=models.CASCADE)
+
+    # requested_latitude = models.FloatField()
+    # requested_longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "india_location_data"
         ordering = ["created"]

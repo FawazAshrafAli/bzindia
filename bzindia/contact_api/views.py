@@ -6,7 +6,7 @@ from .serializers import EnquirySerializer
 
 class EnquiryViewSet(viewsets.ModelViewSet):
     queryset = Enquiry.objects.all()
-    serializer_class = EnquirySerializer
+    serializer_class = EnquirySerializer    
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data = request.data)

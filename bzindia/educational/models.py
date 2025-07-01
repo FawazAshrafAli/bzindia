@@ -508,7 +508,12 @@ class CourseDetail(models.Model):
             return datetime.strftime(self.updated, "%Y-%m-%d")
         return None
 
-
+    @property
+    def image_count(self):
+        if self.course.image:
+            return 1
+        
+        return 0
 
 class Enquiry(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="course_enquiry_company")
@@ -1011,4 +1016,11 @@ class MultiPage(models.Model):
         if self.updated:
             return datetime.strftime(self.updated, "%Y-%m-%d")
         return None
+    
+    @property
+    def image_count(self):
+        if self.course.image:
+            return 1
+        
+        return 0
         

@@ -9,10 +9,13 @@ from django.db.models import Q
 from company_api.serializers import CompanySerializer
 from .serializers import (
     ProductCategorySerializer, DetailSerializer, ProductSerializer, 
-    EnquirySerializer, ProductSubCategorySerializer
+    EnquirySerializer, ProductSubCategorySerializer, ReviewSerializer,
+    MultiPageSerializer
+    
     )
 from product.models import (
-    ProductDetailPage, Category, Product, Enquiry, SubCategory
+    ProductDetailPage, Category, Product, Enquiry, SubCategory, 
+    Review, MultiPage
     )
 from company.models import Company
 from .paginations import ProductDetailPagination
@@ -85,7 +88,7 @@ class ProductDetailViewset(viewsets.ReadOnlyModelViewSet):
         return context
     
 
-class ProductCategoryViewSet(viewsets.ModelViewSet):
+class ProductCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ProductCategorySerializer
     
     def get_queryset(self):
@@ -95,6 +98,24 @@ class ProductCategoryViewSet(viewsets.ModelViewSet):
             return Category.objects.filter(company__slug = company_slug)
         
         return Category.objects.none()
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
+
+class ProductMultipageViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = MultiPageSerializer
+    lookup_field = "slug"
+    
+    def get_queryset(self):
+        company_slug = self.kwargs.get("company_slug")
+
+        if company_slug:
+            return MultiPage.objects.filter(company__slug = company_slug)
+        
+        return MultiPage.objects.none()
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -177,6 +198,69 @@ class EnquiryViewSet(viewsets.ModelViewSet):
             )
             response_data.update({
                 "message": "Server error processing your enquiry",
+                "error": "Internal server error"
+            })
+            return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    http_method_names = ["post", "get"]
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return Review.objects.filter(company__slug=self.kwargs.get("company_slug")) if self.kwargs.get("company_slug") else Review.objects.none()
+
+    def create(self, request, *args, **kwargs):
+        response_data = {
+            "success": False,
+            "message": "Validation Failed",
+            "errors": None
+        }
+
+        try:
+            company_slug = self.kwargs.get("company_slug")
+            if not company_slug:
+                response_data["message"] = "Company identifier missing"
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+            
+            company = get_object_or_404(Company, slug = company_slug)
+            
+            review_data = request.data.copy()
+            review_data["company"] = company
+            serializer = self.get_serializer(data=review_data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(company = company)
+
+            response_data.update({
+                "success": True,
+                "message": "Review submitted successfully",
+                "data": serializer.data
+            })
+            return Response(response_data, status=status.HTTP_201_CREATED)
+
+        except Http404:
+            response_data.update({
+                "message": "Invalid company specified",
+                "error": "Company not found"
+            })
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        except serializers.ValidationError as e:
+            response_data.update({
+                "message": "Validation error",
+                "errors": e.detail
+            })
+            print(e)
+
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            logger.exception(
+                f"Review submission error - Company: {company_slug}, "
+            )
+            response_data.update({
+                "message": "Server error processing your review",
                 "error": "Internal server error"
             })
             return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

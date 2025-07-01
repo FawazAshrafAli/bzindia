@@ -268,6 +268,11 @@ class Product(models.Model):
     def get_absolute_url(self):
         return f'/products/{self.slug}'
     
+    @property
+    def blogs(self):
+        from blog.models import Blog
+        return Blog.objects.filter(product = self, is_published=True)
+    
 
 class Faq(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_faq_company")
@@ -403,120 +408,6 @@ class Feature(models.Model):
         ordering = ["created"]
 
 
-# class VerticalBullet(models.Model):
-#     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_vertical_bullet_company")
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-#     heading = models.CharField(max_length=250, null=True, blank=True)
-#     sub_heading = models.CharField(max_length=250, null=True, blank=True)
-
-#     bullet = models.CharField(max_length=250)
-
-#     created = models.DateTimeField(auto_now_add=True)
-#     updated = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return f"{self.company.name}-{self.product.name}"
-    
-#     class Meta:
-#         db_table = "product_vertical_bullets"
-#         ordering = ["created"]
-
-
-# class VerticalTab(models.Model):
-#     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_vertical_tab_company")
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    
-#     heading = models.CharField(max_length=250, null=True, blank=True)
-#     sub_heading = models.CharField(max_length=250, null=True, blank=True)
-#     summary = models.TextField(blank=True, null=True)
-#     bullets = models.ManyToManyField(VerticalBullet)
-
-#     created = models.DateTimeField(auto_now_add=True)
-#     updated = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return f"{self.company.name}-{self.product.name}"
-    
-#     class Meta:
-#         db_table = "product_vertical_tabs"
-#         ordering = ["created"]
-
-
-# class HorizontalBullet(models.Model):
-#     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_horizontal_bullet_company")
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-#     heading = models.CharField(max_length=250, null=True, blank=True)
-
-#     bullet = models.CharField(max_length=250)
-
-#     created = models.DateTimeField(auto_now_add=True)
-#     updated = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return f"{self.company.name}-{self.product.name}"
-    
-#     class Meta:
-#         db_table = "product_horizontal_bullets"
-#         ordering = ["created"]
-
-
-# class HorizontalTab(models.Model):
-#     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_horizontal_tab_company")
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-#     heading = models.CharField(max_length=250, null=True, blank=True)
-#     summary = models.TextField(blank=True, null=True)
-#     bullets = models.ManyToManyField(HorizontalBullet)
-
-#     created = models.DateTimeField(auto_now_add=True)
-#     updated = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return f"{self.company.name}-{self.product.name}"
-    
-#     class Meta:
-#         db_table = "product_horizontal_tabs"
-#         ordering = ["created"]
-
-
-# class TableData(models.Model):
-#     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_table_data_company")
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-#     heading = models.CharField(max_length=250)
-#     data = models.CharField(max_length=250)
-
-#     created = models.DateTimeField(auto_now_add=True)
-#     updated = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return f"{self.company.name}-{self.product.name}"
-    
-#     class Meta:
-#         db_table = "product_table_data"
-#         ordering = ["created"]
-
-
-# class Table(models.Model):
-#     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_table_company")
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-#     heading = models.CharField(max_length=250)
-#     datas = models.ManyToManyField(TableData)
-
-#     created = models.DateTimeField(auto_now_add=True)
-#     updated = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return f"{self.company.name}-{self.product.name}"
-    
-#     class Meta:
-#         db_table = "product_table"
-#         ordering = ["created"]    
-
-
 class BulletPoint(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_bullet_points_company")
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -582,21 +473,7 @@ class ProductDetailPage(models.Model):
     meta_description = models.TextField()
 
     features = models.ManyToManyField(Feature)
-
-    # Verical Tab
-    # vertical_title = models.CharField(max_length=250, null=True, blank=True)
-    # vertical_tabs = models.ManyToManyField(VerticalTab)
-
-    # Horizontal Tab
-    # horizontal_title = models.CharField(max_length=250, null=True, blank=True)
-    # horizontal_tabs = models.ManyToManyField(HorizontalTab)
-
-    # Table
-    # table_title = models.CharField(max_length=250, null=True, blank=True)
-    # tables = models.ManyToManyField(Table)
-
-    # Bullet Point
-    # bullet_title = models.CharField(max_length=250, null=True, blank=True)
+    
     bullet_points = models.ManyToManyField(BulletPoint)
 
     # Tag
@@ -607,10 +484,7 @@ class ProductDetailPage(models.Model):
     timeline_title = models.CharField(max_length=250, null=True, blank=True)
     timelines = models.ManyToManyField(Timeline)
 
-    hide_features = models.BooleanField(default=False)
-    # hide_vertical_tab = models.BooleanField(default=False)
-    # hide_horizontal_tab = models.BooleanField(default=False)
-    # hide_table = models.BooleanField(default=False)
+    hide_features = models.BooleanField(default=False)    
     hide_bullets = models.BooleanField(default=False)
     hide_tags = models.BooleanField(default=False)
     hide_timeline = models.BooleanField(default=False)
@@ -649,19 +523,6 @@ class ProductDetailPage(models.Model):
     class Meta:
         db_table = "product_details"
         ordering = ["created"]
-
-    # @property
-    # def get_data(self):        
-    #     rows = []
-    #     tables = self.tables.all()
-
-    #     for table in tables:
-    #         data = [data.data for data in table.datas.all()]
-    #         rows.append(data)
-
-    #     transposed_data = list(map(list, zip(*rows)))
-
-    #     return transposed_data
     
     @property
     def get_meta_tags(self):
@@ -682,12 +543,19 @@ class ProductDetailPage(models.Model):
         toc = [title for title, hidden in options.items() if not hidden]
 
         return toc
+    
+    @property
+    def image_count(self):
+        if self.product.image:
+            return 1
+        
+        return 0
 
 
 
 class MultiPageFeature(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage_feature")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    title = models.CharField(max_length=250)
 
     feature = models.CharField(max_length=250)
 
@@ -702,122 +570,9 @@ class MultiPageFeature(models.Model):
         ordering = ["created"]
 
 
-class MultiPageVerticalBullet(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage_vertical_bullet")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-    heading = models.CharField(max_length=250, null=True, blank=True)
-    sub_heading = models.CharField(max_length=250, null=True, blank=True)
-
-    bullet = models.CharField(max_length=250)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
-    
-    class Meta:
-        db_table = "product_multipage_vertical_bullets"
-        ordering = ["created"]
-    
-
-class MultiPageVerticalTab(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage_vertical_tab")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    
-    heading = models.CharField(max_length=250, null=True, blank=True)
-    sub_heading = models.CharField(max_length=250, null=True, blank=True)
-    summary = models.TextField(blank=True, null=True)
-    bullets = models.ManyToManyField(MultiPageVerticalBullet)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
-    
-    class Meta:
-        db_table = "product_multipage_vertical_tabs"
-        ordering = ["created"]
-
-
-class MultiPageHorizontalBullet(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage_horizontal_bullet")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-    heading = models.CharField(max_length=250, null=True, blank=True)
-
-    bullet = models.CharField(max_length=250)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
-    
-    class Meta:
-        db_table = "product_multipage_horizontal_bullets"
-        ordering = ["created"]
-
-
-class MultiPageHorizontalTab(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage_horizontal_tab")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-    heading = models.CharField(max_length=250, null=True, blank=True)
-    summary = models.TextField(blank=True, null=True)
-    bullets = models.ManyToManyField(MultiPageHorizontalBullet)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
-    
-    class Meta:
-        db_table = "product_multipage_horizontal_tabs"
-        ordering = ["created"]
-
-class MultiPageTableData(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage_table_data")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-    heading = models.CharField(max_length=250)
-    data = models.CharField(max_length=250)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
-    
-    class Meta:
-        db_table = "product_multipage_table_data"
-        ordering = ["created"]
-
-
-class MultiPageTable(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage_table")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-    heading = models.CharField(max_length=250)
-    datas = models.ManyToManyField(MultiPageTableData)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
-    
-    class Meta:
-        db_table = "product_multipage_table"
-        ordering = ["created"]    
-
-
 class MultiPageBulletPoint(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage_bullets")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    title = models.CharField(max_length=250)
 
     bullet_point = models.CharField(max_length=250)
 
@@ -834,7 +589,7 @@ class MultiPageBulletPoint(models.Model):
 
 class MultiPageTag(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage_tag")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    title = models.CharField(max_length=250)
 
     tag = models.CharField(max_length=250)
 
@@ -851,7 +606,7 @@ class MultiPageTag(models.Model):
 
 class MultiPageTimeline(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage_timeline")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    title = models.CharField(max_length=250)
 
     heading = models.CharField(max_length=250)
     summary = models.TextField()
@@ -869,7 +624,7 @@ class MultiPageTimeline(models.Model):
 
 class MultiPageFaq(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage_faq")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    title = models.CharField(max_length=250)
 
     question = models.CharField(max_length=250)
     answer = models.TextField()
@@ -887,7 +642,9 @@ class MultiPageFaq(models.Model):
 
 class MultiPage(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+
+    title = models.CharField(max_length=250)
+    products = models.ManyToManyField(Product)
 
     summary = models.TextField(null=True, blank=True)
     description = RichTextField()
@@ -898,19 +655,10 @@ class MultiPage(models.Model):
 
     url_type = models.CharField(max_length=50, default="slug_filtered")
 
-    features = models.ManyToManyField(MultiPageFeature)
+    product_region = models.CharField(max_length=250, default="all")
+    available_states = models.ManyToManyField(UniqueState, related_name="product_multipage_states")
 
-    # Verical Tab
-    vertical_title = models.CharField(max_length=250, null=True, blank=True)
-    vertical_tabs = models.ManyToManyField(MultiPageVerticalTab)
-
-    # Horizontal Tab
-    horizontal_title = models.CharField(max_length=250, null=True, blank=True)
-    horizontal_tabs = models.ManyToManyField(MultiPageHorizontalTab)
-
-    # Table
-    table_title = models.CharField(max_length=250, null=True, blank=True)
-    tables = models.ManyToManyField(MultiPageTable)
+    features = models.ManyToManyField(MultiPageFeature)    
 
     # Bullet Point
     bullet_title = models.CharField(max_length=250, null=True, blank=True)
@@ -927,10 +675,7 @@ class MultiPage(models.Model):
     # Faqs
     faqs = models.ManyToManyField(MultiPageFaq)
 
-    hide_features = models.BooleanField(default=False)
-    hide_vertical_tab = models.BooleanField(default=False)
-    hide_horizontal_tab = models.BooleanField(default=False)
-    hide_table = models.BooleanField(default=False)
+    hide_features = models.BooleanField(default=False)    
     hide_bullets = models.BooleanField(default=False)
     hide_tags = models.BooleanField(default=False)
     hide_timeline = models.BooleanField(default=False)
@@ -949,40 +694,30 @@ class MultiPage(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.meta_title:
-            self.meta_title = f"{self.product.name} - {self.company.name}"
+            self.meta_title = f"{self.title} - {self.company.name}"
 
-        if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.product.name}")
-            slug = base_slug
-            count = 1
+        base_slug = slugify(self.title)
+        slug = base_slug
+        count = 1
 
-            while MultiPage.objects.filter(slug = slug).exists():
-                slug = f"{base_slug}-{count}"
-                count += 1
+        while MultiPage.objects.filter(slug = slug).exclude(pk = self.pk).exists():
+            slug = f"{base_slug}-{count}"
+            count += 1
 
-            self.slug = slug
+        if self.url_type != "slug_filtered":
+            slug = slug.replace("-in-place_name", "").replace("-in-district_name", "").replace("-in-state_name", "").replace("-place_name", "").replace("-district_name", "").replace("-state_name", "")
+
+        self.slug = slug
+
 
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
+        return f"{self.title}-{self.company.name}"
     
     class Meta:
         db_table = "product_multipages"
         ordering = ["created"]
-
-    @property
-    def get_data(self):        
-        rows = []
-        tables = self.tables.all()
-
-        for table in tables:
-            data = [data.data for data in table.datas.all()]
-            rows.append(data)
-
-        transposed_data = list(map(list, zip(*rows)))
-
-        return transposed_data
     
     @property
     def get_meta_tags(self):
@@ -992,3 +727,22 @@ class MultiPage(models.Model):
         tag_list = [tag.name for tag in self.meta_tags.all()]
 
         return ", ".join(tag_list)
+    
+    @property
+    def toc(self):
+        options = {            
+            self.tag_title: self.hide_tags,
+            self.timeline_title: self.hide_timeline,
+            "FAQs": self.hide_faqs
+        }
+
+        toc = [title for title, hidden in options.items() if not hidden]
+
+        return toc
+
+    @property
+    def image_count(self):
+        if self.products.count() > 0:
+            return len([product.image for product in self.products.all() if product.image])
+        
+        return 0

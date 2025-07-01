@@ -1196,7 +1196,7 @@
 				if (isProduct) {
 					actionUrl = `{% url 'product:get_sub_categories' %}`;
 
-					$('#product-dropdown').html('<option value="" hidden disabled selected>Select Service</option>');
+					$('#product-dropdown').html('<option value="" hidden disabled selected>Select Product</option>');
 				} else {
 					$('#service-dropdown').html('<option value="" hidden disabled selected>Select Service</option>');
 				}
@@ -1248,10 +1248,11 @@
 								$('#product-dropdown').append(`<option value="${product.slug}">${product.name}</option>`)
 							})
 						}
-						
+
 						if (response.error) {
 							console.error("Error: ", response.error)
 						}
+						
 					},
 					error: error => console.error("Error: ", error),
 				});            

@@ -102,7 +102,6 @@ class Company(models.Model):
             self.meta_title = f"Home - {self.name}"
 
         if not self.slug:
-            # base_slug = slugify(self.name)
             base_slug = slugify(self.sub_type)
             self.slug = base_slug
             count = 1

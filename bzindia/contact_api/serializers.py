@@ -19,7 +19,7 @@ class EnquirySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Enquiry
-        fields = ["name", "phone", "email", "state", "comment"]
+        fields = ["name", "phone", "email", "state", "comment", "company_sub_type"]
 
     def validate(self, data):
         cleaned_data = {}

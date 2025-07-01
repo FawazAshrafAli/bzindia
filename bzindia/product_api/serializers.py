@@ -1,13 +1,15 @@
 from rest_framework import serializers
 from django.conf import settings
+from django.db.models import Max
 
 from utility.text import clean_string
 from datetime import datetime
 
 from product.models import (
     Product, Review, Category, ProductDetailPage, Enquiry, 
-    SubCategory, Feature, Timeline, Tag, 
-    Faq, BulletPoint
+    SubCategory, Feature, Timeline, Tag, MultiPage,
+    Faq, BulletPoint, MultiPageFaq, MultiPageBulletPoint,
+    MultiPageFeature, MultiPageTag, MultiPageTimeline,
     )
 from blog_api.serializers import BlogSerializer
 from blog.models import Blog
@@ -19,36 +21,103 @@ class FaqSerializer(serializers.ModelSerializer):
         model = Faq
         fields = ["question", "answer", "slug"]
 
+
 class ReviewSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='user.username', read_only=True)
     product_name = serializers.CharField(source="product.name", read_only=True)
     created_date = serializers.SerializerMethodField()
+
+    product = serializers.SlugRelatedField(
+        queryset=Product.objects.all(),
+        slug_field='slug',
+        required=True
+    )
+
+    email = serializers.EmailField(
+        max_length=254,
+        required=True
+    )
     
     class Meta:
         model = Review
-        fields = ['name', 'text', 'rating', 'created', "product_name", "review_by", "created_date"]
-        read_only_fields = fields
+        fields = ['name', 'text', 'rating', 'created', "product_name", "review_by", "created_date", "product", "email"]
+        extra_kwargs = {
+            'company': {'required': False},
+            'review_by': {'required': True},
+            'text': {'required': True},
+            'email': {'required': True},
+            'rating': {'required': True}
+        }
 
     def get_created_date(self, obj):
         if not obj:
             return None
 
         return datetime.strftime(obj.created, "%b %d, %Y")
+    
+    def __init__(self, *args, **kwargs):
+        company_slug = kwargs.pop('company_slug', None)
+        super().__init__(*args, **kwargs)
+        
+        if company_slug:
+            self.fields['product'].queryset = Product.objects.filter(
+                company__slug=company_slug,                
+            )
+
+    def validate(self, data):
+        # Clean string fields
+        cleaned_data = {}
+        string_fields = ['review_by', 'text']
+        
+        for field in string_fields:
+            value = data.get(field, '').strip()
+            if not value:
+                raise serializers.ValidationError(
+                    {field: f"{field.capitalize()} is required and cannot be empty"}
+                )
+            cleaned_data[field] = clean_string(value)
+        
+        # Email validation
+        email = data.get('email', '').strip().lower()
+        if not email:
+            raise serializers.ValidationError({"email": "Email is required"})
+        cleaned_data['email'] = email
+
+        rating = data.get('rating', '')
+        cleaned_data['rating'] = rating if rating else 0
+
+        
+        # Update data with cleaned values
+        data.update(cleaned_data)
+        
+        # Additional business logic validation
+        if not self.context.get('request').user.is_authenticated:
+            # Example: Spam prevention for anonymous submissions
+            if len(data['text']) > 1000:
+                raise serializers.ValidationError(
+                    {"message": "Message too long (max 1000 characters)"}
+                )
+        
+        return data
 
 
 class ProductSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     category_name = serializers.CharField(source = "category.name", read_only = True)
+    category_slug = serializers.CharField(source = "category.slug", read_only = True)
+    brand_name = serializers.CharField(source = "brand.name", read_only = True)
     reviews = ReviewSerializer(many=True, read_only=True)
     faqs = serializers.SerializerMethodField()
     blogs = serializers.SerializerMethodField()
+    detail_page_slug = serializers.SerializerMethodField()    
 
     class Meta:
         model = Product
         fields = [
             "name", "image_url", "price", "description", "get_absolute_url", 
             "category_name", "rating", "rating_count", "reviews", "slug", 
-            "sku", "stock", "faqs", "blogs"
+            "sku", "stock", "faqs", "blogs", "category_slug", "brand_name",
+            "detail_page_slug"
             ]
 
     def get_image_url(self, obj):
@@ -80,51 +149,22 @@ class ProductSerializer(serializers.ModelSerializer):
 
         return serializer.data
     
+    def get_detail_page_slug(self, obj):
+        if not obj:
+            return None
+        
+        try:
+            detail_page = ProductDetailPage.objects.get(product = obj)
+
+            return detail_page.slug
+        except ProductDetailPage.DoesNotExist:
+            return None
+
 
 class FeatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feature
         fields = ["feature", "id"]
-
-
-# class VerticalBulletSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = VerticalBullet
-#         fields = ["id", "bullet"]
-
-
-# class HorizontalBulletSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = HorizontalBullet
-#         fields = ["id", "bullet"]
-
-    
-# class VerticalTabSerializer(serializers.ModelSerializer):
-#     bullets = VerticalBulletSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = VerticalTab
-#         fields = [
-#             "id", "heading", "sub_heading", "summary", "bullets"
-#             ]
-        
-
-# class HorizontalTabSerializer(serializers.ModelSerializer):
-#     bullets = HorizontalBulletSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = HorizontalTab
-#         fields = [
-#             "id", "heading", "summary", "bullets"
-#             ]
-        
-        
-# class TableSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Table
-#         fields = [
-#             "id", "heading"
-#             ]
 
 
 class BulletPointSerializer(serializers.ModelSerializer):
@@ -154,10 +194,7 @@ class TimelineSerializer(serializers.ModelSerializer):
 class DetailSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
 
-    features = FeatureSerializer(many=True)
-    # vertical_tabs = VerticalTabSerializer(many=True, read_only=True)
-    # horizontal_tabs = HorizontalTabSerializer(many=True, read_only=True)
-    # tables = TableSerializer(many=True, read_only=True)
+    features = FeatureSerializer(many=True)    
     bullet_points = BulletPointSerializer(many=True, read_only=True)    
     tags = TagSerializer(many=True, read_only=True)
     timelines = TimelineSerializer(many=True, read_only=True)
@@ -171,6 +208,136 @@ class DetailSerializer(serializers.ModelSerializer):
             "hide_tags", "hide_timeline", "tags", "timelines", "meta_tags", 
             "toc", "timeline_title", "tag_title", "hide_support_languages"
             ]
+        
+
+class MultipageFeatureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MultiPageFeature
+        fields = ["feature", "id"]
+
+
+class MultipageBulletPointSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MultiPageBulletPoint
+        fields = [
+            "id", "bullet_point"
+            ]
+        
+
+class MultipageTagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MultiPageTag
+        fields = [
+            "id", "tag"
+            ]
+        
+
+class MultipageTimelineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MultiPageTimeline
+        fields = [
+            "id", "heading", "summary"
+            ]
+        
+
+class MultipageFaqSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MultiPageFaq
+        fields = [
+            "id", "question", "answer"
+            ]
+
+
+class MultiPageSerializer(serializers.ModelSerializer):
+    products = ProductSerializer(many=True, read_only=True)
+    company_slug = serializers.CharField(source="company.slug", read_only=True)
+
+    features = MultipageFeatureSerializer(many=True)    
+    bullet_points = MultipageBulletPointSerializer(many=True, read_only=True)    
+    tags = MultipageTagSerializer(many=True, read_only=True)
+    timelines = MultipageTimelineSerializer(many=True, read_only=True)
+    faqs = MultipageFaqSerializer(many=True, read_only=True)
+    meta_tags = MetaTagSerializer(many=True, read_only=True)
+    rating = serializers.SerializerMethodField()
+    rating_count = serializers.SerializerMethodField()
+    reviews = serializers.SerializerMethodField()
+    blogs = serializers.SerializerMethodField()
+    published = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MultiPage
+        fields = [
+            "title", "products", "slug", "meta_description", "summary", "description",
+            "features", "bullet_points", "hide_features", "hide_bullets",
+            "hide_tags", "hide_timeline", "tags", "timelines", "meta_tags", 
+            "toc", "timeline_title", "tag_title", "hide_support_languages",
+            "faqs", "company_slug", "rating", "rating_count", "reviews",
+            "blogs", "meta_title", "created", "updated", "published"
+            ]
+        
+    def get_reviews(self, obj):
+        if not obj:
+            return None
+        
+        products = obj.products.all()
+
+        reviews_slug = []
+
+        for product in products:
+            product_reviews_slug = product.reviews.values_list("slug", flat=True)
+
+            reviews_slug += product_reviews_slug
+
+        reviews = Review.objects.filter(slug__in = reviews_slug)
+
+        serializer = ReviewSerializer(reviews, many=True)
+
+        return serializer.data
+        
+    def get_rating(self, obj):
+        if not obj:
+            return None
+        
+        products = obj.products.all()
+
+        highest_rating = (max(products, key=lambda p: p.rating)).rating        
+
+        return highest_rating if highest_rating else 0
+    
+    def get_rating_count(self, obj):
+        if not obj:
+            return None
+        
+        products = obj.products.all()
+
+        highest_rating_count = (max(products, key=lambda p: p.rating)).rating_count
+
+        return highest_rating_count if highest_rating_count else 0
+    
+    def get_blogs(self, obj):
+        if not obj:
+            return None
+        
+        products = obj.products.all()
+
+        blogs_slug = []
+
+        for product in products:
+            product_blogs_slug = product.blogs.values_list("slug", flat=True)
+
+            blogs_slug += product_blogs_slug
+
+        blogs = Blog.objects.filter(slug__in = blogs_slug)
+
+        serializer = BlogSerializer(blogs, many=True)
+
+        return serializer.data
+    
+    def get_published(self, obj):
+        if not obj:
+            return None
+        
+        return datetime.strftime(obj.created, "%d-%b-%Y")
     
 
 class ProductSubCategorySerializer(serializers.ModelSerializer):
@@ -238,7 +405,7 @@ class EnquirySerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'company': {'required': False},  # Typically set server-side
             'name': {'required': True},
-            'message': {'required': True}
+            'message': {'required': True},            
         }
     
     def get_company(self, obj):
