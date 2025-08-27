@@ -7,7 +7,7 @@ from ckeditor.fields import RichTextField
 from educational.models import Course
 from product.models import Product
 from service.models import Service
-from registration.models import RegistrationSubType
+from registration.models import Registration
 from company.models import Company
 from base.models import MetaTag
 
@@ -21,7 +21,7 @@ class Blog(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
     service = models.ForeignKey(Service, on_delete=models.CASCADE, null=True, blank=True)
-    registration_sub_type = models.ForeignKey(RegistrationSubType, on_delete=models.CASCADE, null=True, blank=True)
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, null=True, blank=True, related_name="blogs")
 
     summary = models.TextField()
     content = RichTextField()
@@ -45,20 +45,13 @@ class Blog(models.Model):
         else:
             self.published_date = None
 
-        if not self.slug:
-            topic = (
-                getattr(self.course, "name", None) or
-                getattr(self.product, "name", None) or
-                getattr(self.service, "name", None) or
-                getattr(self.registration_sub_type, "name", "")
-            )
-
-            base_slug = slugify(f"{self.title}-{self.blog_type}-{topic}")
+        if not self.slug:            
+            base_slug = slugify({self.title})
 
             slug = base_slug
             count = 1
 
-            while Blog.objects.filter(slug = slug).exists():
+            while Blog.objects.filter(slug = slug).exclude(pk = self.pk).exists():
                 slug = f"{base_slug}-{count}"
                 count += 1
 
@@ -80,8 +73,8 @@ class Blog(models.Model):
             topic = self.course.name
         elif self.product:
             topic = self.product.name
-        elif self.registration_sub_type:
-            topic = self.registration_sub_type.name
+        elif self.registration:
+            topic = self.registration.title
         elif self.service:
             topic = self.service.name
             
@@ -102,8 +95,8 @@ class Blog(models.Model):
             return self.product.name
         elif self.blog_type == "Service":
             return self.service.name
-        elif self.blog_type == "Registration":
-            return self.registration_sub_type.name
+        elif self.blog_type == "Registration" and self.registration:                
+            return self.registration.title
         else:
             return None
         
@@ -118,7 +111,7 @@ class Blog(models.Model):
     
     @property
     def category(self):
-        for category in (self.course, self.product, self.service, self.registration_sub_type):
+        for category in (self.course, self.product, self.service, self.registration):
             if category:
                 return category.name
 
@@ -126,7 +119,7 @@ class Blog(models.Model):
     
     @property
     def category_slug(self):
-        for category in (self.course, self.product, self.service, self.registration_sub_type):
+        for category in (self.course, self.product, self.service, self.registration):
             if category:
                 return category.slug
 
@@ -134,10 +127,10 @@ class Blog(models.Model):
     
     @property
     def get_absolute_url(self):
-        return f"https://bzindia/blogs/{self.slug}"
+        return f"https://bzindia/learn/{self.slug}"
     
     @property
     def category_count(self):
 
-        return Blog.objects.filter(Q(course__name = self.category) | Q(product__name = self.category) | Q(service__name = self.category) | Q(registration_sub_type__name = self.category)).count()
+        return Blog.objects.filter(Q(course__name = self.category) | Q(product__name = self.category) | Q(service__name = self.category) | Q(registration__title = self.category)).count()
     
