@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 from company.models import Company
 
-from locations.models import UniquePlace, UniqueDistrict, UniqueState
+from locations.models import UniquePlace, UniqueState
 from base.models import MetaTag
 
 
@@ -22,7 +22,7 @@ class Program(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.name}-{self.company.name}")
+            base_slug = slugify(self.name)
             slug = base_slug
             count = 1
 
@@ -71,11 +71,11 @@ class Specialization(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.name}-{self.program.name}-{self.company.name}")
+            base_slug = slugify(self.name)
             slug = base_slug
             count = 1
 
-            while Specialization.objects.filter(slug = slug).exists():
+            while Specialization.objects.filter(slug = slug).exclude(pk = self.pk).exists():
                 slug = f"{base_slug}-{count}"
                 count += 1
 
@@ -92,11 +92,11 @@ class Specialization(models.Model):
 
 
 class Course(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="courses")
 
     image = models.ImageField(upload_to="course/", null=True, blank=True)
     name = models.CharField(max_length=150)
-    program = models.ForeignKey(Program, on_delete=models.CASCADE)
+    program = models.ForeignKey(Program, on_delete=models.CASCADE, related_name = "courses")
     specialization = models.ForeignKey(Specialization, on_delete=models.CASCADE)
     mode = models.CharField(max_length=150)
     duration = models.PositiveIntegerField()
@@ -113,7 +113,7 @@ class Course(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.name}-{self.program.name}-{self.specialization.name}-{self.company.name}")
+            base_slug = slugify(self.name)
             slug = base_slug
             count = 1
 
@@ -141,13 +141,12 @@ class Course(models.Model):
 
     @property
     def description(self):
-        try:
-            detail_page = CourseDetail.objects.get(course = self)
+        detail_page = CourseDetail.objects.filter(course = self).first()
 
+        if detail_page:
             return detail_page.summary
         
-        except CourseDetail.DoesNotExist:
-            return ""
+        return None
         
     @property
     def rating(self):
@@ -196,7 +195,7 @@ class Feature(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.title}-{self.company.name}"
+        return f"{self.course.name}-{self.company.name}"
     
     class Meta:
         db_table = "features"
@@ -216,7 +215,7 @@ class VerticalBullet(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.title}-{self.company.name}"
+        return f"{self.course.name}-{self.company.name}"
     
     class Meta:
         db_table = "vertical_bullets"
@@ -236,7 +235,7 @@ class VerticalTab(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.title}-{self.company.name}"
+        return f"{self.course.name}-{self.company.name}"
     
     class Meta:
         db_table = "vertical_tabs"
@@ -255,7 +254,7 @@ class HorizontalBullet(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.title}-{self.company.name}"
+        return f"{self.course.name}-{self.company.name}"
     
     class Meta:
         db_table = "horizontal_bullets"
@@ -274,7 +273,7 @@ class HorizontalTab(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.title}-{self.company.name}"
+        return f"{self.course.name}-{self.company.name}"
     
     class Meta:
         db_table = "horizontal_tabs"
@@ -291,7 +290,7 @@ class TableData(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.title}-{self.company.name}"
+        return f"{self.course.name}-{self.company.name}"
     
     class Meta:
         db_table = "table_data"
@@ -309,7 +308,7 @@ class Table(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.title}-{self.company.name}"
+        return f"{self.course.name}-{self.company.name}"
     
     class Meta:
         db_table = "table"
@@ -327,27 +326,10 @@ class BulletPoints(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.title}-{self.company.name}"
+        return f"{self.course.name}-{self.company.name}"
     
     class Meta:
         db_table = "bullet_points"
-        ordering = ["created"]
-
-
-class Tag(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
-
-    tag = models.CharField(max_length=250)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.title}-{self.company.name}"
-    
-    class Meta:
-        db_table = "course_tags"
         ordering = ["created"]
 
 
@@ -362,7 +344,7 @@ class Timeline(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.title}-{self.company.name}"
+        return f"{self.course.name}-{self.company.name}"
     
     class Meta:
         db_table = "timelines"
@@ -396,11 +378,7 @@ class CourseDetail(models.Model):
 
     # Bullet Point
     bullet_title = models.CharField(max_length=250, null=True, blank=True)
-    bullet_points = models.ManyToManyField(BulletPoints)
-
-    # Tag
-    tag_title = models.CharField(max_length=250, null=True, blank=True)
-    tags = models.ManyToManyField(Tag)
+    bullet_points = models.ManyToManyField(BulletPoints)    
 
     # Timeline
     timeline_title = models.CharField(max_length=250, null=True, blank=True)
@@ -410,13 +388,12 @@ class CourseDetail(models.Model):
     hide_vertical_tab = models.BooleanField(default=False)
     hide_horizontal_tab = models.BooleanField(default=False)
     hide_table = models.BooleanField(default=False)
-    hide_bullets = models.BooleanField(default=False)
-    hide_tags = models.BooleanField(default=False)
+    hide_bullets = models.BooleanField(default=False)    
     hide_timeline = models.BooleanField(default=False)
 
     hide_support_languages = models.BooleanField(default=False)
 
-    slug = models.SlugField(null=True, blank=True)
+    slug = models.SlugField(blank=True, null=True, max_length=500)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -426,7 +403,7 @@ class CourseDetail(models.Model):
             self.meta_title = f"{self.course.name} - {self.company.name}"
 
         if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.course.name}")
+            base_slug = slugify(self.course.name)
             slug = base_slug
             count = 1
 
@@ -439,7 +416,7 @@ class CourseDetail(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.title}-{self.company.name}"
+        return f"{self.course.name}-{self.company.name}"
     
     class Meta:
         db_table = "course_details"
@@ -473,8 +450,7 @@ class CourseDetail(models.Model):
             self.vertical_title: self.hide_vertical_tab,
             self.horizontal_title: self.hide_horizontal_tab,
             self.table_title: self.hide_table,
-            self.bullet_title: self.hide_bullets,
-            self.tag_title: self.hide_tags,
+            self.bullet_title: self.hide_bullets,            
             self.timeline_title: self.hide_timeline
         }
 
@@ -523,7 +499,6 @@ class Enquiry(models.Model):
     email = models.EmailField(max_length=254)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     state = models.ForeignKey(UniqueState, on_delete=models.CASCADE, related_name="course_state")
-    message = models.TextField()
 
     slug = models.SlugField(null=True, blank=True, max_length=500)
 
@@ -532,7 +507,7 @@ class Enquiry(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.course.name}-{self.email}")
+            base_slug = slugify(f"{self.course.name}-{self.email}")
             slug = base_slug
 
             count = 1
@@ -568,7 +543,7 @@ class Faq(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.course.name}")
+            base_slug = slugify(f"{self.question}")
             slug = base_slug
 
             count = 1
@@ -581,7 +556,7 @@ class Faq(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.title}-{self.company.name}"
+        return f"{self.course.name}-{self.company.name}"
     
     class Meta:
         db_table = "course_faqs"
@@ -609,7 +584,7 @@ class Testimonial(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.name}-{self.course.name}-{self.place.name}")
+            base_slug = slugify(f"{self.name}-{self.course.name}-{self.place.name}")
 
             slug = base_slug
             count = 1
@@ -787,24 +762,6 @@ class MultiPageBulletPoints(models.Model):
         ordering = ["created"]
 
 
-class MultiPageTag(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    title = models.CharField(max_length = 250, blank=True, null=True)
-
-    tag = models.CharField(max_length=250)
-    # link = models.URLField(max_length=200)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.title}-{self.company.name}"
-    
-    class Meta:
-        db_table = "course_multipage_tags"
-        ordering = ["created"]
-
-
 class MultiPageTimeline(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     title = models.CharField(max_length = 250, blank=True, null=True)
@@ -844,11 +801,11 @@ class MultiPageFaq(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.course.name}")
+            base_slug = slugify(self.title)
             slug = base_slug
 
             count = 1
-            while Faq.objects.filter(slug = slug).exists():
+            while MultiPageFaq.objects.filter(slug = slug).exists():
                 slug = f"{base_slug}-{count}"
                 count += 1
 
@@ -861,10 +818,11 @@ class MultiPageFaq(models.Model):
 
 
 class MultiPage(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="course_multipages")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="multipages")
 
     title = models.CharField(max_length = 250, blank=True, null=True)
+    sub_title = models.CharField(max_length = 250, blank=True, null=True)
 
     summary = models.TextField(null=True, blank=True)
     description = RichTextField()
@@ -876,7 +834,9 @@ class MultiPage(models.Model):
     url_type = models.CharField(max_length=50, default="slug_filtered")
 
     course_region = models.CharField(max_length=250, default="all")
-    available_states = models.ManyToManyField(UniqueState, related_name="education_multipage_states")
+    available_states = models.ManyToManyField(UniqueState, related_name="course_multipages")
+
+    slider_courses = models.ManyToManyField(CourseDetail)
 
     features = models.ManyToManyField(MultiPageFeature)
 
@@ -894,11 +854,7 @@ class MultiPage(models.Model):
 
     # Bullet Point
     bullet_title = models.CharField(max_length=250, null=True, blank=True)
-    bullet_points = models.ManyToManyField(MultiPageBulletPoints)
-
-    # Tag
-    tag_title = models.CharField(max_length=250, null=True, blank=True)
-    tags = models.ManyToManyField(MultiPageTag)
+    bullet_points = models.ManyToManyField(MultiPageBulletPoints)    
 
     # Timeline
     timeline_title = models.CharField(max_length=250, null=True, blank=True)
@@ -911,14 +867,14 @@ class MultiPage(models.Model):
     hide_vertical_tab = models.BooleanField(default=False)
     hide_horizontal_tab = models.BooleanField(default=False)
     hide_table = models.BooleanField(default=False)
-    hide_bullets = models.BooleanField(default=False)
-    hide_tags = models.BooleanField(default=False)
+    hide_bullets = models.BooleanField(default=False)    
     hide_timeline = models.BooleanField(default=False)
     hide_faqs = models.BooleanField(default=False)
 
     hide_support_languages = models.BooleanField(default=False)
+    home_footer_visibility = models.BooleanField(default=False)
 
-    slug = models.SlugField(null=True, blank=True)
+    slug = models.SlugField(blank=True, null=True, max_length=500)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -926,6 +882,9 @@ class MultiPage(models.Model):
     def save(self, *args, **kwargs):
         if not self.meta_title:
             self.meta_title = f"{self.title} - {self.company.name}"
+
+        if not self.home_footer_visibility and not MultiPage.objects.exclude(pk=self.pk).filter(company = self.company, home_footer_visibility=True).exists():
+            self.home_footer_visibility = True
 
         base_slug = slugify(self.title)
         slug = base_slug
@@ -943,11 +902,27 @@ class MultiPage(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.title}-{self.company.name}"
+        return f"{self.course.name}-{self.company.name}"
     
     class Meta:
         db_table = "course_multipages"
         ordering = ["created"]
+
+    @property
+    def slider_course_program_slug(self):
+        if self.slider_courses.count() > 0:
+            first_slider_course_detail = self.slider_courses.first()
+            return first_slider_course_detail.course.program.slug
+        
+        return None
+    
+    @property
+    def slider_course_specialization_slug(self):
+        if self.slider_courses.count() > 0:
+            first_slider_course_detail = self.slider_courses.first()
+            return first_slider_course_detail.course.specialization.slug
+        
+        return None
 
     @property
     def get_data(self):        
@@ -996,8 +971,7 @@ class MultiPage(models.Model):
             self.vertical_title: self.hide_vertical_tab,
             self.horizontal_title: self.hide_horizontal_tab,
             self.table_title: self.hide_table,
-            self.bullet_title: self.hide_bullets,
-            self.tag_title: self.hide_tags,
+            self.bullet_title: self.hide_bullets,            
             self.timeline_title: self.hide_timeline
         }
 

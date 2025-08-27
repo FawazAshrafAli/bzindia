@@ -30,7 +30,7 @@
 	<div class="col-md-12">
 		<div class="card">
 			<div class="card-header">									
-				<h5 class="card-title">{{service_detail.service.name}} Service Details</h5>
+				<h5 class="card-title">{{service_detail.service.name}}</h5>
 			</div>            
 		</div>
         <div class="card">
@@ -226,27 +226,7 @@
 				{% endif %}
 			</div>
 		</div>
-		{% endif %}
-
-		{% if not service_detail.hide_tags %}
-		<div class="card">
-            <div class="card-body">
-				<h4>Tags</h4>
-				<hr>
-				{% if service_detail.tag_title or service_detail.tags.all %}
-				<h5>Title: {{service_detail.tag_title}}</h5>
-				<br>
-				<div>
-					{% for tag_obj in service_detail.tags.all %}
-					<a href="{{tag_obj.link}}" class="tag" target="_blank">{{tag_obj.tag}}</a>
-					{% endfor %}
-				</div>
-				{% else %}
-				<p class="text-center text-danger">No data</p>
-				{% endif %}
-			</div>
-		</div>
-		{% endif %}
+		{% endif %}		
 
 		{% if not service_detail.hide_timeline %}
 		<div class="card">

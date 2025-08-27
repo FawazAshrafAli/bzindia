@@ -60,6 +60,9 @@ class ProductDetailViewset(viewsets.ReadOnlyModelViewSet):
         category = self.request.query_params.get("category")
 
         if company_slug:
+            if company_slug == "all":
+                return ProductDetailPage.objects.all()
+
             filters = {"company__slug": company_slug}
             
             if category:
@@ -90,6 +93,7 @@ class ProductDetailViewset(viewsets.ReadOnlyModelViewSet):
 
 class ProductCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ProductCategorySerializer
+    lookup_field = "slug"
     
     def get_queryset(self):
         company_slug = self.kwargs.get("company_slug")
@@ -125,12 +129,20 @@ class ProductMultipageViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ProductSubCategoryViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSubCategorySerializer
+    pagination_class = ProductDetailPagination
+    lookup_field = "slug"
     
     def get_queryset(self):
         company_slug = self.kwargs.get("company_slug")
+        category_slug = self.request.query_params.get("category")
 
         if company_slug:
-            return SubCategory.objects.filter(company__slug = company_slug)
+            filters = {"company__slug": company_slug}
+
+            if category_slug:
+                filters["category__slug"] = category_slug
+
+            return SubCategory.objects.filter(**filters)
         
         return SubCategory.objects.none()
     

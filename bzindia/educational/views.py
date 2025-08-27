@@ -135,6 +135,46 @@ class GetCourseView(BaseEducationCompanyView, View):
             }, status=500)
         
 
+class GetCourseDetailsView(BaseEducationCompanyView, View):
+    def get(self, request, *args, **kwargs):
+        if request.headers.get("x-requested-with") != "XMLHttpRequest":
+            return JsonResponse({
+                "status": "failed",
+                "error": "Method Not Allowed"
+            }, status=403)
+
+        company_slug = request.GET.get("company")
+        specialization_slug = request.GET.get("specialization")
+
+        if not company_slug or not specialization_slug:
+            return JsonResponse({
+                "status": "failed",
+                "error": "Missing required parameters"
+            }, status=400)
+
+        try:
+            course_details = CourseDetail.objects.filter(
+                company__slug = company_slug, course__specialization__slug = specialization_slug
+            ).values("course__name", "slug")
+
+            return JsonResponse({
+                "status": "success",
+                "course_details": list(course_details)
+            }, status=200)
+
+        except Http404:
+            return JsonResponse({
+                "status": "failed",
+                "error": "Company or specialization not found"
+            }, status=404)
+        except Exception as e:
+            logger.exception(f"Unexpected error in GetCourseDetailView: {e}")
+            return JsonResponse({
+                "status": "failed",
+                "error": "An unexpected error occurred"
+            }, status=500)
+        
+
 class BaseEducationView(CompanyBaseView):
     model = Company
 

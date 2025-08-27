@@ -1,17 +1,20 @@
 from rest_framework import serializers
 from django.conf import settings
+from datetime import datetime
 
 from utility.text import clean_string
 
 from educational.models import  (
     Course, Testimonial, Faq, Enquiry, Program, CourseDetail,
     Feature, VerticalTab, HorizontalTab, Table, BulletPoints, 
-    Tag, Timeline, VerticalBullet, HorizontalBullet,
+    Timeline, VerticalBullet, HorizontalBullet,
 
     MultiPage, MultiPageFaq, MultiPageFeature, MultiPageBulletPoints,
-    MultiPageHorizontalBullet, MultiPageHorizontalTab, MultiPageTag,
-    MultiPageTable, MultiPageTimeline, MultiPageTableData, MultiPageVerticalTab,
-    MultiPageVerticalBullet
+    MultiPageHorizontalBullet, MultiPageHorizontalTab,
+    MultiPageTable, MultiPageTimeline, MultiPageVerticalTab,
+    MultiPageVerticalBullet,
+
+    Specialization
     )
 from locations.models import UniqueState
 from company.models import Company
@@ -28,14 +31,19 @@ class CourseSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(source='company.name', read_only=True)
     company_sub_type = serializers.CharField(source='company.sub_type', read_only=True)
     company_slug = serializers.CharField(source='company.slug', read_only=True)
+    program_slug = serializers.CharField(source='program.slug', read_only=True)
+    specialization_slug = serializers.CharField(source='specialization.slug', read_only=True)
+    specialization_name = serializers.CharField(source='specialization.name', read_only=True)
 
     class Meta:
         model = Course
         fields = [
             "name", "program_name", "image_url", "company_sub_type",
             "description", "company_name", "company_slug", "mode", 
-            "starting_date", "ending_date", "duration", 
-            "price", "rating", "rating_count", "slug"]
+            "starting_date", "ending_date", "duration", "program_slug",
+            "price", "rating", "rating_count", "slug", "specialization_slug",
+            "specialization_name"
+            ]
         
         read_only_fields = fields
 
@@ -100,15 +108,6 @@ class BulletPointSerializer(serializers.ModelSerializer):
         fields = [
             "id", "bullet_point"
             ]
-        
-
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = [
-            "id", "tag"
-            ]
-        
 
 class TimelineSerializer(serializers.ModelSerializer):
     class Meta:
@@ -136,6 +135,12 @@ class StudentTestimonialSerializer(serializers.ModelSerializer):
         return
 
 
+class CourseFaqSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Faq
+        fields = ["question", "answer", "slug"]
+        
+
 class DetailSerializer(serializers.ModelSerializer):
     course = CourseSerializer()
     features = FeatureSerializer(many=True)
@@ -143,33 +148,40 @@ class DetailSerializer(serializers.ModelSerializer):
     horizontal_tabs = HorizontalTabSerializer(many=True, read_only=True)
     tables = TableSerializer(many=True, read_only=True)
     bullet_points = BulletPointSerializer(many=True, read_only=True)    
-    tags = TagSerializer(many=True, read_only=True)
     timelines = TimelineSerializer(many=True, read_only=True)
     blogs = BlogSerializer(many=True, read_only=True)
-    faqs = FaqSerializer(many=True, read_only=True)
+    faqs = CourseFaqSerializer(many=True, read_only=True)
     testimonials = StudentTestimonialSerializer(many=True, read_only=True)
     meta_tags = MetaTagSerializer(many=True, read_only=True)
     item_name = serializers.CharField(source="course.name", read_only = True)
+    company_slug = serializers.CharField(source="company.slug", read_only = True)
+    url = serializers.SerializerMethodField()
 
     class Meta:
         model = CourseDetail
         fields = [
+            "meta_title", "meta_description", "company_slug",
             "summary", "description", "features", "course", "slug",
             "vertical_title", "horizontal_title", "vertical_tabs", 
             "horizontal_tabs", "table_title", "tables", "get_data",
-            "bullet_title", "bullet_points", "tag_title", "tags",
+            "bullet_title", "bullet_points",
             "timeline_title", "timelines", "toc", "hide_features", 
             "hide_vertical_tab", "hide_horizontal_tab", "hide_table",
-            "hide_bullets", "hide_tags", "hide_timeline", "hide_support_languages",
+            "hide_bullets", "hide_timeline", "hide_support_languages",
             "blogs", "faqs", "testimonials", "meta_tags", "published",
-            "modified", "item_name"
+            "modified", "item_name", "created", "updated", "url"
             ]
+        
+    def get_url(self, obj):
+        try:
+            company_slug = obj.company.slug
+            program_slug = obj.course.program.slug
+            specialization_slug = obj.course.specialization.slug
+            slug = obj.slug
+        except AttributeError:
+            return None
 
-
-class CourseFaqSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Faq
-        fields = ["question", "answer", "slug"]
+        return f"{company_slug}/{program_slug}/{specialization_slug}/{slug}"
 
 
 class EnquirySerializer(serializers.ModelSerializer):
@@ -202,11 +214,10 @@ class EnquirySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Enquiry
-        fields = ["company", "name", "phone", "email", "course", "state", "message"]
+        fields = ["company", "name", "phone", "email", "course", "state"]
         extra_kwargs = {
             'company': {'required': False},  # Typically set server-side
             'name': {'required': True},
-            'message': {'required': True}
         }
     
     def get_company(self, obj):
@@ -225,7 +236,7 @@ class EnquirySerializer(serializers.ModelSerializer):
     def validate(self, data):
         # Clean string fields
         cleaned_data = {}
-        string_fields = ['name', 'message']
+        string_fields = ['name']
         
         for field in string_fields:
             value = data.get(field, '').strip()
@@ -245,15 +256,7 @@ class EnquirySerializer(serializers.ModelSerializer):
         cleaned_data['phone'] = data['phone']
         
         # Update data with cleaned values
-        data.update(cleaned_data)
-        
-        # Additional business logic validation
-        if not self.context.get('request').user.is_authenticated:
-            # Example: Spam prevention for anonymous submissions
-            if len(data['message']) > 1000:
-                raise serializers.ValidationError(
-                    {"message": "Message too long (max 1000 characters)"}
-                )
+        data.update(cleaned_data)        
         
         return data
     
@@ -262,10 +265,20 @@ class ProgramSerializer(serializers.ModelSerializer):
     courses = serializers.SerializerMethodField()
     blogs = BlogSerializer(many=True, read_only=True)
     detail_pages = serializers.SerializerMethodField()
+    testimonials = serializers.SerializerMethodField()
 
     class Meta:
         model = Program
-        fields = ["name", "slug", "courses", "blogs", "detail_pages"]
+        fields = ["name", "slug", "courses", "blogs", "detail_pages", "testimonials", "updated"]
+
+    def get_testimonials(self, obj):
+
+        courses = obj.courses.all()
+
+        testimonials = Testimonial.objects.filter(course__in = courses)
+        serializer = StudentTestimonialSerializer(testimonials, many=True)
+
+        return serializer.data
 
     def get_courses(self, obj):
         request = self.context.get("request")
@@ -289,6 +302,37 @@ class ProgramSerializer(serializers.ModelSerializer):
         details = CourseDetail.objects.filter(course__program = obj)
 
         return DetailSerializer(details, many=True).data
+    
+
+class SpecializationSerializer(serializers.ModelSerializer):
+    program = ProgramSerializer(many=False)
+    image_url = serializers.SerializerMethodField()
+    blogs = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Specialization
+        fields = ["name", "slug", "program", "updated", "image_url", "blogs", "updated"]
+
+    read_only_fields = "__all__"
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+
+        course = Course.objects.filter(specialization = obj, image__isnull = False).first()
+
+        if course and course.image and hasattr(course.image, 'url'):
+            if request is not None:
+                return request.build_absolute_uri(course.image.url)
+            return f"{settings.SITE_URL}{course.image.url}"
+        return None
+
+    def get_blogs(self, obj):
+        from blog.models import Blog
+
+        blogs = Blog.objects.filter(course__specialization = obj)
+        serializer = BlogSerializer(blogs, many=True)
+
+        return serializer.data
     
 
 class MultipageFeatureSerializer(serializers.ModelSerializer):
@@ -345,14 +389,6 @@ class MultipageBulletPointSerializer(serializers.ModelSerializer):
             ]
         
 
-class MultipageTagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MultiPageTag
-        fields = [
-            "id", "tag"
-            ]
-        
-
 class MultiPageFaqSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageFaq
@@ -378,24 +414,39 @@ class MultiPageSerializer(serializers.ModelSerializer):
     horizontal_tabs = MultipageHorizontalTabSerializer(many=True, read_only=True)
     tables = MultipageTableSerializer(many=True, read_only=True)
     bullet_points = MultipageBulletPointSerializer(many=True, read_only=True)    
-    tags = MultipageTagSerializer(many=True, read_only=True)
+    tags = serializers.SerializerMethodField()
     timelines = MultipageTimelineSerializer(many=True, read_only=True)
     blogs = BlogSerializer(many=True, read_only=True)
     faqs = MultiPageFaqSerializer(many=True, read_only=True)
     testimonials = StudentTestimonialSerializer(many=True, read_only=True)
     meta_tags = MetaTagSerializer(many=True, read_only=True)
 
+    slider_courses = DetailSerializer(many=True)
+
     class Meta:
         model = MultiPage
         fields = [
-            "title", "summary", "description", "features", "slug",
+            "title", "summary", "description", "slider_courses", "features", "slug",
             "vertical_title", "horizontal_title", "vertical_tabs", 
             "horizontal_tabs", "table_title", "tables", "get_data",
-            "bullet_title", "bullet_points", "tag_title", "tags",
+            "bullet_title", "bullet_points", "tags",
             "timeline_title", "timelines", "toc", "hide_features", 
             "hide_vertical_tab", "hide_horizontal_tab", "hide_table",
-            "hide_bullets", "hide_tags", "hide_timeline", "hide_support_languages",
+            "hide_bullets", "hide_timeline", "hide_support_languages",
             "blogs", "faqs", "testimonials", "url_type", "meta_tags", 
             "published", "modified", "meta_description", "company_name",
-            "company_slug", "course"
+            "company_slug", "course", "sub_title", "meta_title",
+            "updated", "created"
             ]
+        
+    read_only_fields = "__all___"
+        
+    def get_tags(self, obj):
+        if not obj.meta_tags:
+            return None
+        
+        meta_tags = obj.meta_tags.all()
+
+        serializer = MetaTagSerializer(meta_tags)
+
+        return serializer.data

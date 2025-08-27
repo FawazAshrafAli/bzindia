@@ -20,7 +20,7 @@ class Category(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.name}-{self.company.name}")
+            base_slug = slugify(self.name)
             slug = base_slug
 
             count = 1
@@ -60,7 +60,7 @@ class SubCategory(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.name}-{self.category.name}-{self.company.name}")
+            base_slug = slugify(self.name)
             slug = base_slug
 
             count = 1
@@ -82,17 +82,18 @@ class SubCategory(models.Model):
 
 
 class Service(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="service_company")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="services")
 
     image = models.ImageField(upload_to="services/", null=True, blank=True)
     name = models.CharField(max_length=250)    
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    sub_category = models.ForeignKey(SubCategory, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="services")
+    sub_category = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name="services")
+    description = models.TextField(null=True, blank=True)
 
     slug = models.SlugField(null=True, blank=True, max_length=500)
 
-    price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    duration = models.DurationField(blank=True, null=True)
+    price = models.CharField(max_length=100, blank=True, null=True)
+    duration = models.CharField(max_length=100, blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
     created = models.DateTimeField(auto_now_add=True)
@@ -100,7 +101,7 @@ class Service(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.name}-{self.category.name}-{self.sub_category.name}-{self.company.name}")
+            base_slug = slugify(self.name)
             slug = base_slug
 
             count = 1
@@ -127,12 +128,7 @@ class Service(models.Model):
         if self.image:
             return self.image.name.replace('services/', '')
         
-        return None
-
-    @property
-    def description(self):
-        service_detail = ServiceDetail.objects.filter(service = self).first()
-        return service_detail.summary if service_detail else ""
+        return None    
 
 class Feature(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="service_feature_company")
@@ -281,24 +277,6 @@ class BulletPoints(models.Model):
         db_table = "service_bullet_points"
         ordering = ["created"]
 
-
-class Tag(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="service_tag_company")
-    service = models.ForeignKey(Service, on_delete=models.CASCADE)
-
-    tag = models.CharField(max_length=250)
-    link = models.URLField(max_length=200)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.company.name}-{self.service.name}"
-    
-    class Meta:
-        db_table = "service_tags"
-        ordering = ["created"]
-
     
 class Timeline(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="service_timeline_company")
@@ -322,14 +300,15 @@ class ServiceDetail(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     service = models.ForeignKey(Service, on_delete=models.CASCADE)
 
-    summary = models.TextField(null=True, blank=True)
+    summary = models.TextField()
     description = models.TextField(null=True, blank=True)
 
     meta_title = models.CharField(max_length=100)
-    meta_tags = models.ManyToManyField(MetaTag, related_name="meta_tags_of_detail_page")
     meta_description = models.TextField()
 
     features = models.ManyToManyField(Feature)
+
+    meta_tags = models.ManyToManyField(MetaTag, related_name="meta_tags_of_detail_page")
 
     # Verical Tab
     vertical_title = models.CharField(max_length=250, null=True, blank=True)
@@ -347,10 +326,6 @@ class ServiceDetail(models.Model):
     bullet_title = models.CharField(max_length=250, null=True, blank=True)
     bullet_points = models.ManyToManyField(BulletPoints)
 
-    # Tag
-    tag_title = models.CharField(max_length=250, null=True, blank=True)
-    tags = models.ManyToManyField(Tag)
-
     # Timeline
     timeline_title = models.CharField(max_length=250, null=True, blank=True)
     timelines = models.ManyToManyField(Timeline)
@@ -360,22 +335,21 @@ class ServiceDetail(models.Model):
     hide_horizontal_tab = models.BooleanField(default=False)
     hide_table = models.BooleanField(default=False)
     hide_bullets = models.BooleanField(default=False)
-    hide_tags = models.BooleanField(default=False)
     hide_timeline = models.BooleanField(default=False)
 
-    hide_support_languages = models.BooleanField(default=False)
+    hide_support_languages = models.BooleanField(default=False)    
 
-    slug = models.SlugField(null=True, blank=True)
+    slug = models.SlugField(blank=True, null=True, max_length=500)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
         if not self.meta_title:
-            self.meta_title = f"{self.service.name} - {self.company.name}"
+            self.meta_title = f"{self.service.name} - {self.company.name}"        
 
         if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.service.name}")
+            base_slug = slugify(self.service.name)
             slug = base_slug
             count = 1
 
@@ -388,7 +362,7 @@ class ServiceDetail(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.company.name}-{self.service.name}"
+        return f"{self.company.name}-{self.service.name}"  
     
     class Meta:
         db_table = "service_details"
@@ -422,8 +396,7 @@ class ServiceDetail(models.Model):
             self.vertical_title: self.hide_vertical_tab,
             self.horizontal_title: self.hide_horizontal_tab,
             self.table_title: self.hide_table,
-            self.bullet_title: self.hide_bullets,
-            self.tag_title: self.hide_tags,
+            self.bullet_title: self.hide_bullets,            
             self.timeline_title: self.hide_timeline
         }
 
@@ -458,7 +431,6 @@ class Enquiry(models.Model):
     email = models.EmailField(max_length=254)
     service = models.ForeignKey(Service, on_delete=models.CASCADE)
     state = models.ForeignKey(UniqueState, on_delete=models.CASCADE)
-    message = models.TextField()
 
     slug = models.SlugField(null=True, blank=True, max_length=500)
 
@@ -467,7 +439,7 @@ class Enquiry(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.service.name}-{self.email}")
+            base_slug = slugify(f"{self.service.name}-{self.email}")
             slug = base_slug
 
             count = 1
@@ -502,7 +474,7 @@ class Faq(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.service.name}")
+            base_slug = slugify(self.question)
             slug = base_slug
 
             count = 1
@@ -669,24 +641,6 @@ class MultiPageBulletPoint(models.Model):
         ordering = ["created"]
 
 
-class MultiPageTag(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_service_multipage_tag")
-    title = models.CharField(max_length = 250)
-
-    tag = models.CharField(max_length=250)
-    # link = models.URLField(max_length=200)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.company.name}-{self.service.name}"
-    
-    class Meta:
-        db_table = "service_multipage_tags"
-        ordering = ["created"]
-
-
 class MultiPageTimeline(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_service_multipage_timeline")
     title = models.CharField(max_length = 250)
@@ -706,27 +660,46 @@ class MultiPageTimeline(models.Model):
 
 
 class MultiPageFaq(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_service_multipage_faq")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="service_faqs")
     title = models.CharField(max_length = 250)
 
     question = models.CharField(max_length=250)
     answer = models.TextField()
 
+    slug = models.SlugField(blank=True, null=True, max_length=500)
+
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.company.name}-{self.service.name}"
+        return f"{self.company.name}-{self.title}"
     
     class Meta:
         db_table = "service_multipage_faqs"
         ordering = ["created"]
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.question)
+            slug = base_slug
+
+            count = 1
+            while MultiPageFaq.objects.filter(slug = slug).exclude(pk = self.pk).exists():
+                slug = f"{base_slug}-{count}"
+
+                count += 1
+
+            self.slug = slug
+
+        super().save(*args, **kwargs)
+
 
 class MultiPage(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_service_multipage")
-    service = models.ForeignKey(Service, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="service_multipages")
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name="multipages")
+
     title = models.CharField(max_length = 250)
+    sub_title = models.CharField(max_length = 250, blank=True, null=True)
 
     summary = models.TextField(null=True, blank=True)
     description = RichTextField()
@@ -738,7 +711,9 @@ class MultiPage(models.Model):
     url_type = models.CharField(max_length=50, default="slug_filtered")
 
     service_region = models.CharField(max_length=250, default="all")
-    available_states = models.ManyToManyField(UniqueState, related_name="service_multipage_available_states")
+    available_states = models.ManyToManyField(UniqueState, related_name="service_multipages")
+
+    slider_services = models.ManyToManyField(ServiceDetail)
 
     features = models.ManyToManyField(MultiPageFeature)
 
@@ -758,10 +733,6 @@ class MultiPage(models.Model):
     bullet_title = models.CharField(max_length=250, null=True, blank=True)
     bullet_points = models.ManyToManyField(MultiPageBulletPoint)
 
-    # Tag
-    tag_title = models.CharField(max_length=250, null=True, blank=True)
-    tags = models.ManyToManyField(MultiPageTag)
-
     # Timeline
     timeline_title = models.CharField(max_length=250, null=True, blank=True)
     timelines = models.ManyToManyField(MultiPageTimeline)
@@ -773,14 +744,14 @@ class MultiPage(models.Model):
     hide_vertical_tab = models.BooleanField(default=False)
     hide_horizontal_tab = models.BooleanField(default=False)
     hide_table = models.BooleanField(default=False)
-    hide_bullets = models.BooleanField(default=False)
-    hide_tags = models.BooleanField(default=False)
+    hide_bullets = models.BooleanField(default=False)    
     hide_timeline = models.BooleanField(default=False)
     hide_faqs = models.BooleanField(default=False)
 
     hide_support_languages = models.BooleanField(default=False)
+    home_footer_visibility = models.BooleanField(default=False)
 
-    slug = models.SlugField(null=True, blank=True)
+    slug = models.SlugField(blank=True, null=True, max_length=500)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -788,6 +759,9 @@ class MultiPage(models.Model):
     def save(self, *args, **kwargs):
         if not self.meta_title:
             self.meta_title = f"{self.title} - {self.company.name}"
+
+        if not self.home_footer_visibility and not MultiPage.objects.exclude(pk=self.pk).filter(company = self.company, home_footer_visibility=True).exists():
+            self.home_footer_visibility = True
 
         base_slug = slugify(self.title)
         slug = base_slug
@@ -810,6 +784,22 @@ class MultiPage(models.Model):
     class Meta:
         db_table = "service_multipages"
         ordering = ["created"]
+
+    @property
+    def slider_service_category_slug(self):
+        if self.slider_services.count() > 0:
+            first_slider_service_detail = self.slider_services.first()
+            return first_slider_service_detail.service.category.slug
+        
+        return None
+    
+    @property
+    def slider_service_sub_category_slug(self):
+        if self.slider_services.count() > 0:
+            first_slider_service_detail = self.slider_services.first()
+            return first_slider_service_detail.service.sub_category.slug
+        
+        return None
 
     @property
     def get_data(self):        
@@ -839,8 +829,7 @@ class MultiPage(models.Model):
             self.vertical_title: self.hide_vertical_tab,
             self.horizontal_title: self.hide_horizontal_tab,
             self.table_title: self.hide_table,
-            self.bullet_title: self.hide_bullets,
-            self.tag_title: self.hide_tags,
+            self.bullet_title: self.hide_bullets,            
             self.timeline_title: self.hide_timeline
         }
 

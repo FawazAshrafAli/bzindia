@@ -10,6 +10,7 @@ class BlogSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     published_on = serializers.SerializerMethodField()
     meta_tags = MetaTagSerializer(many=True, read_only=True)
+    company_slug = serializers.CharField(source="company.slug", read_only = True)
 
     class Meta:
         model = Blog
@@ -17,7 +18,7 @@ class BlogSerializer(serializers.ModelSerializer):
             "title", "image_url", "published_date", "updated", 
             "get_absolute_url", "summary", "meta_tags", "slug", 
             "category", "category_slug", "published_on", "company", "content",
-            "category_count", "meta_description"
+            "category_count", "meta_description", "company_slug",            
             ]
         
     def get_image_url(self, obj):

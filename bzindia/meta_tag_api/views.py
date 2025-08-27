@@ -45,7 +45,9 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
             "company_slug": detail.company.slug,
             "meta_description": detail.meta_description,
             "price": detail.product.price,
-            "slug": detail.slug            
+            "slug": detail.slug,
+            "updated": detail.updated,
+            "url": f"{detail.company.slug}/{detail.product.category.slug}/{detail.product.sub_category.slug}/{detail.slug}"
             } for detail in product_details]
         
         items += [{
@@ -58,11 +60,13 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
             "company_slug": detail.company.slug,
             "meta_description": detail.meta_description,
             "price": detail.service.price,
-            "slug": detail.slug            
+            "slug": detail.slug,
+            "updated": detail.updated,
+            "url": f"{detail.company.slug}/{detail.service.category.slug}/{detail.service.sub_category.slug}/{detail.slug}"
             } for detail in service_details]
         
         items += [{
-            "title": detail.registration_sub_type.name,
+            "title": detail.registration.title,
             "image_url": None,
             "summary": detail.summary,
             "company_name": detail.company.name,
@@ -71,7 +75,9 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
             "company_slug": detail.company.slug,
             "meta_description": detail.meta_description,
             "price": "",
-            "slug": detail.slug            
+            "slug": detail.slug,
+            "updated": detail.updated,
+            "url": f"{detail.company.slug}/{detail.registration.registration_type.slug}/{detail.registration.sub_type.slug}/{detail.slug}"
             } for detail in registration_details]
         
         items += [{
@@ -93,6 +99,9 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
             "category": detail.course.program.name,
             "rating": detail.course.rating,
             "rating_count": detail.course.rating_count,
+            "updated": detail.updated,
+
+            "url": f"{detail.company.slug}/{detail.course.program.slug}/{detail.course.specialization.slug}/{detail.slug}"
 
             } for detail in course_details]
         

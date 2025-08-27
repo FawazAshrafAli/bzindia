@@ -19,11 +19,11 @@ class EnquirySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Enquiry
-        fields = ["name", "phone", "email", "state", "comment", "company_sub_type"]
+        fields = ["name", "phone", "email", "state", "company_sub_type"]
 
     def validate(self, data):
         cleaned_data = {}
-        for field in ['name', 'phone', 'email', 'comment']:
+        for field in ['name', 'phone', 'email']:
             value = clean_string(data.get(field, ''))
             if not value:
                 raise serializers.ValidationError({field: f"{field.capitalize()} is required"})

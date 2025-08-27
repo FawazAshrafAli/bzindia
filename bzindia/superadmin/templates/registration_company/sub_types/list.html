@@ -26,14 +26,14 @@
 											<input type="checkbox">
 											<span class="checkmark"></span>
 										</label>
-									</td>									
-									<td>{{sub_type.name}}</td>
+									</td>														
+									<td>{{sub_type.name}}</td>				
 									<td>{{sub_type.type.name}}</td>									
 									<td class="text-end">
 										<div class="dropdown dropdown-action">
 											<a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="material-icons">more_vert</i></a>
 											<div class="dropdown-menu dropdown-menu-right">
-												<a class="dropdown-item edit-toggle-btn" href="#" data-bs-toggle="modal" data-bs-target="#edit_registration_sub_type_modal" data-name="{{sub_type.name}}" data-type="{{sub_type.type.slug}}" data-description="{% if sub_type.description %}{{sub_type.description}}{% endif %}" data-slug="{{sub_type.slug}}">Edit This Registration Types</a>
+												<a class="dropdown-item edit-toggle-btn" href="#" data-bs-toggle="modal" data-bs-target="#edit_registration_sub_type_modal" data-name="{{sub_type.name}}" data-type="{{sub_type.type.slug}}" data-description="{% if sub_type.description %}{{sub_type.description}}{% endif %}" data-slug="{{sub_type.slug}}" {% if sub_type.image %} data-image-url="{{sub_type.image.url}}" data-image-name="{{sub_type.image.name}}" {% endif %}>Edit This Registration Types</a>
 												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{sub_type.name}}" data-slug="{{sub_type.slug}}" >Remove This Registration Sub Types</a>
 											</div>
 										</div>
@@ -96,7 +96,7 @@
 			<div class="modal-body">
 				<div class="row">
 					<div class="col-md-12">
-						<form method="post" action="{% url 'superadmin:add_registration_sub_types' current_company.slug %}" class="needs-validation" id="add-service-sub-type-form" novalidate>
+						<form method="post" action="{% url 'superadmin:add_registration_sub_types' current_company.slug %}" class="needs-validation" id="add-service-sub-type-form" enctype="multipart/form-data" novalidate>
 							{% csrf_token %}
 							<h4>Registration Sub Types</h4>
 							<div class="form-group row">
@@ -110,7 +110,7 @@
 										Looks good!
 									</div>
 								</div>
-							</div>
+							</div>							
 							<div class="form-row">
 								<div class="col-md-12 mb-3">
 									<label for="product-type-dropdown">Registration Types <span class="text-danger">*</span></label>
@@ -162,7 +162,7 @@
 			<div class="modal-body">
 				<div class="row">
 					<div class="col-md-12">
-						<form method="post" action="#" class="needs-validation" id="edit-service-sub-type-form" novalidate>
+						<form method="post" action="#" class="needs-validation" id="edit-service-sub-type-form" enctype="multipart/form-data" novalidate>
 							{% csrf_token %}
 							<h4>Registration Sub Types</h4>
 							<div class="form-group row">
@@ -176,7 +176,7 @@
 										Looks good!
 									</div>
 								</div>
-							</div>
+							</div>							
 							<div class="form-row">
 								<div class="col-md-12 mb-3">
 									<label for="product-type-dropdown">Registration Types <span class="text-danger">*</span></label>
@@ -228,8 +228,14 @@
 			$('#deletion-form').prop('action', `/admin/companies/remove_registration_sub_type/${slug}/${registrationSubTypeSlug}/`);
 		});
 
-		$('.edit-toggle-btn').click(function () {
-			const name = $(this).data('name');		
+		$('#edit-image-input').on('change', function () {
+			if ($(this).val()) {
+				$('#current-image').empty();
+			}
+		})
+
+		$(document).on('click', '.edit-toggle-btn', function () {
+			const name = $(this).data('name');	
 			const typeSlug = $(this).data('type');
 			const description = $(this).data('description');
 			const slug = `{{current_company.slug}}`;
@@ -239,9 +245,10 @@
 
 			$('#edit-name-input').val(name);
 			$('#edit-type-dropdown').val(typeSlug);
+			
 
 			$('#edit-description-input').val(description);
-			$('#edit-service-sub-type-form').prop('action', actionUrl);
+			$('#edit-service-sub-type-form').prop('action', actionUrl);			
 		});
 
 		let namePattern = /^[a-zA-Z\s'()-]+$/;

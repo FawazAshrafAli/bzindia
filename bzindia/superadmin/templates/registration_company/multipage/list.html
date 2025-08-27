@@ -20,7 +20,8 @@
 											<span class="checkmark"></span>
 										</label>
 									</th>
-									<th>Title</th>									
+									<th>Title</th>
+									<th class="text-center">Footer City Menu</th>									
 									<th class="text-center">Actions</th>
 								</tr>
 							</thead>
@@ -34,8 +35,10 @@
 										</label>
 									</td>
 									<td>										
-										{% comment %} <a href="{% url 'superadmin:registration_multipage' current_company.slug multipage.registration_sub_type.slug %}" >{{multipage.registration_sub_type.name}}</a> {% endcomment %}
 										<a href="{% url 'superadmin:registration_multipage' current_company.slug multipage.slug %}" >{{multipage.title}}</a>
+									</td>
+									<td class="text-center">										
+										<input type="checkbox" class="multipage-checkbox" name="multipage_checkbox" {% if multipage.home_footer_visibility %}checked{% endif %}  value="{{multipage.slug}}">
 									</td>									
 									
 									<td class="text-center">
@@ -43,7 +46,7 @@
 											<a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="material-icons">more_vert</i></a>
 											<div class="dropdown-menu dropdown-menu-right">
 												<a class="dropdown-item" href="{% url 'superadmin:update_registration_multipage' current_company.slug multipage.slug %}">Edit This Multi Page</a>
-												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{multipage.registration_sub_type.name}}" data-slug="{{multipage.slug}}">Remove This Multi Page</a>
+												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{multipage.registration.name}}" data-slug="{{multipage.slug}}">Remove This Multi Page</a>
 											</div>
 										</div>
 									</td>
@@ -114,6 +117,34 @@
 
 			$('#deleting-object').html(name);
 			$('#deletion-form').prop('action', actionUrl);
+		});
+
+		const updateCheckedRegistrationMultipage = (multipageSlug) => {
+			
+			$.ajax({
+				type: "POST",
+				dataType: "json",
+				url: `{% url 'superadmin:update_checked_registration_multipage' %}`,
+				data: {
+					"multipage_slug": multipageSlug,
+					"csrfmiddlewaretoken": `{{ csrf_token }}`,
+				},
+				success: response => {
+					if (response.success) console.log("Updated!");
+					if (response.error) console.error(error);
+				},
+				error: (xhr, status, error) => console.error("AJAX error:", error),
+
+			})
+		};
+
+		$('.multipage-checkbox').on('click', function () {
+			$('.multipage-checkbox').prop('checked', false);
+			$(this).prop('checked', true);
+
+			const multipageSlug = $(this).val();
+			
+			updateCheckedRegistrationMultipage(multipageSlug);
 		});
 	});
 </script>

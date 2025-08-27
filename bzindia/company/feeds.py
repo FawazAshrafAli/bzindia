@@ -17,7 +17,7 @@ from django.utils.html import strip_tags
 
 from company.models import Company
 from custom_pages.models import (
-    ContactUs, FAQ, AboutUs, PrivacyPolicy, TermsAndConditions, 
+    ContactUs, FAQ, AboutUs, PrivacyPolicy, TermsAndCondition, 
     ShippingAndDeliveryPolicy, CancellationAndRefundPolicy
     )
 
@@ -286,7 +286,7 @@ class CompanyTermsAndConditionsFeed(Feed):
     feed_type = ContentEncodedFeed
 
     def get_object(self, request, company_slug):
-        return get_object_or_404(TermsAndConditions, company__slug=company_slug)
+        return get_object_or_404(TermsAndCondition, company__slug=company_slug)
 
     def title(self, obj):
         return f"{obj.company.name} - Terms & Conditions"

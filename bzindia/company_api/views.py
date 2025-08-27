@@ -7,18 +7,19 @@ from datetime import datetime
 from utility.text import clean_string
 from django.http import Http404
 
-from company.models import Company, CompanyType, ContactEnquiry, Client, Testimonial
+from company.models import Company, CompanyType, ContactEnquiry, Client, Testimonial, Banner
 from blog.models import Blog
 from educational.models import Program
 from custom_pages.models import AboutUs
 from product.models import Review
 
 from course_api.serializers import ProgramSerializer
-from .serializers import CompanySerializer, CompanyTypeSerializer, ContactEnquirySerializer, ClientSerializer, TestimonialSerializer
+from .serializers import CompanySerializer, CompanyTypeSerializer, ContactEnquirySerializer, ClientSerializer, TestimonialSerializer, BannerSerializer
 from blog_api.serializers import BlogSerializer
 from custom_pages_api.serializers import AboutUsSerializer
 from product_api.serializers import ReviewSerializer
-
+from custom_pages_api.serializers import ContactUsSerializer
+from custom_pages.models import ContactUs
 
 from .paginations import BlogPagination
 
@@ -26,7 +27,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class CompanyApiViewset(viewsets.ModelViewSet):
+class CompanyApiViewset(viewsets.ReadOnlyModelViewSet):
     serializer_class = CompanySerializer
     queryset = Company.objects.all().order_by("?")
     lookup_field  = "slug"
@@ -39,7 +40,7 @@ class CompanyApiViewset(viewsets.ModelViewSet):
 
 class CompanyTypeApiViewset(viewsets.ModelViewSet):
     serializer_class = CompanyTypeSerializer
-    queryset = CompanyType.objects.all().order_by("name")
+    queryset = CompanyType.objects.all().order_by("?")
     lookup_field  = "slug"
 
     def get_serializer_context(self):
@@ -58,13 +59,13 @@ class CompanyBlogViewSet(viewsets.ModelViewSet):
 
         category = self.request.query_params.get("category")
         month_and_year = self.request.query_params.get("month_and_year")
-        q = clean_string(self.request.query_params.get("q", ""))
+        s = clean_string(self.request.query_params.get("s", ""))
 
         if company_slug:        
             filters = Q(company__slug = company_slug, is_published = True)
 
             if category:
-                filters &= (Q(course__name = category) | Q(product__name = category) | Q(service__name = category) | Q(registration_sub_type__name = category))                
+                filters &= (Q(course__name = category) | Q(product__name = category) | Q(service__name = category) | Q(registration__name = category))                
 
             if month_and_year:
                 formated_month_and_year = datetime.strptime(month_and_year, "%B %Y")
@@ -73,12 +74,12 @@ class CompanyBlogViewSet(viewsets.ModelViewSet):
                     published_date__year = formated_month_and_year.year
                     )
                 
-            if q:
+            if s:
                 filters &= (
-                        Q(title__icontains = q) | Q(course__name__icontains = q) | 
-                        Q(product__name__icontains = q) | Q(service__name__icontains = q) |
-                        Q(registration_sub_type__name__icontains = q) | Q(summary__icontains = q) |
-                        Q(content__icontains = q)
+                        Q(title__icontains = s) | Q(course__name__icontains = s) | 
+                        Q(product__name__icontains = s) | Q(service__name__icontains = s) |
+                        Q(registration__name__icontains = s) | Q(summary__icontains = s) |
+                        Q(content__icontains = s)
                     )
             
             blogs = Blog.objects.filter(filters)
@@ -103,7 +104,8 @@ class CompanyBlogArchivesViewSets(viewsets.ViewSet):
         )
 
         data = [
-            {
+            {   
+                "endpoint": entry["month"].strftime("%Y/%m"),
                 "published_month_and_year": entry["month"].strftime("%B %Y"),
                 "published_month_count": entry["published_month_count"],
             }
@@ -241,3 +243,27 @@ class CompanyReviewViewset(viewsets.ReadOnlyModelViewSet):
             return Review.objects.filter(company__slug = slug, company__type__name = "Product").order_by("order")
         
         return Review.objects.none()
+    
+
+class CompanyBannerViewset(viewsets.ReadOnlyModelViewSet):
+    serializer_class = BannerSerializer
+    
+    def get_queryset(self):
+        slug = self.kwargs.get("company_slug")
+
+        if slug:
+            return Banner.objects.filter(company__slug = slug).order_by("-created")
+        
+        return Banner.objects.none()
+    
+
+class CompanyContactUsViewset(viewsets.ReadOnlyModelViewSet):
+    serializer_class = ContactUsSerializer
+    
+    def get_queryset(self):
+        slug = self.kwargs.get("company_slug")
+
+        if slug:
+            return ContactUs.objects.filter(company__slug = slug).order_by("-created")
+        
+        return ContactUs.objects.none()

@@ -30,7 +30,7 @@
 	<div class="col-md-12">
 		<div class="card">
 			<div class="card-header">									
-				<h5 class="card-title">{{detail_page.registration_sub_type.name}} Registration Detail Page</h5>
+				<h5 class="card-title">{{detail_page.registration.title}}</h5>
 			</div>            
 		</div>
         <div class="card">
@@ -210,13 +210,13 @@
 		<div class="card">
             <div class="card-body">
 				<h4>Tags</h4>
-				<hr>
-				<h5>Title: {{detail_page.tag_title}}</h5>
-				<br>
+				<hr>				
 				<div>
-					{% for tag_obj in detail_page.tags.all %}
-					<a href="{{tag_obj.link}}" class="tag" target="_blank">{{tag_obj.tag}}</a>
+					<p>
+					{% for tag_obj in detail_page.meta_tags.all %}
+					{{tag_obj.name}}{% if not forloop.last %}, {% endif %}
 					{% endfor %}
+					</p>
 				</div>
 			</div>
 		</div>

@@ -80,11 +80,15 @@
                     </div>
                     <div class="card-body">
                         <div class="row">                            
-                            <div class="col-sm-6 mb-3">
+                            <div class="col-sm-4 mb-3">
                                 <label class="col-form-label">Title</label>
                                 <input class="form-control"  type="text" id="title-input" name="title" placeholder="Title" value="{% if multipage.title %}{{multipage.title}}{% endif %}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-sm-4 mb-3">
+                                <label class="col-form-label">Sub Title</label>
+                                <input class="form-control"  type="text" id="sub-title-input" name="sub_title" placeholder="Sub Title" value="{% if multipage.sub_title %}{{multipage.sub_title}}{% endif %}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
                                 <label for="service-dropdown" class="col-form-label">Service <span class="text-danger">*</span></label>
                                 <select class="form-control" id="service-dropdown" name="service" required>
                                     <option value="" hidden disabled selected>Select Service</option>
@@ -164,6 +168,59 @@
                                     <option value="{{state.slug}}" {% if state in multipage.available_states.all %}selected{% endif %}>{{state.name}}</option>
                                     {% endfor %}									
 								</select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row" id="slider-section">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="service-category-dropdown" >Slider Category <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="service-category-dropdown" name="category" required>
+                                        <option value="" hidden disabled selected>Select Category</option>
+                                        {% for category in categories %}
+                                        <option value="{{category.slug}}" {% if category.slug == multipage.slider_service_category_slug %}selected{% endif %} >{{category.name}}</option>
+                                        {% endfor %}                                    
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Please provide the category.
+                                    </div>
+                                    <div class="valid-feedback">
+                                        Looks good!
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="service-sub-category-dropdown" >Slider Sub Category <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="service-sub-category-dropdown" name="sub_category" required>
+                                        <option value="" hidden disabled selected>Select Sub Category</option>
+                                        {% for sub_category in sub_categories %}
+                                        <option value="{{sub_category.slug}}" {% if sub_category.slug == multipage.slider_service_sub_category_slug %}selected{% endif %} >{{sub_category.name}}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Please provide the sub category.
+                                    </div>
+                                    <div class="valid-feedback">
+                                        Looks good!
+                                    </div>
+                                </div>
+                            </div>    
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="service-detail-dropdown" >Slider Service Details <span class="text-danger">*</span></label>
+                                    <select data-placeholder="Select Services" class="chosen-select" id="service-detail-dropdown" name="service_details" multiple required>
+                                        {% for detail in service_details %}
+                                        <option value="{{detail.slug}}" {% if detail in multipage.slider_services.all %}selected{% endif %} >{{detail.service.name}}</option>
+                                        {% endfor %}                              
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Please provide the service.
+                                    </div>
+                                    <div class="valid-feedback">
+                                        Looks good!
+                                    </div>
+                                </div>                 
+                                
                             </div>
                         </div>
 
@@ -445,40 +502,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="tasks__item crms-task-item active">
-                                        <div class="accordion-header js-accordion-header">Tags</div> 
-                                        <div class="accordion-body js-accordion-body">
-                                            <div class="accordion-body__contents">
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label>Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Tags" name="tag_title" value="{% if multipage.tag_title %}{{multipage.tag_title}}{% endif %}" required>
-                                                    </div>
-                                                    <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
-                                                        <label for="hide-tags">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-tags" name="hide_tags" {% if multipage.hide_tags %}checked{% endif %}>&nbsp;Hide Tags
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <div style="display: flex; flex-direction: row;">
-                                                            <input type="text" class="form-control" id="tag-input" placeholder="Tag Name" required>
-                                                            <button class="add-button" type="button" id="add-tag-btn">ADD</button>
-                                                        </div>
-                                                        <br>
-                                                        <div class="row" id="tag-div">
-                                                            {% if multipage.tags.all|length > 0 %}
-                                                            {% for tag_obj in multipage.tags.all %}
-                                                            <div class="col-lg-4 col-md-12 mt-3"><a href="{{tag_obj.link}}" class="tag" target="_blank">{{tag_obj.tag}}</a><input type="text" name="tag" value="{{tag_obj.tag}}" hidden><input type="text" name="tag_link" value="{{tag_obj.link}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>
-                                                            {% endfor %}
-                                                            {% endif %}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>                                    
                                     <div class="tasks__item crms-task-item active">
                                         <div class="accordion-header js-accordion-header">Timeline</div> 
@@ -618,10 +641,7 @@
 
 {% block scripts %}
 <script>
-    $(document).ready(() => {
-        
-        let durationPattern = /^[1-9]\d*$/;
-        let pricePattern = /^(?!0(\.0{1,2})?$)(\$?)([1-9][0-9]*(\.[0-9]{1,2})?)$/;
+    $(document).ready(() => {        
 
         function validateForm() {  
             const formValid = true       
@@ -629,22 +649,7 @@
             let name = $('#name-input').val();
             if (name) {
                 name = name.trim();
-            }
-
-            const programDropdown = $('#program-dropdown').val();
-            const specializationDropdown = $('#specialization-dropdown').val();
-
-            const modeDropdown = $('#mode-dropdown').val();                                  
-            
-            let duration = $('#duration-input').val();
-            if (duration) {
-                duration = duration.trim();
-            }
-
-            let price = $('#price-input').val();
-            if (price) {
-                price = price.trim();
-            }            
+            }                    
 
             if (!name) {
                 $('#name-input').removeClass('is-valid').addClass('is-invalid');
@@ -655,59 +660,7 @@
                 $('#name-input').removeClass('is-invalid').addClass('is-valid');
                 $('#name-input').blur();
                 
-            }            
-
-            if (!programDropdown) {
-                $('#program-dropdown').addClass('is-invalid');
-                $('#program-dropdown').focus();
-                formValid = false;
-            } else {
-                $('#program-dropdown').addClass('is-valid');
-                $('#program-dropdown').blur();
-                
-            }
-
-            if (!specializationDropdown) {
-                $('#specialization-dropdown').addClass('is-invalid');
-                $('#specialization-dropdown').focus();
-                formValid = false;
-            } else {
-                $('#specialization-dropdown').addClass('is-valid');
-                $('#specialization-dropdown').blur();
-                
-            }
-
-            if (!modeDropdown) {
-                $('#mode-dropdown').addClass('is-invalid');
-                $('#mode-dropdown').focus();
-                formValid = false;
-            } else {
-                $('#mode-dropdown').addClass('is-valid');
-                $('#mode-dropdown').blur();
-                
-            }            
-            
-            if (duration && !durationPattern.test(duration)) {
-                $('#duration-input').removeClass('is-valid').addClass('is-invalid');
-                $('#duration-input').focus();
-                formValid = false;
-
-            } else {
-                $('#duration-input').removeClass('is-invalid').remove('is-valid');
-                $('#duration-input').blur();
-                
-            }
-
-            if (!price || !pricePattern.test(price)) {
-                $('#price-input').removeClass('is-valid').addClass('is-invalid');
-                $('#price-input').focus();
-                formValid = false;
-
-            } else {
-                $('#price-input').removeClass('is-invalid').addClass('is-valid');
-                $('#price-input').blur();
-                
-            }
+            }                        
             
             if (formValid == true) {
                 $('#add-service-form').submit()
@@ -719,7 +672,7 @@
 
         // Inputting
 
-        $('#name-input, #duration-input, #price-input').on('input', function () {
+        $('#name-input').on('input', function () {
             let thisValue = $(this).val();
             if (thisValue) {
                 thisValue = thisValue.trim();
@@ -731,87 +684,9 @@
                 } else {
                     $(this).removeClass('is-valid').addClass('is-invalid');                
                 }
-            } else {
-                 if ($(this).prop('id') == "price-input" && !pricePattern.test(thisValue)) {
-                    $(this).removeClass('is-valid').addClass('is-invalid');
-                } else {
-                    $(this).removeClass('is-invalid').addClass('is-valid');
-                }
-            }
-
-            if (thisValue) {
-                if ($(this).prop('id') == "duration-input") {
-                    if (durationPattern.test(thisValue)) {
-                        $(this).removeClass('is-invalid').addClass('is-valid');                    
-                    } else {
-                        $(this).removeClass('is-valid').addClass('is-invalid');
-                    }
-                }
-                            
-            }
+            }           
             
-        });
-
-        // changing
-
-        $('#program-dropdown, #specialization-dropdown, #mode-dropdown, #unit-dropdown, #image-input').on('change', function () {
-            if (($(this).prop('id') == 'program-dropdown' || $(this).prop('id') == 'sub-category-dropdown' || $(this).prop('id') == 'brand-dropdown') && !$(this).val()) {
-                $(this).removeClass('is-valid').addClass('is-invalid');
-
-            } else {
-                $(this).removeClass('is-invalid').addClass('is-valid');
-            }
-
-            if ($(this).prop('id') == 'image-input' || $(this).prop('id') == 'logo-input') {
-                let imageInput = $('#image-input')[0];
-                let image = imageInput.files[0];                
-                if (!image) {
-                    $(this).removeClass('is-valid').addClass('is-invalid');
-                } else {
-                    $(this).removeClass('is-invalid').addClass('is-valid');
-                }
-            }
-                        
-        })        
-        
-
-        // Get Specialization
-        function getSpecializations(program) {
-            const company = `{{current_company.slug}}`
-            
-            $.ajax({
-                type: 'GET',
-                url: '/education/get_specializations/',
-                dataType: 'json',
-                data: {
-                    "program": program,
-                    "company": company
-                },
-                success: response => {
-                    let specializations = response.specializations;
-
-                    $('#specialization-dropdown').html(`<option value="" hidden disabled selected>Select Specialization</option>`);
-                    if (specializations && specializations.length) {
-                        specializations.forEach(specialization => {
-                            if (specialization.standard) {
-                                $('#specialization-dropdown').append(`<option value="${specialization.slug}">${specialization.name}&nbsp;&nbsp;&nbsp; ${specialization.standard}</option>`)
-                            } else {
-                                $('#specialization-dropdown').append(`<option value="${specialization.slug}">${specialization.name}</option>`)
-                            }
-                        })
-                    } else {
-                        $('#specialization-dropdown').html(`<option value="" disabled selected>No specialization for the selected program</option>`);
-                    }                    
-                },
-                error: error => console.error("Error: ", error),
-            })
-        }
-
-        $('#program-dropdown').on('change', function () {
-            const program = $(this).val();
-
-            getSpecializations(program);
-        });
+        });        
         
         // Add Multiple Feature 
         $('#add-feature-btn').click(function () {
@@ -1092,25 +967,6 @@
             $('#bullet-input').val('');
         });
 
-        // Adding tag for tags section
-        $(document).on('click', '#add-tag-btn', function () {
-            const tag = $('#tag-input').val();
-
-            if (tag.trim()) {
-                $('#tag-div').append(
-                    `<div class="col-lg-4 col-md-12 mt-3"><a href="#" class="tag" target="_blank">${tag}</a><input type="text" name="tag" value="${tag}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>`
-                );
-            }
-
-            $('#tag-input, #tag-link-input').val('');
-        });
-
-        // Remove bullet points
-        $(document).on('click', '#remove-tag-btn', function () {
-            const parentElement = $(this).parent();
-
-            parentElement.remove();
-        });
 
         // Remove bullet points
         $(document).on('click', '#remove-bullet-btn', function () {
@@ -1265,6 +1121,74 @@
 
             }
         });
+
+        // Populate sub categories
+        function getSubCategories(category) {
+            const currentCompany = `{{current_company.slug}}`
+            $.ajax({
+                type: 'GET',
+                url: `/service/get_sub_categories/`,
+                dataType: 'json',
+                data: {"category_slug": category, "company_slug": currentCompany},
+                success: response => {
+                    let subCategories = response.sub_categories
+
+                    $('#service-sub-category-dropdown').html(`<option value="" hidden disabled selected>Select Sub Category</option>`);
+                    if (subCategories && subCategories.length) {
+                        subCategories.forEach(subCategory => {
+                            if (subCategory.standard) {
+                                $('#service-sub-category-dropdown').append(`<option value="${subCategory.slug}">${subCategory.name}&nbsp;&nbsp;&nbsp; ${subCategory.standard}</option>`)
+                            } else {
+                                $('#service-sub-category-dropdown').append(`<option value="${subCategory.slug}">${subCategory.name}</option>`)
+                            }
+                        })
+                    } else {
+                        $('#service-sub-category-dropdown').html(`<option value="" disabled selected>Select Sub Category</option>`);
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            })
+        }
+
+        $('#service-category-dropdown').on('change', function () {
+            const category = $(this).val();
+
+            getSubCategories(category);
+        });
+
+        // Populate Services
+        function getServiceDetails() {
+            const sub_category = $('#service-sub-category-dropdown').val();
+            const company = `{{current_company.slug}}`;
+
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'service:get_service_details' %}`,
+                dataType: 'json',
+                data: {
+                    "sub_category_slug": sub_category,
+                    "company_slug": company
+                },
+                success: response => {
+                    $('#service-detail-dropdown').empty();
+                    if (response.service_details && response.service_details.length > 0) {
+                        response.service_details.forEach(detail => {
+                            $('#service-detail-dropdown').append(`<option value="${detail.slug}">${detail.service__name}</option>`)
+                        })
+                    }
+
+                    if (response.error) {
+                        console.error("Error: ", response.error)
+                    }
+
+                    $('#service-detail-dropdown').trigger("chosen:updated");
+                },
+                error: error => console.error("Error: ", error),
+            });            
+        };
+
+        $('#service-sub-category-dropdown').on('change', () => getServiceDetails());
+        
     });
 </script>
 {% endblock scripts %}

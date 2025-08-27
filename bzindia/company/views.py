@@ -71,4 +71,3 @@ class GetFilteredCompaniesView(View):
         except Exception as e:
             logger.exception(f"Error in get function of GetFilteredCompaniesView in company app: {e}")
             return JsonResponse({"status": "failed", "message": "An unexpected error occurred"}, status=500)
-        

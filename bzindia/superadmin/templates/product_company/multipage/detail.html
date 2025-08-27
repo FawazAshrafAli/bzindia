@@ -30,7 +30,7 @@
 	<div class="col-md-12">
 		<div class="card">
 			<div class="card-header">									
-				<h5 class="card-title">{{multipage.product.name}} Product multipage</h5>
+				<h5 class="card-title">{{multipage.title}}{{multipage.sub_title}}</h5>
 			</div>            
 		</div>
         <div class="card">
@@ -69,126 +69,7 @@
 				</ul>
 			</div>
 		</div>
-		{% endif %}
-
-		{% if not multipage.hide_vertical_tab %}
-		<div class="card">
-			<div class="card-body">
-				<h4>Vertical Tab</h4>
-				<table class="table table-borderless">
-					<tr>
-						<th>Title:</th>
-						<td>{{multipage.vertical_title}}</td>
-					</tr>
-					{% for vertical_tab in multipage.vertical_tabs.all %}
-					<tr>
-						<th>&nbsp;</th>
-						<td>&nbsp;</td>
-					</tr>
-					<tr>
-						<th>Tab No:</th>
-						<td>{{forloop.counter}}</td>
-					</tr>
-					<tr>
-						<th>Heading:</th>
-						<td>{{vertical_tab.heading}}</td>
-					</tr>
-					<tr>
-						<th>Sub Heading:</th>
-						<td>{{vertical_tab.sub_heading}}</td>
-					</tr>
-					<tr>
-						<th>Summary:</th>
-						<td>{{vertical_tab.summary}}</td>
-					</tr>
-					<tr>
-						<th>Bullets:</th>
-						<td>
-							<ol>
-							{% for bullet in vertical_tab.bullets.all %}
-							<li>{{bullet.bullet}}</li>
-							{% endfor %}
-							</ol>
-						</td>
-					</tr>
-					
-					{% endfor %}
-				</table>
-			</div>
-		</div>
-		{% endif %}
-
-		{% if not multipage.hide_horizontal_tab %}
-		<div class="card">
-			<div class="card-body">
-				<h4>Horizontal Tab</h4>
-				<table class="table table-borderless">
-					<tr>
-						<th>Title:</th>
-						<td>{{multipage.horizontal_title}}</td>
-					</tr>
-					{% for horizontal_tab in multipage.horizontal_tabs.all %}
-					<tr>
-						<th>&nbsp;</th>
-						<td>&nbsp;</td>
-					</tr>
-					<tr>
-						<th>Tab No:</th>
-						<td>{{forloop.counter}}</td>
-					</tr>
-					<tr>
-						<th>Heading:</th>
-						<td>{{horizontal_tab.heading}}</td>
-					</tr>					
-					<tr>
-						<th>Summary:</th>
-						<td>{{horizontal_tab.summary}}</td>
-					</tr>
-					<tr>
-						<th>Bullets:</th>
-						<td>
-							<ol>
-							{% for bullet in horizontal_tab.bullets.all %}
-							<li>{{bullet.bullet}}</li>
-							{% endfor %}
-							</ol>
-						</td>
-					</tr>
-					
-					{% endfor %}
-				</table>
-			</div>
-		</div>
-		{% endif %}
-
-		{% if not multipage.hide_table %}
-		<div class="card">
-			<div class="card-body">
-				<h4>Table</h4>
-				<hr>
-				<h5>Title: {{multipage.table_title}}</h5>
-				<br>
-				<table class="table table-borderless">
-					<thead>
-						<tr>
-							{% for table in multipage.tables.all %}
-							<th>{{table.heading}}</th>
-							{% endfor %}
-						</tr>
-					</thead>
-					<tbody>
-						{% for row in multipage.get_data %}
-						<tr>
-							{% for item in row %}
-							<td>{{item}}</td>
-							{% endfor %}							
-						</tr>
-						{% endfor %}
-					</tbody>
-				</table>
-			</div>
-		</div>
-		{% endif %}
+		{% endif %}		
 
 		{% if not multipage.hide_bullets %}
 		<div class="card">

@@ -260,20 +260,21 @@ CKEDITOR_CONFIGS = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
 
 CORS_ORIGIN_WHITELIST = [
-    "http://localhost:5173",  # or your frontend URL
+    "http://localhost:3000/",  # or your frontend URL
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-
-SITE_URL = 'https://bzindia.in'
+    
+# SITE_URL = 'https://bzindia.in'
+SITE_URL = 'http://127.0.0.1:5005'
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
+    "http://localhost:3000/",
     "https://bzindia.in"
 ]
 

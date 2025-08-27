@@ -3,6 +3,7 @@ from rest_framework_nested.routers import NestedDefaultRouter
 from django.urls import path, include
 from .views import (
     ServiceViewset, CompanyViewSet, DetailViewSet, EnquiryViewSet,
+    SubCategoryViewset, CategoryViewset
     )
 
 app_name = "service_api"
@@ -16,6 +17,8 @@ companies_router = NestedDefaultRouter(router, r'companies', lookup = "company")
 companies_router.register(r'services', ServiceViewset, basename="company-service")
 companies_router.register(r'details', DetailViewSet, basename="company-detail")
 companies_router.register(r'enquiries', EnquiryViewSet, basename="company-enquiry")
+companies_router.register(r'sub_categories', SubCategoryViewset, basename="company-sub_category")
+companies_router.register(r'categories', CategoryViewset, basename="company-category")
 
 urlpatterns = [
     path('', include(router.urls)),

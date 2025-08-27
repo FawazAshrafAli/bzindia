@@ -11,7 +11,7 @@
         <title>{% block title %}{% endblock title %} - BZ India</title>
 		
 		<!-- Favicon -->
-        <link rel="shortcut icon" type="image/x-icon" href="{% static 'w3/images/logo.jpeg' %}">
+        <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/Favicon.png' %}">
 		
 		<!-- Bootstrap CSS -->
         <link rel="stylesheet" href="{% static 'assets/css/bootstrap.min.css' %}">
@@ -70,9 +70,9 @@
 			
 				<!-- Logo -->
                 <div class="header-left">
-                    <a href="{% url 'home:home' %}" class="logo">
-						<img src="{% static 'w3/images/logo.jpeg' %}"  alt="Logo" class="sidebar-logo">
-						<img src="{% static 'w3/images/logo.jpeg' %}"  alt="Logo" class="mini-sidebar-logo">
+                    <a href="{% url 'superadmin:home' %}" class="logo">
+						<img src="{% static 'w3/images/logo.svg' %}"  alt="Logo" class="sidebar-logo">
+						<img src="{% static 'w3/images/logo.svg' %}"  alt="Logo" class="mini-sidebar-logo">
 					</a>
                 </div>
 				<!-- /Logo -->
@@ -374,9 +374,15 @@
 									{% if product_page %}
 									<li><a {% if add_product_page %}class="active"{% endif %} href="{% url 'superadmin:add_product' current_company.slug %}">Add Product</a></li>
 									{% elif product_categories_page %}
-									<li><a {% if add_product_page %}class="active"{% endif %} href="#" data-bs-toggle="modal" data-bs-target="#add_product_category">Add Category</a></li>
+									<li><a  href="#" data-bs-toggle="modal" data-bs-target="#add_product_category">Add Category</a></li>
 									{% elif product_sub_categories_page %}
-									<li><a {% if add_product_page %}class="active"{% endif %} href="#" data-bs-toggle="modal" data-bs-target="#add_product_sub_category">Add Sub Category</a></li>
+									<li><a  href="#" data-bs-toggle="modal" data-bs-target="#add_product_sub_category">Add Sub Category</a></li>
+									{% elif product_brand_page %}
+									<li><a  href="#" data-bs-toggle="modal" data-bs-target="#add_product_brand">Add Brand</a></li>
+									{% elif product_color_page %}
+									<li><a  href="#" data-bs-toggle="modal" data-bs-target="#add_product_color">Add Color</a></li>
+									{% elif product_size_page %}
+									<li><a  href="#" data-bs-toggle="modal" data-bs-target="#add_product_size">Add Size</a></li>
 									{% endif %}
 
 									{% if service_page %}
@@ -435,6 +441,18 @@
 
 									{% elif registration_multipage %}
 									<li><a {% if add_registration_multipage %}class="active"{% endif %} href="{% url 'superadmin:add_registration_multipage' current_company.slug %}">Add Multipage</a></li>
+
+									{% elif education_banner_page %}
+									<li><a {% if add_banner_page %}class="active"{% endif %} href="{% url 'superadmin:add_education_banner' current_company.slug %}">Add Banner</a></li>
+
+									{% elif product_banner_page %}
+									<li><a {% if add_banner_page %}class="active"{% endif %} href="{% url 'superadmin:add_product_banner' current_company.slug %}">Add Banner</a></li>
+
+									{% elif service_banner_page %}
+									<li><a {% if add_banner_page %}class="active"{% endif %} href="{% url 'superadmin:add_service_banner' current_company.slug %}">Add Banner</a></li>
+
+									{% elif registration_banner_page %}
+									<li><a {% if add_banner_page %}class="active"{% endif %} href="{% url 'superadmin:add_registration_banner' current_company.slug %}">Add Banner</a></li>
 
 									{% endif %}									
 								</ul>
@@ -510,6 +528,7 @@
 
 		{% block modal %}{% endblock modal %}
 
+		{% if current_company %}
 		<!-- Brand Modal (Start) -->
 		<div class="modal fade" id="add_product_brand" tabindex="-1" role="dialog" aria-modal="true">
 			<div class="modal-dialog" role="document">
@@ -523,7 +542,7 @@
 					<div class="modal-body">
 						<div class="row">
 							<div class="col-md-12">
-								<form method="post" action="#" class="needs-validation" id="add-product-brand-form" novalidate>
+								<form method="post" action="{% url 'superadmin:add_brand' current_company.slug %}" class="needs-validation" id="add-product-brand-form" novalidate>
 									{% csrf_token %}
 									<h4>{{product_company.name}} Brand</h4>
 									<div class="form-group row">
@@ -550,8 +569,8 @@
 
 				</div><!-- modal-content -->
 			</div><!-- modal-dialog -->
-		</div><!-- modal -->
-		<!-- Brand Modal (End) -->		
+		</div><!-- modal -->		
+		<!-- Brand Modal (End) -->				 
 
 		<!-- Color Modal (Start) -->
 		<div class="modal fade" id="add_product_color" tabindex="-1" role="dialog" aria-modal="true">
@@ -566,7 +585,7 @@
 					<div class="modal-body">
 						<div class="row">
 							<div class="col-md-12">
-								<form method="post" action="#" class="needs-validation" id="add-product-color-form" novalidate>
+								<form method="post" action="{% url 'superadmin:add_color' current_company.slug  %}" class="needs-validation" id="add-product-color-form" novalidate>
 									{% csrf_token %}
 									<h4>Color</h4>
 									<div class="form-group row">
@@ -606,6 +625,84 @@
 				</div><!-- modal-content -->
 			</div><!-- modal-dialog -->
 		</div><!-- modal -->
+
+		<div class="modal fade" id="add_product_size" tabindex="-1" role="dialog" aria-modal="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+
+					<div class="modal-header">
+						<h4 class="modal-title text-center">Add Size</h4>
+						<button type="button" class="btn-close xs-close" data-bs-dismiss="modal"></button>
+					</div>
+
+					<div class="modal-body">
+						<div class="row">
+							<div class="col-md-12">
+								<form method="post" action="{% url 'superadmin:add_size' current_company.slug %}" class="needs-validation" id="update-size-form" novalidate>
+									{% csrf_token %}
+									<h4>Size</h4>
+									<div class="form-group row">
+										<div class="col-md-12"><label class="col-form-label">Name <span class="text-danger">*</span></label></div>
+										<div class="col-md-12">
+											<input class="form-control" type="text" id="name-input" placeholder="Name of Size" name="name">
+											<div class="invalid-feedback">
+												Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
+											</div>
+											<div class="valid-feedback">
+												Looks good!
+											</div>
+											<span><small>Insert the sizes seperated with commas (',') to add multiple sizes at once.</small></span>
+										</div>
+									</div>
+									<div class="form-row">
+										<div class="col-md-12 mb-3">
+											<label for="product-category-dropdown">Category <span class="text-danger">*</span></label>
+											<select class="form-control" id="size-category-dropdown" name="category" required>
+												<option value="" hidden disabled selected>Select Category</option>
+												{% for category in categories %}
+												<option value="{{category.slug}}">{{category.name}}</option>
+												{% endfor %}
+											</select>
+											<div class="invalid-feedback">
+												Please provide a valid category.
+											</div>
+											<div class="valid-feedback">
+												Looks good!
+											</div>
+										</div>                            										                                                       
+									</div>									
+									<div class="form-row">
+										<div class="col-md-12 mb-3">
+											<label for="standard-dropdown">Standards (optional)</label>
+											<select class="form-control" id="standard-dropdown" name="standard" required>
+												<option value="" selected>Select Standards</option>
+												{% for standard in standards %}
+												<option value="{{standard}}">{{standard}}</option>
+												{% endfor %}
+											</select>
+											<div class="invalid-feedback">
+												Please provide a valid category.
+											</div>
+											<div class="valid-feedback">
+												Looks good!
+											</div>
+										</div>                            										                                                       
+									</div>
+									<div class="text-center py-3">
+										<button type="submit" class="border-0 btn btn-primary btn-gradient-primary btn-rounded" id="add-size-button">Save</button>&nbsp;&nbsp;
+										<button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">Cancel</button>
+									</div>
+								</form>
+							</div>
+						</div>
+
+					</div>
+
+				</div><!-- modal-content -->
+			</div><!-- modal-dialog -->
+		</div><!-- modal -->
+		<!-- Size Modal (End) -->
+		{% endif %}
 
 		<!-- Color Modal (End) -->
 
@@ -1318,6 +1415,36 @@
 					error: error => console.error("Error: ", error),
 				});            
 			};
+
+			function getRegistrations() {
+            const sub_type = $('#sub-type-dropdown').val();
+            const company = `{{current_company.slug}}`;
+
+            $('#registration-dropdown').html(`<option value="" hidden disabled selected>Select Registration</option>`);
+
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'registration:get_registrations' %}`,
+                dataType: 'json',
+                data: {
+                    "sub_type_slug": sub_type,
+                    "company_slug": company
+                },
+                success: response => {						
+                    
+                    if (response.registrations && response.registrations.length > 0) {
+                        response.registrations.forEach(registration => {
+                            $('#registration-dropdown').append(`<option value="${registration.slug}">${registration.title}</option>`)
+                        })
+                    }
+                    
+                    if (response.error) {
+                        console.error("Error: ", response.error)
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            });            
+        };
 		</script>
     </body>
 </html>

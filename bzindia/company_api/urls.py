@@ -6,7 +6,7 @@ from .views import (
     CompanyBlogArchivesViewSets, CompanyAboutUsViewSet,
     ContactEnquiryViewSet, CompanyProgramViewSet,
     CompanyClientViewset, CompanyTestimonialViewset,
-    CompanyReviewViewset
+    CompanyReviewViewset, CompanyBannerViewset, CompanyContactUsViewset
     )
 
 app_name = "company_api"
@@ -28,6 +28,8 @@ companies_router.register(r'contact_enquiries', ContactEnquiryViewSet, basename=
 companies_router.register(r'clients', CompanyClientViewset, basename="company-client")
 companies_router.register(r'testimonials', CompanyTestimonialViewset, basename="company-testimonial")
 companies_router.register(r'reviews', CompanyReviewViewset, basename="company-review")
+companies_router.register(r'banners', CompanyBannerViewset, basename="company-banner")
+companies_router.register(r'contact-us', CompanyContactUsViewset, basename="company-contact_us")
 
 urlpatterns = [
     path('', include(router.urls)),

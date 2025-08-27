@@ -41,6 +41,7 @@
             <form method="post" action="#" class="needs-validation" enctype="multipart/form-data" id="add-custom-page-form" novalidate>
                 {% csrf_token %}
                 {{ about_us_form.media }}
+
                 <div class="card">
                     <div class="card-header">
                         <h4 class="card-title mb-0">Page Type &amp; Company</h4>
@@ -65,7 +66,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="company-dropdown">Company <span class="text-danger">*</span></label>
                                 <select class="form-control" id="company-dropdown" name="company" required>
-                                    <option value="" hidden disabled selected>Select Company</option>
+                                    <option value="" selected>BZIndia</option>
                                     {% for company in companies %}
                                     <option value="{{company.slug}}">{{company.name}}</option>
                                     {% endfor %}
@@ -95,6 +96,7 @@
 {% endblock content %}
 
 {% block scripts %}
+<script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
 <script>
 
     $(document).ready(() => {
@@ -340,7 +342,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="company-dropdown">Company <span class="text-danger">*</span></label>
                                 <select class="form-control" id="company-dropdown" name="company" required>
-                                    <option value="" hidden disabled selected>Select Company</option>
+                                    <option value="" selected>BZIndia</option>
                                     {% for company in companies %}
                                     <option value="{{company.slug}}" ${company == '{{company.slug}}' && 'selected'}>{{company.name}}</option>
                                     {% endfor %}
@@ -378,12 +380,14 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-12 mb-3">
-                                    ${formHtml}
+                                    <label for="about-content-input">Content <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" name="content" id="about-content-input" placeholder="Content"></textarea>
                                 </div>
                             </div>                            
                         </div>
                     </div>
-                `)                
+                `)    
+                CKEDITOR.replace('about-content-input');            
             } else if (currentPageType === "Contact Us") {
                 $('#add-custom-page-form').prop('action', `{% url 'superadmin:add_contact_us' %}`);
                 $('#add-custom-page-form').append(`
@@ -407,8 +411,25 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="phone1-input">Phone <span class="text-danger">*</span></label>
-                                    <input type="tel" name="phone" id="phone-input" class="form-control" placeholder="Phone" required>
+                                    <label for="web-input">Web</label>
+                                    <input type="url" class="form-control" id="web-input" name="web" placeholder="Web Address" aria-describedby="inputGroupPrepend" required>                                                                            
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="tel-input">Tel <span class="text-danger">*</span></label>
+                                    <input type="tel" name="tel" id="tel-input" class="form-control" placeholder="Tel" required>
+                                    <span class="form-text text-muted">eg: 9876543210</span>
+                                    <div class="invalid-feedback">
+                                        Please enter a valid contact number. It can include numbers, spaces, dashes, or start with + for international format.
+                                    </div>
+                                    <div class="valid-feedback">
+                                        Looks good!
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="mobile-input">Mobile <span class="text-danger">*</span></label>
+                                    <input type="mobile" name="mobile" id="mobile-input" class="form-control" placeholder="Mobile" required>
                                     <span class="form-text text-muted">eg: 9876543210</span>
                                     <div class="invalid-feedback">
                                         Please enter a valid contact number. It can include numbers, spaces, dashes, or start with + for international format.
@@ -419,7 +440,13 @@
                                 </div>
                             </div>                            
                             <br>
-                            <div class="row">
+                            <div class="row">                                
+                                <div class="col-md-12 mb-3">
+                                    <label for="address-input">Address <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" name="address" id="address-input" placeholder="Address"></textarea>
+                                </div>
+                            </div>
+                            <div class="row">                                
                                 <div class="col-md-6 mb-3">
                                     <label for="page-type-dropdown">State <span class="text-danger">*</span></label>
                                     <select class="form-control" id="state-dropdown" name="state" required>
@@ -472,51 +499,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <br>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="facebook-input">Facebook <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="facebook-input" placeholder="Facebook" name="facebook" required>
-                                    <div class="invalid-feedback">
-                                        Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
-                                    </div>
-                                    <div class="valid-feedback">
-                                        Looks good!
-                                    </div>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="x-input">X (Twitter) <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="x-input" placeholder="X (Twitter)" name="x" required>
-                                    <div class="invalid-feedback">
-                                        Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
-                                    </div>
-                                    <div class="valid-feedback">
-                                        Looks good!
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="youtube-input">Youtube <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="youtube-input" placeholder="Youtube" name="youtube" required>
-                                    <div class="invalid-feedback">
-                                        Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
-                                    </div>
-                                    <div class="valid-feedback">
-                                        Looks good!
-                                    </div>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="instagram-input">Instagram <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="instagram-input" placeholder="Instagram" name="instagram" required>
-                                    <div class="invalid-feedback">
-                                        Please enter a valid name containing only letters, spaces, hyphens, or apostrophes. Numbers and special characters are not allowed.
-                                    </div>
-                                    <div class="valid-feedback">
-                                        Looks good!
-                                    </div>
-                                </div>
-                            </div>
+                            
                             <br>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -560,7 +543,7 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-12 mb-3">
-                                    <label for="page-type-dropdown">Question <span class="text-danger">*</span></label>
+                                    <label for="question-input">Question <span class="text-danger">*</span></label>
                                     <textarea class="form-control" name="question" id="question-input" placeholder="Question"></textarea>
                                     <div class="invalid-feedback">
                                         Question is required.
@@ -572,19 +555,26 @@
                             </div>
                             <div class="row">
                                 <div class="col-md-12 mb-3">
-                                    <label for="page-type-dropdown">Answer <span class="text-danger">*</span></label>
-                                    <textarea class="form-control" name="answer" id="answer-input" placeholder="Answer"></textarea>
+                                    <label for="short-answer-input">Short Answer <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" name="short_answer" id="short-answer-input" placeholder="Short Answer"></textarea>
                                     <div class="invalid-feedback">
-                                        Answer is required.
+                                        Short Answer is required.
                                     </div>
                                     <div class="valid-feedback">
                                         Looks good!
                                     </div>
                                 </div>
-                            </div>                        
+                            </div>                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="answer-input">Answer <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" name="answer" id="answer-input" placeholder="Answer"></textarea>
+                                </div
+                            </div>                       
                         </div>
                     </div>
-                `);                
+                `);
+                CKEDITOR.replace('answer-input');
                 
             } else if (currentPageType === "Privacy Policy") {
                 $('#add-custom-page-form').prop('action', `{% url 'superadmin:add_privacy_policy' %}`);
@@ -595,7 +585,8 @@
                         </div>
                         <div class="card-body">
                             <div class="form-group">
-                                ${formHtml}
+                                <label for="privacy-content-input">Content <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="content" id="privacy-content-input" placeholder="Answer"></textarea>
                             </div>  
                             <div class="row">
                                 <div class="form-group col-md-6">
@@ -610,7 +601,8 @@
                             
                         </div>
                     </div>
-                `);                
+                `);    
+                CKEDITOR.replace('privacy-content-input');            
                 
             } else if (currentPageType === "Terms And Conditions") {
                 $('#add-custom-page-form').prop('action', `{% url 'superadmin:add_terms_and_conditions' %}`);
@@ -621,7 +613,8 @@
                     </div>
                     <div class="card-body">
                         <div class="form-group">
-                            ${formHtml}
+                            <label for="terms-content-input">Content <span class="text-danger">*</span></label>
+                            <textarea class="form-control" name="content" id="terms-content-input" placeholder="Answer"></textarea>
                         </div>
                         <div class="row">
                             <div class="form-group col-md-6">
@@ -636,6 +629,7 @@
                     </div>
                 </div>
                 `);
+                CKEDITOR.replace('terms-content-input');      
                 
             } else if (currentPageType === "Shipping And Delivery Policy") {
                 $('#add-custom-page-form').prop('action', `{% url 'superadmin:add_shipping_and_delivery_policy' %}`);
@@ -646,13 +640,15 @@
                         </div>
                         <div class="card-body">
                             <div class="form-group">
-                                ${formHtml}
+                                <label for="shipping-content-input">Content <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="content" id="shipping-content-input" placeholder="Answer"></textarea>
                                 <br>
                             </div>                              
                             
                         </div>
                     </div>
-                `);                
+                `);
+                CKEDITOR.replace('shipping-content-input');              
                 
             } else if (currentPageType === "Cancellation And Refund Policy") {
                 $('#add-custom-page-form').prop('action', `{% url 'superadmin:add_cancellation_and_refund_policy' %}`);
@@ -663,14 +659,15 @@
                         </div>
                         <div class="card-body">
                             <div class="form-group">
-                                ${formHtml}
+                                <label for="cancellation-content-input">Content <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="content" id="cancellation-content-input" placeholder="Answer"></textarea>
                                 <br>
                             </div>                              
                             
                         </div>
                     </div>
                 `);                
-                
+                CKEDITOR.replace('cancellation-content-input'); 
             }
 
             $('#add-custom-page-form').append(`

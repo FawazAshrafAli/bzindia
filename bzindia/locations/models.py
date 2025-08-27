@@ -39,7 +39,7 @@ class District(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.name}-{self.state.name}")
+            base_slug = slugify(self.name)
             slug = base_slug
             count = 1
             while District.objects.filter(slug = slug).exists():
@@ -72,7 +72,7 @@ class Place(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.name}-{self.district.name}-{self.state.name}")
+            base_slug = slugify(self.name)
             slug = base_slug
             count = 1
             while Place.objects.filter(slug = slug).exists():
@@ -251,6 +251,56 @@ class KsaCoordinates(models.Model):
         return f"KSA ({self.latitude}-{self.longitude})"
     
 
+class KuwaitCoordinates(models.Model):
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+    def __str__(self):
+        return f"Kuwait ({self.latitude}-{self.longitude})"
+    
+
+class QatarCoordinates(models.Model):
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+    def __str__(self):
+        return f"Qatar ({self.latitude}-{self.longitude})"
+    
+
+class OmanCoordinates(models.Model):
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+    def __str__(self):
+        return f"Oman ({self.latitude}-{self.longitude})"
+    
+
+class IndiaCoordinates(models.Model):
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+    def __str__(self):
+        return f"India ({self.latitude}-{self.longitude})"
+
+
+class BahrainCoordinates(models.Model):
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+    def __str__(self):
+        return f"Bahrain ({self.latitude}-{self.longitude})"
+    
+
 class UaeLocationData(models.Model):
     json_data = models.JSONField()
 
@@ -278,6 +328,81 @@ class KsaLocationData(models.Model):
 
     class Meta:
         db_table = "ksa_location_data"
+        ordering = ["created"]
+
+    
+class KuwaitLocationData(models.Model):
+    json_data = models.JSONField()
+
+    address = models.CharField(max_length=500)
+
+    requested_latitude = models.FloatField()
+    requested_longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "kuwait_location_data"
+        ordering = ["created"]
+
+
+class QatarLocationData(models.Model):
+    json_data = models.JSONField()
+
+    address = models.CharField(max_length=500)
+
+    requested_latitude = models.FloatField()
+    requested_longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "qatar_location_data"
+        ordering = ["created"]
+
+
+class OmanLocationData(models.Model):
+    json_data = models.JSONField()
+
+    address = models.CharField(max_length=500)
+
+    requested_latitude = models.FloatField()
+    requested_longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "oman_location_data"
+        ordering = ["created"]
+
+
+class IndiaLocationData(models.Model):
+    json_data = models.JSONField()
+
+    address = models.CharField(max_length=500)
+
+    requested_latitude = models.FloatField()
+    requested_longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "india_location_data"
+        ordering = ["created"]
+
+
+class BahrainLocationData(models.Model):
+    json_data = models.JSONField()
+
+    address = models.CharField(max_length=500)
+
+    requested_latitude = models.FloatField()
+    requested_longitude = models.FloatField()
+
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "bahrain_location_data"
         ordering = ["created"]
 
 
@@ -313,7 +438,7 @@ class PincodeAndCoordinate(models.Model):
         super().save(*args, **kwargs)
 
 
-class IndiaLocationData(models.Model):
+class IndiaLocationDataOld(models.Model):
     json_data = models.JSONField()
 
     address = models.CharField(max_length=500)
@@ -326,5 +451,5 @@ class IndiaLocationData(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "india_location_data"
+        db_table = "india_location_data_old"
         ordering = ["created"]

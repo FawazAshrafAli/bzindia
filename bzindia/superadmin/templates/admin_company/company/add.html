@@ -8,6 +8,12 @@
 {% block styles %}
 <link rel="stylesheet" href="{% static 'w3/css/chosen-style.css' %}">
 <link rel="stylesheet" href="{% static 'w3/css/main-color.css' %}" id="colors">
+
+<style>
+    #additional-company-types-field {
+        display: none;
+    }
+</style>
 {% endblock styles %}
 
 {% block content %}
@@ -98,6 +104,10 @@
                                 </div>
                             </div>                                                        
                         </div>
+
+                        <div class="row" id="additional-company-types-field">
+                            
+                        </div>
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -120,6 +130,13 @@
                                     Looks good!
                                 </div>
                             </div>                            
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="summary-input">Summary <span class="text-danger">*</span></label>                                
+                                <textarea class="form-control" name="summary" id="summary-input" placeholder="Summary" required></textarea>
+                            </div>
                         </div>
 
                         <div class="row">
@@ -186,35 +203,7 @@
                             </div>                        
                         </div>                        
                     </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="card-title mb-0">Social Media</h4>
-                    </div>
-                    <div class="card-body">                    
-                        <div class="form-group row">
-                            <div class="col-md-6 mb-3">
-                                <label for="facebook-input">Facebook</label>
-                                <input type="url" name="facebook" id="facebook-input" class="form-control" placeholder="Facebook Link">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="twitter-input">X (Twitter)</label>
-                                <input type="url" name="twitter" id="twitter-input" class="form-control" placeholder="X (Twitter) Link">
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-6 mb-3">
-                                <label for="linkedin-input">LinkedIn</label>
-                                <input type="url" name="linkedin" id="linkedin-input" class="form-control" placeholder="LinkedIn Link">
-                            </div>              
-                            <div class="col-md-6 mb-3">
-                                <label for="youtube-input">Youtube</label>
-                                <input type="url" name="youtube" id="youtube-input" class="form-control" placeholder="Youtube Link">
-                            </div>         
-                        </div>                        
-                    </div>
-                </div>
+                </div>                
 
                 <div class="card">
                     <div class="card-header">
@@ -477,6 +466,31 @@
                 }
             }
         })
+
+        $('#company-type-dropdown').on('change', function () {
+            const items = ["Service", "Product", "Education", "Registration"];
+            const selectedCompanyType = $(this).val();
+            
+            if (selectedCompanyType) {
+                const additionalCompanyTypes = items.filter(companyTypeItem => companyTypeItem.toLocaleLowerCase() != selectedCompanyType);
+                let content = "";
+
+                additionalCompanyTypes.map(companyType => {
+                    content += `<div class="col-md-4 mb-3">
+                                    <label class="form-check-label"><input class="form-check-input" type="checkbox" name="add_on_company_type" value="${companyType}">&nbsp;${companyType}</label>
+                                </div>`
+                })
+
+                $('#additional-company-types-field').show().html(
+                    `<label for="favicon-input" class="form-label">Company Also Provides (optional) :</label>
+                    <div class="row">                    
+                        ${content}
+                    </div>
+                    `
+                )
+            }
+            $('#other-services').html()
+        });
 
     })
 </script>

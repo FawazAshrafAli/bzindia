@@ -5,11 +5,11 @@ from utility.text import clean_string
 
 from service.models import (
     Service, Category, ServiceDetail, Feature, VerticalBullet,
-    VerticalTab, HorizontalBullet, HorizontalTab, Table, Tag, 
+    VerticalTab, HorizontalBullet, HorizontalTab, Table,
     Timeline, BulletPoints, Faq, Enquiry, MultiPageVerticalBullet,
     MultiPageVerticalTab, MultiPageHorizontalTab, MultiPageHorizontalBullet,
-    MultiPageTag, MultiPageTimeline, MultiPageTable, MultiPageBulletPoint, 
-    MultiPageFaq, MultiPageFeature, MultiPage
+    MultiPageTimeline, MultiPageTable, MultiPageBulletPoint, 
+    MultiPageFaq, MultiPageFeature, MultiPage, SubCategory
     )
 from locations.models import UniqueState
 from company.models import Testimonial
@@ -37,6 +37,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.name", read_only = True)
     category_slug = serializers.CharField(source="category.slug", read_only = True)
     sub_category_name = serializers.CharField(source="sub_category.name", read_only = True)
+    sub_category_slug = serializers.CharField(source="sub_category.slug", read_only = True)
     duration_count = serializers.CharField(source="duration.days", read_only = True)
     company_social_medias = serializers.SerializerMethodField()
     company_name = serializers.CharField(source="company.name", read_only = True)
@@ -51,7 +52,8 @@ class ServiceSerializer(serializers.ModelSerializer):
             "name", "image_url", "company_name", "category_name", 
             "duration_count", "price", "company_logo_url", 
             "company_social_medias", "slug", "sub_category_name",
-            "faqs", "testimonials", "blogs", "category_slug"
+            "faqs", "testimonials", "blogs", "category_slug", 
+            "sub_category_slug"
             ]
 
         read_only_fields = ["company_name"]
@@ -116,9 +118,26 @@ class ServiceSerializer(serializers.ModelSerializer):
 
 class CategorySerializer(serializers.ModelSerializer):
     detail_pages = serializers.SerializerMethodField()
+    blogs = serializers.SerializerMethodField()
+    testimonials = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
 
-    model = Category
-    fields = ["detail_pages"]
+    class Meta:
+        model = Category
+        fields = ["name", "slug", "updated", "detail_pages", "blogs", "testimonials",
+                  "image_url"]
+        
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+
+        service = obj.services.filter(image__isnull = False).first()
+
+        if service and service.image and hasattr(service.image, 'url'):
+            if request is not None:
+                return request.build_absolute_uri(service.image.url)
+            return f"{settings.SITE_URL}{service.image.url}"
+        
+        return None
 
     def get_detail_pages(self, obj):
         if not obj:
@@ -127,6 +146,66 @@ class CategorySerializer(serializers.ModelSerializer):
         details = ServiceDetail.objects.filter(service__category = obj)
 
         return DetailSerializer(details, many=True).data
+    
+    def get_blogs(self, obj):
+
+        blogs = Blog.objects.filter(service__category = obj)
+        serializer = BlogSerializer(blogs, many=True)
+
+        return serializer.data
+    
+    def get_testimonials(self, obj):
+
+        testimonials = Testimonial.objects.filter(company = obj.company)
+
+        serializer = TestimonialSerializer(testimonials, many=True)
+
+        return serializer.data
+    
+
+class SubCategorySerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    category_name = serializers.CharField(source="category.name", read_only=True)
+    category_slug = serializers.CharField(source="category.slug", read_only=True)
+    blogs = serializers.SerializerMethodField()
+    testimonials = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SubCategory
+        fields = [
+            "name", "slug", "updated", "image_url", "category_name", 
+            "category_slug", "testimonials", "blogs"
+            ]
+
+    read_only_fields = "__all__"
+
+    def get_blogs(self, obj):
+
+        blogs = Blog.objects.filter(service__sub_category = obj)
+        serializer = BlogSerializer(blogs, many=True)
+
+        return serializer.data
+    
+    def get_testimonials(self, obj):
+
+        testimonials = Testimonial.objects.filter(company = obj.company)
+
+        serializer = TestimonialSerializer(testimonials, many=True)
+
+        return serializer.data
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+
+        service = obj.services.filter(image__isnull = False).first()
+
+        if service.image and hasattr(service.image, 'url'):
+            if request is not None:
+                return request.build_absolute_uri(service.image.url)
+            return f"{settings.SITE_URL}{service.image.url}"
+        
+        return None
+    
     
 
 class FeatureSerializer(serializers.ModelSerializer):
@@ -183,14 +262,6 @@ class BulletPointSerializer(serializers.ModelSerializer):
             ]
         
 
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = [
-            "id", "tag"
-            ]
-        
-
 class TimelineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Timeline
@@ -207,28 +278,38 @@ class DetailSerializer(serializers.ModelSerializer):
     horizontal_tabs = HorizontalTabSerializer(many=True, read_only=True)
     tables = TableSerializer(many=True, read_only=True)
     bullet_points = BulletPointSerializer(many=True, read_only=True)    
-    tags = TagSerializer(many=True, read_only=True)
     timelines = TimelineSerializer(many=True, read_only=True)
     blogs = BlogSerializer(many=True, read_only=True)
     meta_tags = MetaTagSerializer(many=True, read_only=True)    
+    company_slug = serializers.CharField(source="company.slug", read_only=True)
+    company_sub_type = serializers.CharField(source="company.sub_type", read_only=True)
+    url = serializers.SerializerMethodField()
 
     class Meta:
         model = ServiceDetail
         fields = [
+            "meta_title", "meta_description", "company_slug",
             "summary", "description", "features", "service", "slug",
             "vertical_title", "horizontal_title", "vertical_tabs", 
             "horizontal_tabs", "table_title", "tables", "get_data",
-            "bullet_title", "bullet_points", "tag_title", "tags",
+            "bullet_title", "bullet_points",
             "timeline_title", "timelines", "toc", "hide_features", 
             "hide_vertical_tab", "hide_horizontal_tab", "hide_table",
-            "hide_bullets", "hide_tags", "hide_timeline", "hide_support_languages",
-            "blogs", "meta_tags", "published",
-            "modified", "meta_description"
-            ]
-    
-    def get_faqs(self, obj):
-        if not obj:
+            "hide_bullets", "hide_timeline", "hide_support_languages",
+            "blogs", "meta_tags", "published", "company_sub_type",
+            "modified", "updated", "created", "url"
+            ] 
+        
+    def get_url(self, obj):
+        try:
+            company_slug = obj.company.slug
+            category_slug = obj.service.category.slug
+            sub_category_slug = obj.service.sub_category.slug
+            slug = obj.slug
+        except AttributeError:
             return None
+
+        return f"{company_slug}/{category_slug}/{sub_category_slug}/{slug}"
         
 
 class EnquirySerializer(serializers.ModelSerializer):
@@ -261,11 +342,10 @@ class EnquirySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Enquiry
-        fields = ["company", "name", "phone", "email", "service", "state", "message"]
+        fields = ["company", "name", "phone", "email", "service", "state"]
         extra_kwargs = {
             'company': {'required': False}, 
             'name': {'required': True},
-            'message': {'required': True}
         }
     
     def get_company(self, obj):
@@ -283,7 +363,7 @@ class EnquirySerializer(serializers.ModelSerializer):
     def validate(self, data):
         # Clean string fields
         cleaned_data = {}
-        string_fields = ['name', 'message']
+        string_fields = ['name']
         
         for field in string_fields:
             value = data.get(field, '').strip()
@@ -303,15 +383,7 @@ class EnquirySerializer(serializers.ModelSerializer):
         cleaned_data['phone'] = data['phone']
         
         # Update data with cleaned values
-        data.update(cleaned_data)
-        
-        # Additional business logic validation
-        if not self.context.get('request').user.is_authenticated:
-            # Example: Spam prevention for anonymous submissions
-            if len(data['message']) > 1000:
-                raise serializers.ValidationError(
-                    {"message": "Message too long (max 1000 characters)"}
-                )
+        data.update(cleaned_data)            
         
         return data
 
@@ -370,14 +442,6 @@ class MultipageBulletPointSerializer(serializers.ModelSerializer):
             ]
         
 
-class MultipageTagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MultiPageTag
-        fields = [
-            "id", "tag"
-            ]
-        
-
 class MultipageTimelineSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageTimeline
@@ -391,7 +455,7 @@ class MultipageFaqSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MultiPageFaq
-        fields = ["company", "question", "answer"]
+        fields = ["company", "question", "answer", "slug"]
 
     def get_company(self, obj):
         if obj.company:
@@ -409,29 +473,53 @@ class MultipageSerializer(serializers.ModelSerializer):
     horizontal_tabs = MultipageHorizontalTabSerializer(many=True, read_only=True)
     tables = MultipageTableSerializer(many=True, read_only=True)
     bullet_points = MultipageBulletPointSerializer(many=True, read_only=True)    
-    tags = MultipageTagSerializer(many=True, read_only=True)
     timelines = MultipageTimelineSerializer(many=True, read_only=True)
     faqs = MultipageFaqSerializer(many=True, read_only=True)
     blogs = BlogSerializer(many=True, read_only=True)
-    testimonials = TestimonialSerializer(many=True, read_only=True)
+    testimonials = serializers.SerializerMethodField()
     meta_tags = MetaTagSerializer(many=True, read_only=True)
 
     company_slug = serializers.CharField(source = "company.slug", read_only=True)
     company_name = serializers.CharField(source = "company.name", read_only=True)    
+    blogs = serializers.SerializerMethodField()
+
+    slider_services = DetailSerializer(many=True)
 
     class Meta:
         model = MultiPage
         fields = [
-            "title", "summary", "description", "features", "slug",
+            "title", "summary", "description", "slider_services", "features", "slug",
             "vertical_title", "horizontal_title", "vertical_tabs", 
             "horizontal_tabs", "table_title", "tables", "get_data",
-            "bullet_title", "bullet_points", "tag_title", "tags",
+            "bullet_title", "bullet_points",
             "timeline_title", "timelines", "toc", "hide_features", 
             "hide_vertical_tab", "hide_horizontal_tab", "hide_table",
-            "hide_bullets", "hide_tags", "hide_timeline", "hide_support_languages",
+            "hide_bullets", "hide_timeline", "hide_support_languages",
             "blogs", "faqs", "testimonials", "meta_tags", "published",
             "modified", "meta_description", "company_slug", "url_type",
-            "rating", "rating_count", "service", "company_name", "company"
+            "rating", "rating_count", "service", "company_name", "company",
+            "blogs", "sub_title", "meta_title"
             ]
         
         read_only = fields
+
+    def get_blogs(self, obj):
+        if not obj:
+            return None
+        
+        blogs = Blog.objects.filter(company = obj.company, service = obj.service, is_published = True)
+
+        serializer = BlogSerializer(blogs, many=True)
+
+        return serializer.data
+
+    def get_testimonials(self, obj):
+        if not obj:
+            return None
+        
+        testimonials = Testimonial.objects.filter(company = obj.company)
+
+        serializer = TestimonialSerializer(testimonials, many=True)
+
+        return serializer.data    
+        

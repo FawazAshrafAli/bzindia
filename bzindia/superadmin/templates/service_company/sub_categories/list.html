@@ -230,15 +230,13 @@
 			$('#edit-service-sub-category-form').prop('action', actionUrl);
 		});
 
-		let namePattern = /^[a-zA-Z\s'-]+$/;
-
 		// Scripts of Service Sub Category (Start)
 		function validateAddServiceSubCategoryForm() {  
 			let formValid = true       
 
 			const serviceCategory = $('#name-input').val().trim();            
 
-			if (!serviceCategory || !namePattern.test(serviceCategory)) {
+			if (!serviceCategory) {
 				$('#name-input').addClass('is-invalid');
 				$('#name-input').focus();
 				formValid = false;
@@ -262,7 +260,7 @@
 
 			const serviceCategory = $('#edit-name-input').val().trim();            
 
-			if (!serviceCategory || !namePattern.test(serviceCategory)) {
+			if (!serviceCategory) {
 				$('#edit-name-input').addClass('is-invalid');
 				$('#edit-name-input').focus();
 				formValid = false;
@@ -286,11 +284,7 @@
 			if (!$(this).val()) {
 				$(this).removeClass('is-valid').addClass('is-invalid');
 			} else {
-				if (($(this).prop('id') === "name-input" || $(this).prop('id') === "edit-name-input") && !namePattern.test($(this).val())) {
-					$(this).removeClass('is-valid').addClass('is-invalid');
-				} else {
-					$(this).removeClass('is-invalid').addClass('is-valid');
-				}
+				$(this).removeClass('is-invalid').addClass('is-valid');
 			}
 		});
 		// Scripts of Service Sub Category (End)

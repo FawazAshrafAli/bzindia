@@ -17,12 +17,12 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="type-dropdown" >Registration Type <span class="text-danger">*</span></label>
                                 <select class="form-control" id="type-dropdown" name="type" required>
                                     <option value="" hidden disabled selected>Select Type</option>
                                     {% for type in types %}
-                                    <option value="{{type.slug}}" {% if faq.registration_sub_type.type.slug == type.slug %}selected{% endif %} >{{type.name}}</option>
+                                    <option value="{{type.slug}}" {% if faq.registration.registration_type.slug == type.slug %}selected{% endif %} >{{type.name}}</option>
                                     {% endfor %}
                                 </select>
                                 <div class="invalid-feedback">
@@ -33,12 +33,12 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="sub-type-dropdown" >Registration Sub Type <span class="text-danger">*</span></label>
                                 <select class="form-control" id="sub-type-dropdown" name="sub_type" required>
                                     <option value="" hidden disabled selected>Select Sub Type</option>
                                     {% for sub_type in sub_types %}
-                                    <option value="{{sub_type.slug}}" {% if faq.registration_sub_type.slug == sub_type.slug %}selected{% endif %} >{{sub_type.name}}</option>
+                                    <option value="{{sub_type.slug}}" {% if faq.registration.sub_type.slug == sub_type.slug %}selected{% endif %} >{{sub_type.name}}</option>
                                     {% endfor %}
                                 </select>
                                 <div class="invalid-feedback">
@@ -47,7 +47,23 @@
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
-                            </div>                            
+                            </div>   
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="registration-dropdown" >Registration <span class="text-danger">*</span></label>
+                                <select class="form-control" id="registration-dropdown" name="registration" required>
+                                    <option value="" hidden disabled selected>Select Registration</option>
+                                    {% for registration in registrations %}
+                                    <option value="{{registration.slug}}" {% if faq.registration.slug == registration.slug %}selected{% endif %} >{{registration.title}}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please provide the registration.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
                             
                         </div>             
 
@@ -88,37 +104,15 @@
 {% block scripts %}
 <script>
     $(document).ready(() => {
-        // Get Sub Categories
-        function getSubTypes() {
-            const type = $('#type-dropdown').val();
-            const company = `{{current_company.slug}}`;
 
-            $.ajax({
-                type: 'GET',
-                url: `{% url 'registration:get_registration_sub_types' %}`,
-                dataType: 'json',
-                data: {
-                    "type_slug": type,
-                    "company_slug": company
-                },
-                success: response => {
-                    $('#sub-type-dropdown').html(`<option value="" hidden disabled selected>Select Sub Type</option>`);
-                    
-                    if (response.sub_types && response.sub_types.length > 0) {
-                        response.sub_types.forEach(sub_type => {
-                            $('#sub-type-dropdown').append(`<option value="${sub_type.slug}">${sub_type.name}</option>`)
-                        })
-                    }
-                    
-                    if (response.error) {
-                        console.error("Error: ", response.error)
-                    }
-                },
-                error: error => console.error("Error: ", error),
-            });            
-        };
+        $('#type-dropdown').on('change', () => {
+            $('#registration-dropdown').val("");
+            getSubTypes()
+        });
 
-        $('#type-dropdown').on('change', () => getSubTypes());
+        $('#sub-type-dropdown').on('change', () => {
+            getRegistrations()
+        });
         
     })
 </script>

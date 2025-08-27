@@ -84,11 +84,15 @@
                     </div>
                     <div class="card-body">
                         <div class="row">                            
-                            <div class="col-sm-6">
+                            <div class="col-sm-4">
                                 <label class="col-form-label">Title</label>
                                 <input class="form-control"  type="text" id="title-input" name="title" placeholder="Title" required>
                             </div>
-                            <div class="col-sm-6">
+                            <div class="col-sm-4">
+                                <label class="col-form-label">Sub Title</label>
+                                <input class="form-control" type="text" id="sub-title-input" name="sub_title" placeholder="Sub Title" required>
+                            </div>
+                            <div class="col-sm-4">
                                 <label for="course-dropdown" class="form-label">Course <span class="text-danger">*</span></label>
                                 <select class="form-control" name="course" required>
                                     <option value="" disabled hidden selected>Select Course</option>
@@ -165,6 +169,54 @@
                                     <option value="{{state.slug}}" >{{state.name}}</option>
                                     {% endfor %}									
 								</select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row" id="slider-section">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="slider-program-dropdown" >Slider Program <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="slider-program-dropdown" name="program" required>
+                                        <option value="" hidden disabled selected>Select Program</option>
+                                        {% for program in programs %}
+                                        <option value="{{program.slug}}" >{{program.name}}</option>
+                                        {% endfor %}                                    
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Please provide the program.
+                                    </div>
+                                    <div class="valid-feedback">
+                                        Looks good!
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="slider-specialization-dropdown" >Slider Specialization <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="slider-specialization-dropdown" name="specialization" required>
+                                        <option value="" hidden disabled selected>Select Specialization</option>                                       
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Please provide the specialization.
+                                    </div>
+                                    <div class="valid-feedback">
+                                        Looks good!
+                                    </div>
+                                </div>
+                            </div>    
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="slider-detail-dropdown" >Slider Course Details <span class="text-danger">*</span></label>
+                                    <select data-placeholder="Select Course Details" class="chosen-select" id="slider-detail-dropdown" name="course_details" multiple required>
+                                                                   
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Please provide the slider course detail.
+                                    </div>
+                                    <div class="valid-feedback">
+                                        Looks good!
+                                    </div>
+                                </div>                 
+                                
                             </div>
                         </div>
 
@@ -346,34 +398,6 @@
                                                         </div>
                                                         <br>
                                                         <ol class="row" id="bullet-div"></ol>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="tasks__item crms-task-item active">
-                                        <div class="accordion-header js-accordion-header">Tags</div> 
-                                        <div class="accordion-body js-accordion-body">
-                                            <div class="accordion-body__contents">
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label>Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Tags" name="tag_title" required>
-                                                    </div>
-                                                    <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
-                                                        <label for="hide-tags">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-tags" name="hide_tags" {% if multipage.hide_tags %}checked{% endif %}>&nbsp;Hide Tags
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <div style="display: flex; flex-direction: row;">
-                                                            <input type="text" class="form-control" id="tag-input" placeholder="Tag Name" required>
-                                                            <button class="add-button" type="button" id="add-tag-btn">ADD</button>
-                                                        </div>
-                                                        <br>
-                                                        <div class="row" id="tag-div"></div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -900,27 +924,7 @@
             }
 
             $('#bullet-input').val('');
-        });
-
-        // Adding tag for tags section
-        $(document).on('click', '#add-tag-btn', function () {
-            const tag = $('#tag-input').val();
-
-            if (tag.trim()) {
-                $('#tag-div').append(
-                    `<div class="col-lg-4 col-md-12 mt-3"><a href="#" class="tag" target="_blank">${tag}</a><input type="text" name="tag" value="${tag}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>`
-                );
-            }
-
-            $('#tag-input').val('');
-        });
-
-        // Remove bullet points
-        $(document).on('click', '#remove-tag-btn', function () {
-            const parentElement = $(this).parent();
-
-            parentElement.remove();
-        });
+        });        
 
         // Remove bullet points
         $(document).on('click', '#remove-bullet-btn', function () {
@@ -1075,6 +1079,82 @@
                 $('#state-dropdown').prop("required", false);
 
             }
+        });
+
+        // Get Specialization
+        function getSpecializations(program) {
+            const company = `{{current_company.slug}}`
+            
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'education:get_specializations' %}`,
+                dataType: 'json',
+                data: {
+                    "program": program,
+                    "company": company
+                },
+                success: response => {
+                    let specializations = response.specializations;
+
+                    $('#slider-specialization-dropdown').html(`<option value="" hidden disabled selected>Select Specialization</option>`);
+                    if (specializations && specializations.length) {
+                        specializations.forEach(specialization => {
+                            if (specialization.standard) {
+                                $('#slider-specialization-dropdown').append(`<option value="${specialization.slug}">${specialization.name}&nbsp;&nbsp;&nbsp; ${specialization.standard}</option>`)
+                            } else {
+                                $('#slider-specialization-dropdown').append(`<option value="${specialization.slug}">${specialization.name}</option>`)
+                            }
+                        })
+                    } else {
+                        $('#slider-specialization-dropdown').html(`<option value="" disabled selected>No specialization for the selected program</option>`);
+                    }                    
+                },
+                error: error => console.error("Error: ", error),
+            })
+        }
+
+        $('#slider-program-dropdown').on('change', function () {
+            const program = $(this).val();
+
+            getSpecializations(program);
+        });
+
+
+        // Get Course Details
+        function getCourseDetails(specialization) {
+            const company = `{{current_company.slug}}`
+
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'education:get_course_details' %}`,
+                dataType: 'json',
+                data: {
+                    "specialization": specialization,
+                    "company": company
+                },
+                
+                success: response => {
+                    $('#slider-detail-dropdown').empty();
+                    if (response.course_details && response.course_details.length > 0) {
+                        response.course_details.forEach(detail => {
+                            $('#slider-detail-dropdown').append(`<option value="${detail.slug}">${detail.course__name}</option>`)
+                        })
+                    }
+
+                    if (response.error) {
+                        console.error("Error: ", response.error)
+                    }
+
+                    $('#slider-detail-dropdown').trigger("chosen:updated");
+                },
+                error: error => console.error("Error: ", error),
+            })
+        }
+
+        $('#slider-specialization-dropdown').on('change', function () {
+            const specialization = $(this).val();
+
+            getCourseDetails(specialization);
         });
         
     });

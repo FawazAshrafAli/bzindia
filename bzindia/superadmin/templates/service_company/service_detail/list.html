@@ -34,14 +34,14 @@
 										</label>
 									</td>
 									<td>										
-										<a href="{% url 'superadmin:service_detail' current_company.slug service_detail.service.slug %}" >{{service_detail.service.name}}</a>
+										<a href="{% url 'superadmin:service_detail' current_company.slug service_detail.slug %}" >{{service_detail.service.name}}</a>
 									</td>									
 									
 									<td class="text-end">
 										<div class="dropdown dropdown-action">
 											<a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="material-icons">more_vert</i></a>
 											<div class="dropdown-menu dropdown-menu-right">												
-												<a class="dropdown-item" href="{% url 'superadmin:update_service_details' current_company.slug service_detail.service.slug %}">Edit This Service Detail</a>
+												<a class="dropdown-item" href="{% url 'superadmin:update_service_details' current_company.slug service_detail.slug %}">Edit This Service Detail</a>
 												<a class="dropdown-item delete-btn" href="#" data-bs-toggle="modal" data-bs-target="#delete_company" data-name="{{service_detail.service.name}}" data-slug="{{service_detail.slug}}">Remove This Service Detail</a>
 											</div>
 										</div>

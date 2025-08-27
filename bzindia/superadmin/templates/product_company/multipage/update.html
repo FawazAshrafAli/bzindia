@@ -79,9 +79,13 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-sm-12 mb-3">
+                            <div class="col-sm-6 mb-3">
                                 <label class="col-form-label">Title</label>
                                 <input class="form-control"  type="text" id="title-input" name="title" placeholder="Title" value="{% if multipage.title %}{{multipage.title}}{% endif %}" required>
+                            </div>
+                            <div class="col-sm-6 mb-3">
+                                <label class="col-form-label">Sub Title</label>
+                                <input class="form-control"  type="text" id="sub-title-input" name="sub_title" placeholder="Sub Title" value="{% if multipage.sub_title %}{{multipage.sub_title}}{% endif %}" required>
                             </div>
                         </div>
                         <div class="row">
@@ -286,40 +290,6 @@
                                                             {% endfor %}
                                                             {% endif %}
                                                         </ol>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="tasks__item crms-task-item active">
-                                        <div class="accordion-header js-accordion-header">Tags</div> 
-                                        <div class="accordion-body js-accordion-body">
-                                            <div class="accordion-body__contents">
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label>Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Tags" name="tag_title" value="{% if multipage.tag_title %}{{multipage.tag_title}}{% endif %}" required>
-                                                    </div>
-                                                    <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
-                                                        <label for="hide-tags">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-tags" name="hide_tags" {% if multipage.hide_tags %}checked{% endif %}>&nbsp;Hide Tags
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <div style="display: flex; flex-direction: row;">
-                                                            <input type="text" class="form-control" id="tag-input" placeholder="Tag Name" required>
-                                                            <button class="add-button" type="button" id="add-tag-btn">ADD</button>
-                                                        </div>
-                                                        <br>
-                                                        <div class="row" id="tag-div">
-                                                            {% if multipage.tags.all|length > 0 %}
-                                                            {% for tag_obj in multipage.tags.all %}
-                                                            <div class="col-lg-4 col-md-12 mt-3"><a href="{{tag_obj.link}}" class="tag" target="_blank">{{tag_obj.tag}}</a><input type="text" name="tag" value="{{tag_obj.tag}}" hidden><input type="text" name="tag_link" value="{{tag_obj.link}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>
-                                                            {% endfor %}
-                                                            {% endif %}
-                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -617,253 +587,6 @@
             feature.remove();
         });
 
-        //  Add Multiple Vertical Bullet Point
-        $(document).on('click', '.vertical-tab-div .add-button', function () {
-            const parentDiv = $(this).parent().parent();            
-
-            const olTag = parentDiv.find('ol');
-            const bulletInput = parentDiv.find('.tab-bullet-input')
-            const bulletPoint = bulletInput.val();
-
-            if (bulletPoint.trim()) {
-                olTag.append(
-                    `<li class="col-md-6">${bulletPoint}<input type="text" name="vertical_bullet" value="${bulletPoint}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-vertical-bullet-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${bulletPoint}'"><i class="fa fa-close" style="padding: 0;"></i></button></li>`
-                );
-            }
-
-            bulletInput.val('');
-
-            // Count bullets for vertical tab
-            const bulletCountInput = parentDiv.find('.vertical-bullet-count');
-            const bulletCount = olTag.find('li').length;            
-            bulletCountInput.val(bulletCount)
-
-        });
-
-        // Remove vertical bullet points
-        $(document).on('click', '#remove-vertical-bullet-btn', function () {
-            const parentElement = $(this).parent();
-
-            parentElement.remove();
-        });
-
-
-        // Add Multiple Vertical tabs
-        $('#add-vertical-tab-btn').click(function () {
-            let verticalTabNumber = $('.vertical-tab-inner-div').length;
-
-            verticalTabNumber++;
-            
-            let currentVerticalTabNumber = verticalTabNumber;
-
-            $('#vertical-tab-div').append(`
-                <div class="vertical-tab-inner-div">
-                    <hr>
-                    <br>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label>Heading of Tab${currentVerticalTabNumber} <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" placeholder="Heading of Tab${currentVerticalTabNumber}" name="vertical_heading" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label  >Sub Heading of Tab${currentVerticalTabNumber} <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" placeholder="Sub Heading of Tab${currentVerticalTabNumber}" name="vertical_sub_heading" required>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label >Summary of Tab${currentVerticalTabNumber} <span class="text-danger">*</span></label>
-                            <textarea type="text" class="form-control" placeholder="Summary of Tab${currentVerticalTabNumber}" name="vertical_summary" required></textarea>
-                        </div>            
-                    </div>
-                    <div style="display: flex; flex-direction: row;">
-                        <input type="text" class="form-control tab-bullet-input" placeholder="Bullet Points of Tab${currentVerticalTabNumber}" required>
-                        <button class="add-button" type="button">ADD</button>
-                    </div>
-                    <br>
-                    <ol class="row tab-bullet-div"></ol>
-                    <input class="vertical-bullet-count" type="number" name="vertical_bullet_count" hidden>
-                </div>
-            `);
-        });        
-
-        // Remove vertical tab
-        $(document).on('click', '#remove-vertical-tab-btn', function () {
-            const varticalTabCount = $('.vertical-tab-inner-div').length;
-            
-            if (varticalTabCount > 1) {
-                const tab = $('.vertical-tab-inner-div').last();
-                tab.remove();
-            }
-        });
-
-        // Visibility of vertical tab's remove tab btn
-        $(document).on('click', '#add-vertical-tab-btn, #remove-vertical-tab-btn', function () {
-            const verticalTabCount = $('.vertical-tab-inner-div').length;
-
-            if (verticalTabCount > 1) {
-                $('#remove-vertical-tab-btn').show();                
-            } else {
-                $('#remove-vertical-tab-btn').hide();
-            }
-        });
-
-        // Add Multiple Horizontal tabs
-        $('#add-horizontal-tab-btn').click(function () {
-            let horizontalTabNumber = $('.horizontal-tab-inner-div').length;
-
-            horizontalTabNumber++;
-            
-            let currentHorizontalTabNumber = horizontalTabNumber;
-
-            $('#horizontal-tab-div').append(`
-                <div class="horizontal-tab-inner-div">
-                    <hr>
-                    <br>
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label>Heading of Tab${currentHorizontalTabNumber} <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" placeholder="Heading of Tab${currentHorizontalTabNumber}" name="horizontal_heading" required>
-                        </div>             
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label >Summary of Tab${currentHorizontalTabNumber} <span class="text-danger">*</span></label>
-                            <textarea type="text" class="form-control" placeholder="Summary of Tab${currentHorizontalTabNumber}" name="horizontal_summary" required></textarea>
-                        </div>            
-                    </div>
-                    <div style="display: flex; flex-direction: row;">
-                        <input type="text" class="form-control tab-bullet-input" placeholder="Bullet Points of Tab${currentHorizontalTabNumber}" required>
-                        <button class="add-button" type="button">ADD</button>
-                    </div>
-                    <br>
-                    <ol class="row tab-bullet-div"></ol>
-                    <input class="horizontal-bullet-count" type="number" name="horizontal_bullet_count" hidden>
-                </div>
-            `);
-            
-        });
-
-        //  Add Multiple Horizontal Bullet Point
-        $(document).on('click', '.horizontal-tab-div .add-button', function () {
-            const parentDiv = $(this).parent().parent();            
-
-            const olTag = parentDiv.find('ol');
-            const bulletInput = parentDiv.find('.tab-bullet-input')
-            const bulletPoint = bulletInput.val();
-
-            if (bulletPoint.trim()) {
-                olTag.append(
-                    `<li class="col-md-6">${bulletPoint}<input type="text" name="horizontal_bullet" value="${bulletPoint}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-horizontal-bullet-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${bulletPoint}'"><i class="fa fa-close" style="padding: 0;"></i></button></li>`
-                );
-            }
-
-            bulletInput.val('');
-
-            // Count bullets for horizontal tab
-            const bulletCountInput = parentDiv.find('.horizontal-bullet-count');
-            const bulletCount = olTag.find('li').length;            
-            bulletCountInput.val(bulletCount)
-        });
-
-        // Remove horizontal bullet points
-        $(document).on('click', '#remove-horizontal-bullet-btn', function () {
-            const parentElement = $(this).parent();
-
-            parentElement.remove();
-        });
-        
-        // Remove Horizontal Tab
-        $(document).on('click', '#remove-horizontal-tab-btn', function () {
-            const horizontalTabCount = $('.horizontal-tab-inner-div').length;
-            
-            if (horizontalTabCount > 1) {
-                const tab = $('.horizontal-tab-inner-div').last();
-                tab.remove();
-            }
-        });
-        
-        // Visibility of horizontal tab's remove tab btn
-        $(document).on('click', '#add-horizontal-tab-btn, #remove-horizontal-tab-btn', function () {
-            const horizontalTabCount = $('.horizontal-tab-inner-div').length;
-
-            if (horizontalTabCount > 1) {
-                $('#remove-horizontal-tab-btn').show();                
-            } else {
-                $('#remove-horizontal-tab-btn').hide();
-            }
-        });
-
-
-        // Add column for table
-        $(document).on('click', '#add-column-btn', function () {
-            let columnNumber = $('#table-header th').length - 1;
-
-            columnNumber++;
-
-            const bodyLength = $('#table-body tr').length;
-
-            let content = $('#table-header').html();
-
-            content = content.replace('<th><button class="add-button" id="add-column-btn" type="button" style="width: fit-content;">Add Column</button><br><button class="remove-button" id="remove-column-btn" type="button" style="width: fit-content;">Remove Column</button></th>', `<th><input type="text" class="form-control" placeholder="Heading of Column${columnNumber}" name="table_heading" title="Heading of Column${columnNumber}"></th>`);
-
-            $('#table-header').html(content);
-
-            $('#table-header').append(
-                `<th><button class="add-button" id="add-column-btn" type="button" style="width: fit-content;">Add Column</button><br><button class="remove-button" id="remove-column-btn" type="button" style="width: fit-content;">Remove Column</button></th>`
-            );
-
-            for (i = 1; i < bodyLength; i++) {
-                const rowId = '#row-' + i;
-                $(rowId).append(`<td><input type="text" class="form-control" placeholder="Data of Column${columnNumber}" name="table_data"></td>`);
-            }
-
-        });
-
-        // Add row for table
-        $(document).on('click', '#add-row-btn', function () {
-            let rowCount = $('#table-body tr').length - 1;
-            
-            rowCount ++;
-
-            const headLength = $('#table-header th').length - 1;
-            let row = '';
-
-            for (colCount = 1; colCount <= headLength; colCount++) {
-               row += `<td><input type="text" class="form-control" placeholder="Data of Column${colCount}" name="table_data"></td>`
-            };
-
-            let tableBodyContent = $('#table-body').html();            
-    
-            tableBodyContent = tableBodyContent.replace('<tr><td><button class="add-button" id="add-row-btn" type="button" style="width: fit-content;">Add Row</button>&nbsp;<button class="remove-button" id="remove-row-btn" type="button" style="width: fit-content;">Remove Row</button></td></tr>', `<tr id="row-${rowCount}">${row}</tr>`)
-    
-            $('#table-body').html(tableBodyContent);
-    
-            $('#table-body').append(
-                `<tr><td><button class="add-button" id="add-row-btn" type="button" style="width: fit-content;">Add Row</button>&nbsp;<button class="remove-button" id="remove-row-btn" type="button" style="width: fit-content;">Remove Row</button></td></tr>`
-            );
-
-        });
-
-        // Remove row of table
-        $(document).on('click', '#remove-row-btn', function () {
-            const bodyLength = $('#table-body tr').length - 1;
-
-            if (bodyLength > 1) {
-
-                $(`#table-body tr:nth-child(${bodyLength})`).remove();
-            }
-        });
-
-        // Remove column of table
-        $(document).on('click', '#remove-column-btn', function () {
-            const columnLength = $('#table-header th').length - 1;
-
-            if (columnLength > 1) {
-                $(`tr td:nth-child(${columnLength}), tr th:nth-child(${columnLength})`).remove();
-            }
-        });
-
         // Adding bullet points for bullet point section
         $(document).on('click', '#add-bullet-btn', function () {
             const bulletPoint = $('#bullet-input').val();
@@ -875,27 +598,7 @@
             }
 
             $('#bullet-input').val('');
-        });
-
-        // Adding tag for tags section
-        $(document).on('click', '#add-tag-btn', function () {
-            const tag = $('#tag-input').val();
-
-            if (tag.trim()) {
-                $('#tag-div').append(
-                    `<div class="col-lg-4 col-md-12 mt-3"><a href="#" class="tag" target="_blank">${tag}</a><input type="text" name="tag" value="${tag}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>`
-                );
-            }
-
-            $('#tag-input, #tag-link-input').val('');
-        });
-
-        // Remove bullet points
-        $(document).on('click', '#remove-tag-btn', function () {
-            const parentElement = $(this).parent();
-
-            parentElement.remove();
-        });
+        });        
 
         // Remove bullet points
         $(document).on('click', '#remove-bullet-btn', function () {
@@ -1120,6 +823,29 @@
                 $('#state-dropdown-section').hide();
                 $('#state-dropdown').prop("required", false);
 
+            }
+        });
+
+        // Function for adding new meta tag
+        $(document).on('input', '.search-field input', function () {
+            const text = $(this).val().trim();
+
+            if (text.endsWith(',')) {
+                const tag = text.replace(',', '');
+
+                const newOption = `<option value="${tag}" selected>${tag}</option>`;
+
+                const optionExists = $('select[name="meta_tag"] option').filter(function() {
+                    return $(this).val().toLowerCase() === tag.toLowerCase() | $(this).html().toLowerCase() === tag.toLowerCase();
+                }).length > 0;
+
+                if (!optionExists) {
+                    $('select[name="meta_tag"]').append(newOption);
+    
+                    $('.chosen-select').trigger("chosen:updated");
+                }
+
+                $(this).val('');
             }
         });
 

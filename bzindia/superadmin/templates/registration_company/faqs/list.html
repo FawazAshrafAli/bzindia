@@ -20,7 +20,7 @@
 											<span class="checkmark"></span>
 										</label>
 									</th>
-									<th>Registration Sub Type</th>
+									<th>Registration</th>
                                     <th>Question</th>
 									<th class="text-end">Actions</th>
 								</tr>
@@ -35,9 +35,9 @@
 										</label>
 									</td>
 									<td>	
-										<a href="#" class="faq-obj" data-bs-toggle="modal" data-bs-target="#faq-detail-modal" data-question="{{faq.question}}" data-answer="{{faq.answer}}" data-sub-type="{{faq.registration_sub_type.name}}">{{faq.registration_sub_type.name}}</a>
+										<a href="#" class="faq-obj" data-bs-toggle="modal" data-bs-target="#faq-detail-modal" data-question="{{faq.question}}" data-answer="{{faq.answer}}" data-registration="{{faq.registration.title}}">{{faq.registration.title}}</a>
 									</td>
-                                    <td>{% if faq.question and faq.questio|length > 100 %}{{faq.question|slice:':100'}}...{% else %}{{faq.question}}{% endif %}</td>
+                                    <td>{% if faq.question and faq.question|length > 100 %}{{faq.question|slice:':100'}}...{% else %}{{faq.question}}{% endif %}</td>
 									
 									<td class="text-end">
 										<div class="dropdown dropdown-action">
@@ -113,7 +113,7 @@
             <div class="modal-body">
                 <div class="row" style="background: #eaeaea;">
                     <div class="col-md-12">
-                        <h4 style="margin: 8px 0;">FAQ of <span id="sub-type-name"></span></h4>
+                        <h4 style="margin: 8px 0;">FAQ of <span id="registration-name"></span></h4>
                     </div>
                 </div>
                 <br>                
@@ -156,12 +156,12 @@
         $('.faq-obj').click(function () {
             $('#question, #answer').empty();
 
-            const subType = $(this).data('sub-type')
+            const registration = $(this).data('registration')
             const question = $(this).data('question')
             const answer = $(this).data('answer')
 
-            if (subType) {
-                $('#sub-type-name').html(subType);
+            if (registration) {
+                $('#registration-name').html(registration);
             }
 
             if (question) {

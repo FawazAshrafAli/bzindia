@@ -10,7 +10,7 @@ import logging
 
 # Model Imports
 from educational.models import (
-    Course, Testimonial, Faq, Enquiry, Program, CourseDetail
+    Course, Testimonial, Faq, Enquiry, Program, CourseDetail, Specialization
     )
 
 from company.models import Company, Client
@@ -18,7 +18,7 @@ from company.models import Company, Client
 from .serializers import (
     CourseSerializer, StudentTestimonialSerializer, 
     CourseFaqSerializer, EnquirySerializer, ProgramSerializer, 
-    DetailSerializer
+    DetailSerializer, SpecializationSerializer
     )
 
 from company_api.serializers import CompanySerializer, ClientSerializer
@@ -44,17 +44,44 @@ class InstituteCourseDetailViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         slug = self.kwargs.get("company_slug")
 
-        if not slug:
-            return Response({"course_details": "Slug was not provided"}, status=status.HTTP_400_BAD_REQUEST)
+        if slug:
+            return CourseDetail.objects.filter(company__slug = slug)
 
-        course_details = get_list_or_404(CourseDetail, company__slug = slug)
-
-        return course_details
+        return CourseDetail.objects.none()
         
 
 class ProgramViewset(viewsets.ModelViewSet):
     serializer_class = ProgramSerializer
-    queryset = Program.objects.all().order_by("?")[:12]
+    lookup_field = "slug"
+
+    def get_queryset(self):
+        company_slug = self.kwargs.get("company_slug")
+    
+        if company_slug:
+            return Program.objects.filter(company__slug = company_slug).order_by("?")
+        
+        return Program.objects.none()
+    
+
+class SpecializationViewset(viewsets.ModelViewSet):
+    serializer_class = SpecializationSerializer
+    pagination_class = CoursePagination
+    lookup_field = "slug"
+
+    def get_queryset(self):
+        company_slug = self.kwargs.get("company_slug")
+        program_slug = self.request.query_params.get("program")
+    
+        if company_slug:
+            filters = {"company__slug": company_slug}
+
+            if program_slug:
+                filters["program__slug"] = program_slug
+
+            return Specialization.objects.filter(**filters).order_by("?")
+        
+        return Specialization.objects.none()
+        
     
 
 class EducationCompanyViewSet(viewsets.ModelViewSet):
@@ -176,12 +203,19 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         slug = self.kwargs.get("company_slug")
         program = self.request.query_params.get("program")
+        specialization_slug = self.request.query_params.get("specialization")
 
         if slug:
+            if slug == "all":
+                return CourseDetail.objects.all()
+
             filters = {"company__slug": slug}
 
             if program:
                 filters["course__program__name"] = program
+
+            if specialization_slug:
+                filters["course__specialization__slug"] = specialization_slug
 
             return CourseDetail.objects.filter(**filters)
         

@@ -24,7 +24,7 @@
                                                     <th style="max-width: 90px;">Category</th>
                                                     <th style="max-width: 90px;">Sub Category</th>
                                                     <th>Duration</th>
-                                                    <th>Price</th>
+                                                    <th>Price (&#8377;)</th>
                                                     <th>Is Active</th>
                                                     <th style="max-width: 90px;">Created</th>
                                                     <th class="text-end">Actions</th>
@@ -47,8 +47,8 @@
                                                     <td style="max-width: 90px; overflow-wrap: break-word; word-wrap: break-word; white-space: normal;">
                                                         {{ service.sub_category.name }}
                                                     </td>  
-                                                    <td>{% if service.duration %}{{service.duration.days}} days{% else %}Not Provided{% endif %}</td>                                                  
-                                                    <td>&#8377; {{service.price}}</td>
+                                                    <td>{% if service.duration %}{{service.duration}}{% else %}Not Provided{% endif %}</td>                                                  
+                                                    <td>{% if service.price %}{{service.price}}{% else %}Not Provided{% endif %}</td>
                                                     <td>{{service.is_active}}</td>
                                                     <td style="max-width: 90px; overflow-wrap: break-word; word-wrap: break-word; white-space: normal;">{{service.created}}</td>
                                                     <td class="text-center">

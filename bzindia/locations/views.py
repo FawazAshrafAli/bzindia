@@ -19,7 +19,10 @@ from .models import (
     UniqueState, UniqueDistrict, UniquePlace,
 
     AndmanAndNicobarTestedCoordinates, UaeCoordinates, KsaCoordinates,    
-    UaeLocationData, KsaLocationData, PlacePincode, PlaceCoordinate
+    UaeLocationData, KsaLocationData, PlacePincode, PlaceCoordinate,
+    KuwaitLocationData, KuwaitCoordinates, BahrainCoordinates, BahrainLocationData,
+    QatarCoordinates, QatarLocationData, OmanCoordinates, OmanLocationData,
+    IndiaCoordinates, IndiaLocationData
     )
 
 logger = logging.getLogger(__name__)
@@ -265,6 +268,395 @@ def get_ksa_locations(top_left, bottom_right, api_key, opencage_cache):
                                         logger.info(f"Place created: '{address}'\n")
                             
                             KsaCoordinates.objects.get_or_create(latitude=latitude, longitude=longitude)
+
+                        except requests.exceptions.RequestException as e:
+                            logger.info(f"Error during API request: {e}")
+                            time.sleep(2)
+                            continue
+
+                        except Exception as e:
+                            # logger.info(f"An Unexpected Error occured: {e}")
+                            logger.exception(f"An Unexpected Error occured: {e}")
+                            time.sleep(2)
+                            continue
+                
+                        time.sleep(0.2)
+
+                    else:
+                        logger.info("You have used up your daily API call limit.")
+                        return
+
+            longitude += lon_step
+            longitude = round(longitude, 2)
+
+        latitude -= lat_step
+        latitude = round(latitude, 2)
+
+
+def get_kuwait_locations(top_left, bottom_right, api_key, opencage_cache):
+    base_url = 'https://api.opencagedata.com/geocode/v1/json'
+
+    lat_step = 0.02
+    lon_step = 0.02
+
+    latitude = top_left[0]
+    
+    while latitude >= bottom_right[0]:
+        longitude = top_left[1]
+
+        while longitude <= bottom_right[1]:
+            request_count = cache.get(opencage_cache, 0)
+
+            if not KuwaitCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
+                with transaction.atomic():            
+                    if request_count <= 6666:
+                        try:
+                            logger.info(f"Querying Coordinates: ({latitude}, {longitude})")
+
+                            response = requests.get(base_url, params={
+                                "q": f"{latitude},{longitude}",
+                                "key": api_key
+                            })
+
+                            response.raise_for_status()
+
+                            request_count += 1
+                            cache.set(opencage_cache, request_count, timeout=60*60*24)
+                            data = response.json()
+
+                            logger.info(f"Request number: {request_count}")
+
+                            if "results" in data and data["results"]:
+                                first_result = data["results"][0]
+                                components = first_result.get("components", {})
+                                formatted = first_result.get("formatted")
+
+                                country = components.get("country")                    
+
+                                if str(country).lower() in {"kuwait"}:
+                                    road = components.get("road")
+                                    address = formatted.replace(f"{road},", "").strip() if road else formatted
+
+                                    if not KuwaitLocationData.objects.filter(address= address).exists():
+
+                                        KuwaitLocationData.objects.create(                                        
+                                            address = address, json_data = data, requested_latitude = latitude, requested_longitude = longitude                                            
+                                        )
+
+                                        logger.info(f"Place created: '{address}'\n")
+                            
+                            KuwaitCoordinates.objects.get_or_create(latitude=latitude, longitude=longitude)
+
+                        except requests.exceptions.RequestException as e:
+                            logger.info(f"Error during API request: {e}")
+                            time.sleep(2)
+                            continue
+
+                        except Exception as e:
+                            # logger.info(f"An Unexpected Error occured: {e}")
+                            logger.exception(f"An Unexpected Error occured: {e}")
+                            time.sleep(2)
+                            continue
+                
+                        time.sleep(0.2)
+
+                    else:
+                        logger.info("You have used up your daily API call limit.")
+                        return
+
+            longitude += lon_step
+            longitude = round(longitude, 2)
+
+        latitude -= lat_step
+        latitude = round(latitude, 2)
+
+
+def get_bahrain_locations(top_left, bottom_right, api_key, opencage_cache):
+    base_url = 'https://api.opencagedata.com/geocode/v1/json'
+
+    lat_step = 0.02
+    lon_step = 0.02
+
+    latitude = top_left[0]
+    
+    while latitude >= bottom_right[0]:
+        longitude = top_left[1]
+
+        while longitude <= bottom_right[1]:
+            request_count = cache.get(opencage_cache, 0)
+
+            if not BahrainCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
+                with transaction.atomic():            
+                    if request_count <= 6666:
+                        try:
+                            logger.info(f"Querying Coordinates: ({latitude}, {longitude})")
+
+                            response = requests.get(base_url, params={
+                                "q": f"{latitude},{longitude}",
+                                "key": api_key
+                            })
+
+                            response.raise_for_status()
+
+                            request_count += 1
+                            cache.set(opencage_cache, request_count, timeout=60*60*24)
+                            data = response.json()
+
+                            logger.info(f"Request number: {request_count}")
+
+                            if "results" in data and data["results"]:
+                                first_result = data["results"][0]
+                                components = first_result.get("components", {})
+                                formatted = first_result.get("formatted")
+
+                                country = components.get("country")                    
+
+                                if str(country).lower() in {"bahrain"}:
+                                    road = components.get("road")
+                                    address = formatted.replace(f"{road},", "").strip() if road else formatted
+
+                                    if not BahrainLocationData.objects.filter(address= address).exists():
+
+                                        BahrainLocationData.objects.create(                                        
+                                            address = address, json_data = data, requested_latitude = latitude, requested_longitude = longitude                                            
+                                        )
+
+                                        logger.info(f"Place created: '{address}'\n")
+                            
+                            BahrainCoordinates.objects.get_or_create(latitude=latitude, longitude=longitude)
+
+                        except requests.exceptions.RequestException as e:
+                            logger.info(f"Error during API request: {e}")
+                            time.sleep(2)
+                            continue
+
+                        except Exception as e:
+                            # logger.info(f"An Unexpected Error occured: {e}")
+                            logger.exception(f"An Unexpected Error occured: {e}")
+                            time.sleep(2)
+                            continue
+                
+                        time.sleep(0.2)
+
+                    else:
+                        logger.info("You have used up your daily API call limit.")
+                        return
+
+            longitude += lon_step
+            longitude = round(longitude, 2)
+
+        latitude -= lat_step
+        latitude = round(latitude, 2)
+
+
+def get_qatar_locations(top_left, bottom_right, api_key, opencage_cache):
+    base_url = 'https://api.opencagedata.com/geocode/v1/json'
+
+    lat_step = 0.02
+    lon_step = 0.02
+
+    latitude = top_left[0]
+    
+    while latitude >= bottom_right[0]:
+        longitude = top_left[1]
+
+        while longitude <= bottom_right[1]:
+            request_count = cache.get(opencage_cache, 0)
+
+            if not QatarCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
+                with transaction.atomic():            
+                    if request_count <= 6666:
+                        try:
+                            logger.info(f"Querying Coordinates: ({latitude}, {longitude})")
+
+                            response = requests.get(base_url, params={
+                                "q": f"{latitude},{longitude}",
+                                "key": api_key
+                            })
+
+                            response.raise_for_status()
+
+                            request_count += 1
+                            cache.set(opencage_cache, request_count, timeout=60*60*24)
+                            data = response.json()
+
+                            logger.info(f"Request number: {request_count}")
+
+                            if "results" in data and data["results"]:
+                                first_result = data["results"][0]
+                                components = first_result.get("components", {})
+                                formatted = first_result.get("formatted")
+
+                                country = components.get("country")                    
+
+                                if str(country).lower() in {"qatar"}:
+                                    road = components.get("road")
+                                    address = formatted.replace(f"{road},", "").strip() if road else formatted
+
+                                    if not QatarLocationData.objects.filter(address= address).exists():
+
+                                        QatarLocationData.objects.create(                                        
+                                            address = address, json_data = data, requested_latitude = latitude, requested_longitude = longitude                                            
+                                        )
+
+                                        logger.info(f"Place created: '{address}'\n")
+                            
+                            QatarCoordinates.objects.get_or_create(latitude=latitude, longitude=longitude)
+
+                        except requests.exceptions.RequestException as e:
+                            logger.info(f"Error during API request: {e}")
+                            time.sleep(2)
+                            continue
+
+                        except Exception as e:
+                            # logger.info(f"An Unexpected Error occured: {e}")
+                            logger.exception(f"An Unexpected Error occured: {e}")
+                            time.sleep(2)
+                            continue
+                
+                        time.sleep(0.2)
+
+                    else:
+                        logger.info("You have used up your daily API call limit.")
+                        return
+
+            longitude += lon_step
+            longitude = round(longitude, 2)
+
+        latitude -= lat_step
+        latitude = round(latitude, 2)
+
+
+def get_oman_locations(top_left, bottom_right, api_key, opencage_cache):
+    base_url = 'https://api.opencagedata.com/geocode/v1/json'
+
+    lat_step = 0.02
+    lon_step = 0.02
+
+    latitude = top_left[0]
+    
+    while latitude >= bottom_right[0]:
+        longitude = top_left[1]
+
+        while longitude <= bottom_right[1]:
+            request_count = cache.get(opencage_cache, 0)
+
+            if not OmanCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
+                with transaction.atomic():            
+                    if request_count <= 6666:
+                        try:
+                            logger.info(f"Querying Coordinates: ({latitude}, {longitude})")
+
+                            response = requests.get(base_url, params={
+                                "q": f"{latitude},{longitude}",
+                                "key": api_key
+                            })
+
+                            response.raise_for_status()
+
+                            request_count += 1
+                            cache.set(opencage_cache, request_count, timeout=60*60*24)
+                            data = response.json()
+
+                            logger.info(f"Request number: {request_count}")
+
+                            if "results" in data and data["results"]:
+                                first_result = data["results"][0]
+                                components = first_result.get("components", {})
+                                formatted = first_result.get("formatted")
+
+                                country = components.get("country")                    
+
+                                if str(country).lower() in {"oman"}:
+                                    road = components.get("road")
+                                    address = formatted.replace(f"{road},", "").strip() if road else formatted
+
+                                    if not OmanLocationData.objects.filter(address= address).exists():
+
+                                        OmanLocationData.objects.create(                                        
+                                            address = address, json_data = data, requested_latitude = latitude, requested_longitude = longitude                                            
+                                        )
+
+                                        logger.info(f"Place created: '{address}'\n")
+                            
+                            OmanCoordinates.objects.get_or_create(latitude=latitude, longitude=longitude)
+
+                        except requests.exceptions.RequestException as e:
+                            logger.info(f"Error during API request: {e}")
+                            time.sleep(2)
+                            continue
+
+                        except Exception as e:
+                            # logger.info(f"An Unexpected Error occured: {e}")
+                            logger.exception(f"An Unexpected Error occured: {e}")
+                            time.sleep(2)
+                            continue
+                
+                        time.sleep(0.2)
+
+                    else:
+                        logger.info("You have used up your daily API call limit.")
+                        return
+
+            longitude += lon_step
+            longitude = round(longitude, 2)
+
+        latitude -= lat_step
+        latitude = round(latitude, 2)
+
+def get_india_locations(top_left, bottom_right, api_key, opencage_cache):
+    base_url = 'https://api.opencagedata.com/geocode/v1/json'
+
+    lat_step = 0.05
+    lon_step = 0.05
+
+    latitude = top_left[0]
+    
+    while latitude >= bottom_right[0]:
+        longitude = top_left[1]
+
+        while longitude <= bottom_right[1]:
+            request_count = cache.get(opencage_cache, 0)
+
+            if not IndiaCoordinates.objects.filter(latitude=latitude, longitude=longitude).exists():
+                with transaction.atomic():            
+                    if request_count <= 6666:
+                        try:
+                            logger.info(f"Querying Coordinates: ({latitude}, {longitude})")
+
+                            response = requests.get(base_url, params={
+                                "q": f"{latitude},{longitude}",
+                                "key": api_key
+                            })
+
+                            response.raise_for_status()
+
+                            request_count += 1
+                            cache.set(opencage_cache, request_count, timeout=60*60*24)
+                            data = response.json()
+
+                            logger.info(f"Request number: {request_count}")
+
+                            if "results" in data and data["results"]:
+                                first_result = data["results"][0]
+                                components = first_result.get("components", {})
+                                formatted = first_result.get("formatted")
+
+                                country = components.get("country")                    
+
+                                if str(country).lower() in {"india"}:
+                                    road = components.get("road")
+                                    address = formatted.replace(f"{road},", "").strip() if road else formatted
+
+                                    if not IndiaLocationData.objects.filter(address= address).exists():
+
+                                        IndiaLocationData.objects.create(                                        
+                                            address = address, json_data = data, requested_latitude = latitude, requested_longitude = longitude                                            
+                                        )
+
+                                        logger.info(f"Place created: '{address}'\n")
+                            
+                            IndiaCoordinates.objects.get_or_create(latitude=latitude, longitude=longitude)
 
                         except requests.exceptions.RequestException as e:
                             logger.info(f"Error during API request: {e}")

@@ -67,7 +67,7 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 
-    path('', include('home.urls', namespace="home")),
+    # path('', include('home.urls', namespace="home")),
     path('company/', include('company.urls', namespace="company")),    
 
     path('admin/', include('superadmin.urls', namespace="superadmin")),

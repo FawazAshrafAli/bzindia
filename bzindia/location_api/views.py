@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from django.db.models import F, FloatField, ExpressionWrapper
 from django.db.models.functions import Sqrt
 from django.shortcuts import get_object_or_404
+from django.http import Http404
 
 from locations.trie_cache import get_place_trie, get_district_trie, get_state_trie
 
@@ -327,7 +328,7 @@ class StateCourseMultiPageViewSet(viewsets.ReadOnlyModelViewSet):
             from rest_framework.exceptions import ValidationError
             raise ValidationError({"detail": "Slug was not provided"})
         
-        if slug == "all":
+        if slug == "all" or slug == "india":
             return MultiPage.objects.all()
 
         state = get_object_or_404(UniqueState, slug=slug)
@@ -347,7 +348,7 @@ class StateRegistrationMultiPageViewSet(viewsets.ReadOnlyModelViewSet):
             from rest_framework.exceptions import ValidationError
             raise ValidationError({"detail": "Slug was not provided"})
         
-        if slug == "all":
+        if slug == "all" or slug == "india":
             return RegistrationMultiPage.objects.all()
 
         state = get_object_or_404(UniqueState, slug=slug)
@@ -368,7 +369,7 @@ class StateProductMultiPageViewSet(viewsets.ReadOnlyModelViewSet):
             from rest_framework.exceptions import ValidationError
             raise ValidationError({"detail": "Slug was not provided"})
         
-        if slug == "all":
+        if slug == "all" or slug == "india":
             return ProductMultiPage.objects.all()
 
         state = get_object_or_404(UniqueState, slug=slug)
@@ -386,11 +387,13 @@ class LocationMatchViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = UniquePlace.objects.none()
     serializer_class = PlaceSerializer
 
-    def retrieve(self, request, pk=None):        
-        slug = pk 
+    def retrieve(self, request, *args, **kwargs):        
+        slug = self.kwargs.get("slug")
+        location_type = self.kwargs.get("location_type")        
 
-        # for model_type, trie, model, serializer_class in MATCH_ORDER:
         for model_type, get_trie_fn, model, serializer_class in MATCH_ORDER:
+            if location_type and location_type != "undefined" and model_type != location_type:
+                continue
             trie = get_trie_fn()
             matched_slug = trie.match_suffix(slug)
             if matched_slug:
@@ -406,7 +409,7 @@ class LocationMatchViewSet(viewsets.ReadOnlyModelViewSet):
                         "match_type": model_type,
                         "matched_slug": matched_slug,
                         "warning": "Slug matched in trie but not found in DB."
-                    })
+                    })                                            
 
         return Response({"match_type": None, "matched_slug": None})
     
@@ -423,7 +426,7 @@ class StateServiceMultiPageViewSet(viewsets.ReadOnlyModelViewSet):
             from rest_framework.exceptions import ValidationError
             raise ValidationError({"detail": "Slug was not provided"})
 
-        if slug == "all":
+        if slug == "all" or slug == "india":
             return ServiceMultiPage.objects.all()
 
         state = get_object_or_404(UniqueState, slug=slug)
@@ -472,25 +475,37 @@ class GetNearbyCscCentersViewSet(viewsets.ModelViewSet):
 
 
 class PopularCityViewSet(viewsets.ModelViewSet):
-    serializer_class = DistrictSerializer
+    serializer_class = PlaceSerializer 
 
     def get_queryset(self):
-        from django.db.models import Case, When, IntegerField
 
         popular_cities = [
-            "Mumbai", "Bengaluru", "Hyderabad", "Kolkata", "Chennai", "Pune", "Ahmedabad", "Surat", "Jaipur", "Lucknow",
-            "Kanpur", "Indore", "Patna", "Nagpur", "Visakhapatnam", "Meerut", "Bhopal", "Varanasi", "Agra", "Nashik", 
-            "Vijayawada", "Guwahati", "Rajkot", "Warangal", "Coimbatore", "Thiruvananthapuram", "Faridabad", "Ghaziabad", 
-            "Chandigarh", "Ludhiana", "Vadodara", "Raipur", "Jodhpur", "Mangalore", "Gwalior", "Tiruchirappalli", "Jamshedpur",
-            "Ranchi", "Prayagraj", "Jalandhar", "Jabalpur", "Chhatrapati Sambhaji Nagar", "Bhubaneswar", "Asansol", "Mumbai",
-            "Gurugram", "Mysuru", "Noida", "Kochi", "Amritsar", "Saharanpur"
-        ]
+            "Mumbai", "Bengaluru", "Hyderabad", "Kolkata", "Chennai", "Pune", "Ahmedabad", "Surat", 
+            "Jaipur", "Lucknow", "Kanpur", "Indore", "Patna", "Nagpur", "Visakhapatnam", "Meerut", 
+            "Bhopal", "Varanasi", "Agra", "Nashik", "Vijayawada", "Guwahati", "Rajkot", "Warangal", 
+            "Coimbatore", "Thiruvananthapuram", "Faridabad", "Ghaziabad", "Chandigarh", "Ludhiana", 
+            "Vadodara", "Raipur", "Jodhpur", "Mangalore", "Gwalior", "Tiruchirappalli", "Jamshedpur", 
+            "Ranchi", "Prayagraj", "Jalandhar", "Jabalpur", "Chhatrapati Sambhaji Nagar", "Bhubaneswar", 
+            "Asansol", "Gurugram", "Mysuru", "Noida", "Kochi", "Amritsar", "Saharanpur"
+            ]
 
-        order = Case(
-            *[When(name=city, then=pos) for pos, city in enumerate(popular_cities)],
-            output_field=IntegerField()
-        )
+        place_objs = []
+        for place in popular_cities:
+            place_obj = None
 
-        return UniqueDistrict.objects.filter(name__in = popular_cities).order_by(order)
+            try:
+                place_obj = UniquePlace.objects.get(name=place)
+            except UniquePlace.MultipleObjectsReturned:
+                place_obj = UniquePlace.objects.filter(name=place, district__name=place).order_by('created').first()
+                if not place_obj:
+                    place_obj = UniquePlace.objects.filter(name=place).order_by('created').first()
+            except UniquePlace.DoesNotExist:
+                pass
+
+            if place_obj:
+                place_objs.append(place_obj)        
+
+
+        return place_objs
 
 

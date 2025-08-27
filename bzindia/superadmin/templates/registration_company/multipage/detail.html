@@ -204,23 +204,7 @@
 				</ul>
 			</div>
 		</div>
-		{% endif %}
-
-		{% if not multipage.hide_tags %}
-		<div class="card">
-            <div class="card-body">
-				<h4>Tags</h4>
-				<hr>
-				<h5>Title: {{multipage.tag_title}}</h5>
-				<br>
-				<div>
-					{% for tag_obj in multipage.tags.all %}
-					<a href="{{tag_obj.link}}" class="tag" target="_blank">{{tag_obj.tag}}</a>
-					{% endfor %}
-				</div>
-			</div>
-		</div>
-		{% endif %}
+		{% endif %}		
 
 		{% if not multipage.hide_timeline %}
 		<div class="card">

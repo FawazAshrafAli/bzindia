@@ -5,10 +5,13 @@ from rest_framework.response import Response
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 
-from .serializers import ServiceSerializer, DetailSerializer, EnquirySerializer
+from .serializers import (
+    ServiceSerializer, DetailSerializer, EnquirySerializer, SubCategorySerializer, 
+    CategorySerializer
+    )
 from company_api.serializers import CompanySerializer
 
-from service.models import Service, ServiceDetail, Enquiry
+from service.models import Service, ServiceDetail, Enquiry, SubCategory, Category
 from company.models import Company
 
 from .paginations import ServiceDetailPagination
@@ -38,6 +41,42 @@ class ServiceViewset(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
+
+
+class CategoryViewset(viewsets.ModelViewSet):
+    serializer_class = CategorySerializer
+    pagination_class = ServiceDetailPagination
+    lookup_field = "slug"
+    
+    def get_queryset(self):
+        slug = self.kwargs.get("company_slug")
+
+        if slug:
+            filters = {"company__slug": slug}
+
+            return Category.objects.filter(**filters)
+        
+        return Category.objects.none()
+
+
+class SubCategoryViewset(viewsets.ModelViewSet):
+    serializer_class = SubCategorySerializer
+    pagination_class = ServiceDetailPagination
+    lookup_field = "slug"
+    
+    def get_queryset(self):
+        slug = self.kwargs.get("company_slug")
+        category_slug = self.request.query_params.get("category")
+
+        if slug:
+            filters = {"company__slug": slug}
+
+            if category_slug:
+                filters["category__slug"] = category_slug
+
+            return SubCategory.objects.filter(**filters)
+        
+        return SubCategory.objects.none()
     
 
 class DetailViewSet(viewsets.ReadOnlyModelViewSet):
@@ -48,12 +87,19 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         slug = self.kwargs.get("company_slug")
         category_name = self.request.query_params.get("category")
+        sub_category_slug = self.request.query_params.get("sub_category")
 
         if slug:
+            if slug == "all":
+                return ServiceDetail.objects.all()
+
             filters = {"company__slug": slug}
 
             if category_name:
                 filters["service__category__name"] = category_name
+
+            if sub_category_slug:
+                filters["service__sub_category__slug"] = sub_category_slug
 
             return ServiceDetail.objects.filter(**filters)
         

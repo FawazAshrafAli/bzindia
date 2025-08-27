@@ -3,8 +3,8 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_nested.routers import NestedDefaultRouter
 
 from .views import (
-    SubTypeApiViewset, CompanyViewSet, DetailViewSet, TypeViewSet, 
-    EnquiryViewSet
+    SubTypeViewset, CompanyViewSet, DetailViewSet, TypeViewSet, 
+    EnquiryViewSet, RegistrationViewset
     )
 
 app_name = "registration_api"
@@ -17,7 +17,8 @@ companies_router = NestedDefaultRouter(router, r'companies', lookup = "company")
 
 companies_router.register(r'details', DetailViewSet, basename="company-detail")
 companies_router.register(r'types', TypeViewSet, basename="company-type")
-companies_router.register(r'sub_types', SubTypeApiViewset, basename="company-sub_type")
+companies_router.register(r'sub_types', SubTypeViewset, basename="company-sub_type")
+companies_router.register(r'registrations', RegistrationViewset, basename="company-registration")
 companies_router.register(r'enquiries', EnquiryViewSet, basename="company-enquiry")
 
 urlpatterns = [

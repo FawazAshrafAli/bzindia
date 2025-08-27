@@ -7,11 +7,11 @@ from django.http import Http404
 
 from .serializers import (
     SubTypeSerializer, DetailSerializer, TypeSerializer, 
-    EnquirySerializer
+    EnquirySerializer, RegistrationSerializer
     )
 from company_api.serializers import CompanySerializer
 
-from registration.models import RegistrationSubType, RegistrationDetailPage, RegistrationType, Enquiry, MultiPage
+from registration.models import RegistrationSubType, RegistrationDetailPage, RegistrationType, Enquiry, Registration
 from company.models import Company
 
 from .paginations import RegistrationPagination
@@ -20,16 +20,39 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class SubTypeApiViewset(viewsets.ReadOnlyModelViewSet):
+class SubTypeViewset(viewsets.ReadOnlyModelViewSet):
     serializer_class = SubTypeSerializer
+    pagination_class = RegistrationPagination
+    lookup_field = "slug"
+
+    def get_queryset(self):
+        slug = self.kwargs.get("company_slug")
+        type_slug = self.request.query_params.get("type")
+
+        if slug: 
+            filters = {"company__slug": slug}
+
+            if type_slug:
+                filters["type__slug"] = type_slug      
+            return RegistrationSubType.objects.filter(**filters)
+        
+        return RegistrationSubType.objects.none()
+    
+
+class RegistrationViewset(viewsets.ReadOnlyModelViewSet):
+    serializer_class = RegistrationSerializer
+    # pagination_class = RegistrationPagination
+    lookup_field = "slug"
 
     def get_queryset(self):
         slug = self.kwargs.get("company_slug")
 
-        if slug:
-            return RegistrationSubType.objects.filter(company__slug = slug)
+        if slug: 
+            filters = {"company__slug": slug}
+
+            return Registration.objects.filter(**filters)
         
-        return RegistrationSubType.objects.none()
+        return Registration.objects.none()
 
 
 class CompanyViewSet(viewsets.ReadOnlyModelViewSet):
@@ -40,6 +63,8 @@ class CompanyViewSet(viewsets.ReadOnlyModelViewSet):
 
 class TypeViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TypeSerializer
+    lookup_field = "slug"
+    pagination_class = RegistrationPagination
 
     def get_queryset(self):
         slug = self.kwargs.get("company_slug")
@@ -58,12 +83,19 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         slug = self.kwargs.get("company_slug")
         registration_type = self.request.query_params.get("type")
+        sub_type_slug = self.request.query_params.get("sub_type")
 
         if slug:
+            if slug == "all":
+                return RegistrationDetailPage.objects.all()
+
             filters = {"company__slug": slug}  
 
             if registration_type:       
-                filters["registration_sub_type__type__name"] = registration_type
+                filters["registration__registration_type__name"] = registration_type
+
+            if sub_type_slug:       
+                filters["registration__sub_type__slug"] = sub_type_slug
 
             return RegistrationDetailPage.objects.filter(**filters)
         

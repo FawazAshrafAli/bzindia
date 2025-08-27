@@ -425,40 +425,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="tasks__item crms-task-item active">
-                                        <div class="accordion-header js-accordion-header">Tags</div> 
-                                        <div class="accordion-body js-accordion-body">
-                                            <div class="accordion-body__contents">
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label>Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Tags" name="tag_title" value="{{course_detail.tag_title}}" required>
-                                                    </div>
-                                                    <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
-                                                        <label for="hide-tags">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-tags" name="hide_tags" {% if course_detail.hide_tags %}checked{% endif %}>&nbsp;Hide Tags
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <div style="display: flex; flex-direction: row;">
-                                                            <input type="text" class="form-control" id="tag-input" placeholder="Tag Name" required>                                                            
-                                                            <button class="add-button" type="button" id="add-tag-btn">ADD</button>
-                                                        </div>
-                                                        <br>
-                                                        <div class="row" id="tag-div">
-                                                            {% if course_detail.tags.all|length > 0 %}
-                                                            {% for tag_obj in course_detail.tags.all %}
-                                                            <div class="col-lg-4 col-md-12 mt-3"><a href="{{tag_obj.link}}" class="tag" target="_blank">{{tag_obj.tag}}</a><input type="text" name="tag" value="{{tag_obj.tag}}" hidden><input type="text" name="tag_link" value="{{tag_obj.link}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>
-                                                            {% endfor %}
-                                                            {% endif %}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>                                    
                                     <div class="tasks__item crms-task-item active">
                                         <div class="accordion-header js-accordion-header">Timeline</div> 
@@ -1026,27 +992,7 @@
             }
 
             $('#bullet-input').val('');
-        });
-
-        // Adding tag for tags section
-        $(document).on('click', '#add-tag-btn', function () {
-            const tag = $('#tag-input').val();
-
-            if (tag.trim()) {
-                $('#tag-div').append(
-                    `<div class="col-lg-4 col-md-12 mt-3"><a href="#" class="tag" target="_blank">${tag}</a><input type="text" name="tag" value="${tag}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>`
-                );
-            }
-
-            $('#tag-input').val('');
-        });
-
-        // Remove bullet points
-        $(document).on('click', '#remove-tag-btn', function () {
-            const parentElement = $(this).parent();
-
-            parentElement.remove();
-        });
+        });        
 
         // Press enter for adding bullet points
         $('#bullet-input').on('keypress', function(e) {
@@ -1112,6 +1058,29 @@
         });
         
         $('#program-dropdown').on('change', () => getCourses());
+
+        // Function for adding new meta tag
+        $(document).on('input', '.search-field input', function () {
+            const text = $(this).val().trim();
+
+            if (text.endsWith(',')) {
+                const tag = text.replace(',', '');
+
+                const newOption = `<option value="${tag}" selected>${tag}</option>`;
+
+                const optionExists = $('select[name="meta_tag"] option').filter(function() {
+                    return $(this).val().toLowerCase() === tag.toLowerCase() | $(this).html().toLowerCase() === tag.toLowerCase();
+                }).length > 0;
+
+                if (!optionExists) {
+                    $('select[name="meta_tag"]').append(newOption);
+    
+                    $('.chosen-select').trigger("chosen:updated");
+                }
+
+                $(this).val('');
+            }
+        });
     });
 </script>
 {% endblock scripts %}

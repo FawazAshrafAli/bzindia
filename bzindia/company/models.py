@@ -60,18 +60,18 @@ class CompanyType(models.Model):
         if Category:
             categories = Category.objects.all().order_by("name")
 
-            return [{"name": category.name, "slug": category.slug, "sub_categories": category.sub_categories, "detail_pages": category.detail_pages} for category in categories]
+            return [{"name": category.name, "slug": category.slug, "sub_categories": category.sub_categories, "detail_pages": category.detail_pages if hasattr(category, "detail_pages") else None} for category in categories]
 
         return None
     
-    @property
-    def companies(self):
-        return Company.objects.filter(type = self).order_by("name")
+    # @property
+    # def companies(self):
+    #     return Company.objects.filter(type = self).order_by("name")
     
 
 class Company(models.Model):
     name = models.CharField(max_length=150)
-    type = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
+    type = models.ForeignKey(CompanyType, on_delete=models.CASCADE, related_name="companies")
     sub_type = models.CharField(max_length=250)
     slug = models.SlugField(null=True, blank=True, max_length=175)
     favicon = models.ImageField(upload_to="company_favicon/", null=True, blank=True)
@@ -80,12 +80,11 @@ class Company(models.Model):
     phone2 = models.CharField(max_length=50)
     whatsapp = models.CharField(max_length=50)
     email = models.EmailField(max_length=254)
+
+    summary = models.TextField()
     description = RichTextField(null=True, blank=True)
 
-    facebook = models.URLField(max_length=500, null=True, blank=True)
-    twitter = models.URLField(max_length=500, null=True, blank=True)
-    linkedin = models.URLField(max_length=500, null=True, blank=True)
-    youtube = models.URLField(max_length=500, null=True, blank=True)
+    add_on_company_types = models.ManyToManyField(CompanyType, related_name="add_on_companies")
 
     meta_title = models.CharField(max_length=100)
     meta_tags = models.ManyToManyField(MetaTag)
@@ -143,7 +142,8 @@ class Company(models.Model):
         if Category:
             return Category.objects.filter(company = self).values("name", "slug").order_by("name")
 
-        return None    
+        return None
+
 
     @property
     def get_meta_tags(self):
@@ -154,11 +154,6 @@ class Company(models.Model):
 
         return ", ".join(tag_list)
     
-    @property
-    def social_media_links(self):
-        social_media_fields = [self.facebook, self.twitter, self.linkedin, self.youtube]        
-        
-        return [link for link in social_media_fields if link and link != "None"]
 
     @property
     def rating(self):
@@ -215,6 +210,9 @@ class Company(models.Model):
         
         return []
 
+    @property
+    def add_on_types(self):
+        return [company_type.name for company_type in self.add_on_company_types.all()]
 
 class Client(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
@@ -230,7 +228,7 @@ class Client(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.name}")
+            base_slug = slugify(self.name)
 
             slug = base_slug
             count = 1
@@ -252,7 +250,7 @@ class Client(models.Model):
 
 
 class Testimonial(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="testimonial_company")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="testimonials")
 
     name = models.CharField(max_length=250)
     image = models.ImageField(upload_to="testimonials/")
@@ -272,7 +270,7 @@ class Testimonial(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.name}-{self.client_company}-{self.place.name}")
+            base_slug = slugify(f"{self.name}-{self.client_company}-{self.place.name}")
 
             slug = base_slug
             count = 1
@@ -315,7 +313,7 @@ class ContactEnquiry(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.email}")
+            base_slug = slugify(self.email)
             slug = base_slug
 
             count = 1
@@ -333,3 +331,42 @@ class ContactEnquiry(models.Model):
     class Meta:
         db_table = "contact_enquiries"
         ordering = ["-created"]
+
+
+class Banner(models.Model):
+    from company.models import Company
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="banners")
+
+    image = models.ImageField(upload_to="banners/")
+    title = models.CharField(max_length=250)
+    description = models.TextField(blank=True, null=True)
+    link = models.URLField(max_length=200)
+
+    slug = models.SlugField(blank=True, null=True)
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table="banners"
+        ordering = ["-created"]
+
+    def __str__(self):
+        return f"{self.company.name}-banner-{self.pk}"
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"banner-{self.title}")
+            slug = base_slug
+
+            count = 0
+
+            while Banner.objects.filter(slug = slug):
+                slug = f"{base_slug}-{count}"
+
+                count += 1
+
+            self.slug = slug
+
+        super().save(*args, **kwargs)

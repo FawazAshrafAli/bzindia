@@ -9,7 +9,7 @@ from company.models import Company
 from blog.models import Blog
 from base.models import MetaTag
 from home.models import HomeContent
-from custom_pages.models import AboutUs
+from custom_pages.models import AboutUs, FAQ, PrivacyPolicy, TermsAndCondition
 
 from ckeditor.widgets import CKEditorWidget
 
@@ -112,4 +112,28 @@ class AboutUsContentForm(forms.ModelForm):
 
     class Meta:
         model = AboutUs
+        fields = ["content"]
+
+
+class FaqForm(forms.ModelForm):
+    answer = forms.CharField(widget=CKEditorWidget())
+
+    class Meta:
+        model = FAQ
+        fields = ["answer"]
+
+
+class PrivacyPolicyForm(forms.ModelForm):
+    content = forms.CharField(widget=CKEditorWidget())
+
+    class Meta:
+        model = PrivacyPolicy
+        fields = ["content"]
+
+
+class TermsAndConditionForm(forms.ModelForm):
+    content = forms.CharField(widget=CKEditorWidget())
+
+    class Meta:
+        model = TermsAndCondition
         fields = ["content"]

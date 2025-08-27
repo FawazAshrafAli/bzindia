@@ -68,7 +68,7 @@
 	<!-- Content Starts -->
     <div class="row">
         <div class="col-lg-12">
-            <form method="post" action="{% url 'superadmin:update_service_details' current_company.slug service_detail.service.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-service-form" novalidate>
+            <form method="post" action="{% url 'superadmin:update_service_details' current_company.slug service_detail.slug %}" class="needs-validation" enctype="multipart/form-data" id="add-service-form" novalidate>
                 {% csrf_token %}
                 <div class="card">
                     <div class="card-header">
@@ -146,7 +146,7 @@
                             <div class="col-sm-6">
                                 <label class="col-form-label">Meta Tags <span class="text-danger">*</span></label>
                                 
-                                <select data-placeholder="Select Meta Tags" class="chosen-select" name="meta_tag" multiple>
+                                <select data-placeholder="Select Meta Tags" class="chosen-select" id="meta-tags-dropdown" name="meta_tag" multiple>
                                     {% for tag in tags %}
                                     <option value="{{tag.slug}}" {% if tag in service_detail.meta_tags.all %}selected{% endif %}>{{tag.name}}</option>
                                     {% endfor %}									
@@ -439,40 +439,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="tasks__item crms-task-item active">
-                                        <div class="accordion-header js-accordion-header">Tags</div> 
-                                        <div class="accordion-body js-accordion-body">
-                                            <div class="accordion-body__contents">
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label>Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Tags" name="tag_title" value="{{service_detail.tag_title}}" required>
-                                                    </div>    
-                                                    <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
-                                                        <label for="hide-tags">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-tags" name="hide_tags" {% if service_detail.hide_tags %}checked{% endif %}>&nbsp;Hide Tags
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <div style="display: flex; flex-direction: row;">
-                                                            <input type="text" class="form-control" id="tag-input" placeholder="Tag Name" required>
-                                                            <button class="add-button" type="button" id="add-tag-btn">ADD</button>
-                                                        </div>
-                                                        <br>
-                                                        <div class="row" id="tag-div">
-                                                            {% if service_detail.tags.all|length > 0 %}
-                                                            {% for tag_obj in service_detail.tags.all %}
-                                                            <div class="col-md-2" style="width: fit-content"><a href="#" class="tag" target="_blank">{{tag_obj.tag}}</a><input type="text" name="tag" value="{{tag_obj.tag}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>
-                                                            {% endfor %}
-                                                            {% endif %}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>                                    
                                     <div class="tasks__item crms-task-item active">
                                         <div class="accordion-header js-accordion-header">Timeline</div> 
@@ -543,7 +509,7 @@
                 </div>     
 
                 <div class="text-center">
-                    <button type="submit" class="btn btn-primary" id="submit-button">Submit</button>
+                    <button type="button" class="btn btn-primary" id="submit-button">Submit</button>
                 </div>
             </form>
                 
@@ -558,158 +524,138 @@
 {% block scripts %}
 <script>
     $(document).ready(() => {
-        
-        let durationPattern = /^[1-9]\d*$/;
-        let pricePattern = /^(?!0(\.0{1,2})?$)(\$?)([1-9][0-9]*(\.[0-9]{1,2})?)$/;
 
         function validateForm() {  
-            const formValid = true       
+            let formValid = true;  
 
-            let name = $('#name-input').val();
-            if (name) {
-                name = name.trim();
+            let summary = $('#summary-input').val();
+            if (summary) {
+                summary = summary.trim();
             }
 
-            const programDropdown = $('#program-dropdown').val();
-            const specializationDropdown = $('#specialization-dropdown').val();
+            let metaTitle = $('#meta-title-input').val();
+            if (metaTitle) {
+                metaTitle = metaTitle.trim();
+            }
 
-            const modeDropdown = $('#mode-dropdown').val();                                  
+            let metaTags = $('#meta-tags-dropdown').val();            
+
+            let metaDescription = $('#meta-description-input').val();
+            if (metaDescription) {
+                metaDescription = metaDescription.trim();
+            }
+
+            const categoryDropdown = $('#category-dropdown').val();
+            const subCategoryDropdown = $('#sub-category-dropdown').val();
+            const serviceDropdown = $('#service-dropdown').val();
+
+            if (!categoryDropdown) {
+                $('#category-dropdown').addClass('is-invalid');
+                $('#category-dropdown').focus();
+                formValid = false;
+                return;
+            } else {
+                $('#category-dropdown').addClass('is-valid');
+                $('#category-dropdown').blur();
+                
+            }
+
+            if (!subCategoryDropdown) {
+                $('#sub-category-dropdown').addClass('is-invalid');
+                $('#sub-category-dropdown').focus();
+                formValid = false;
+                return;
+            } else {
+                $('#sub-category-dropdown').addClass('is-valid');
+                $('#sub-category-dropdown').blur();
+                
+            }
+
+            if (!serviceDropdown) {
+                $('#service-dropdown').addClass('is-invalid');
+                $('#service-dropdown').focus();
+                formValid = false;
+                return;
+            } else {
+                $('#service-dropdown').addClass('is-valid');
+                $('#service-dropdown').blur();
+                
+            }                                            
+            if (!summary) {
+                $('#summary-input').removeClass('is-valid').addClass('is-invalid');
+                $('#summary-input').focus();
+                formValid = false;
+                return;
+
+            } else {
+                $('#summary-input').removeClass('is-invalid').addClass('is-valid');
+                $('#summary-input').blur();
+                
+            }    
             
-            let duration = $('#duration-input').val();
-            if (duration) {
-                duration = duration.trim();
-            }
-
-            let price = $('#price-input').val();
-            if (price) {
-                price = price.trim();
-            }            
-
-            if (!name) {
-                $('#name-input').removeClass('is-valid').addClass('is-invalid');
-                $('#name-input').focus();
+            if (!metaTitle) {
+                $('#meta-title-input').removeClass('is-valid').addClass('is-invalid');
+                $('#meta-title-input').focus();
                 formValid = false;
+                return;
 
             } else {
-                $('#name-input').removeClass('is-invalid').addClass('is-valid');
-                $('#name-input').blur();
+                $('#meta-title-input').removeClass('is-invalid').addClass('is-valid');
+                $('#meta-title-input').blur();
                 
-            }            
+            }    
 
-            if (!programDropdown) {
-                $('#program-dropdown').addClass('is-invalid');
-                $('#program-dropdown').focus();
+            if (!metaTags || metaTags.length < 1) {
                 formValid = false;
-            } else {
-                $('#program-dropdown').addClass('is-valid');
-                $('#program-dropdown').blur();
-                
-            }
+                window.alert("Meta Tags are required.")
+                return;         
+            }             
 
-            if (!specializationDropdown) {
-                $('#specialization-dropdown').addClass('is-invalid');
-                $('#specialization-dropdown').focus();
+            if (!metaDescription) {
+                $('#meta-description-input').removeClass('is-valid').addClass('is-invalid');
+                $('#meta-description-input').focus();
                 formValid = false;
-            } else {
-                $('#specialization-dropdown').addClass('is-valid');
-                $('#specialization-dropdown').blur();
-                
-            }
+                return;
 
-            if (!modeDropdown) {
-                $('#mode-dropdown').addClass('is-invalid');
-                $('#mode-dropdown').focus();
-                formValid = false;
             } else {
-                $('#mode-dropdown').addClass('is-valid');
-                $('#mode-dropdown').blur();
+                $('#meta-description-input').removeClass('is-invalid').addClass('is-valid');
+                $('#meta-description-input').blur();
                 
-            }            
+            }    
+
             
-            if (duration && !durationPattern.test(duration)) {
-                $('#duration-input').removeClass('is-valid').addClass('is-invalid');
-                $('#duration-input').focus();
-                formValid = false;
-
-            } else {
-                $('#duration-input').removeClass('is-invalid').remove('is-valid');
-                $('#duration-input').blur();
-                
-            }
-
-            if (!price || !pricePattern.test(price)) {
-                $('#price-input').removeClass('is-valid').addClass('is-invalid');
-                $('#price-input').focus();
-                formValid = false;
-
-            } else {
-                $('#price-input').removeClass('is-invalid').addClass('is-valid');
-                $('#price-input').blur();
-                
-            }
-            
-            if (formValid == true) {
+            if (formValid) {
                 $('#add-service-form').submit()
             }
 
         }
 
         $('#submit-button').click(validateForm);
-
         // Inputting
 
-        $('#name-input, #duration-input, #price-input').on('input', function () {
+        $('#summary-input, #meta-title-input, #meta-description-input').on('input', function () {
             let thisValue = $(this).val();
             if (thisValue) {
                 thisValue = thisValue.trim();
             }
 
-            if (!thisValue) {
-                if ($(this).prop('id') == "name-input") {
-                    $(this).removeClass('is-valid').removeClass('is-invalid');
-                } else {
-                    $(this).removeClass('is-valid').addClass('is-invalid');                
-                }
+            if (!thisValue) {                
+                $(this).removeClass('is-valid').addClass('is-invalid');
             } else {
-                 if ($(this).prop('id') == "price-input" && !pricePattern.test(thisValue)) {
-                    $(this).removeClass('is-valid').addClass('is-invalid');
-                } else {
-                    $(this).removeClass('is-invalid').addClass('is-valid');
-                }
-            }
-
-            if (thisValue) {
-                if ($(this).prop('id') == "duration-input") {
-                    if (durationPattern.test(thisValue)) {
-                        $(this).removeClass('is-invalid').addClass('is-valid');                    
-                    } else {
-                        $(this).removeClass('is-valid').addClass('is-invalid');
-                    }
-                }
-                            
-            }
+                $(this).removeClass('is-invalid').addClass('is-valid');                
+            }       
             
         });
 
         // changing
 
-        $('#program-dropdown, #specialization-dropdown, #mode-dropdown, #unit-dropdown, #image-input').on('change', function () {
-            if (($(this).prop('id') == 'program-dropdown' || $(this).prop('id') == 'sub-category-dropdown' || $(this).prop('id') == 'brand-dropdown') && !$(this).val()) {
+        $('#category-dropdown, #sub-category-dropdown, #service-dropdown').on('change', function () {
+            if (($(this).prop('id') == 'category-dropdown' || $(this).prop('id') == 'sub-category-dropdown' || $(this).prop('id') == 'service-dropdown') && !$(this).val()) {
                 $(this).removeClass('is-valid').addClass('is-invalid');
 
             } else {
                 $(this).removeClass('is-invalid').addClass('is-valid');
-            }
-
-            if ($(this).prop('id') == 'image-input' || $(this).prop('id') == 'logo-input') {
-                let imageInput = $('#image-input')[0];
-                let image = imageInput.files[0];                
-                if (!image) {
-                    $(this).removeClass('is-valid').addClass('is-invalid');
-                } else {
-                    $(this).removeClass('is-invalid').addClass('is-valid');
-                }
-            }
+            }            
                         
         })        
         
@@ -1035,27 +981,7 @@
             }
 
             $('#bullet-input').val('');
-        });
-
-        // Adding tag for tags section
-        $(document).on('click', '#add-tag-btn', function () {
-            const tag = $('#tag-input').val();
-
-            if (tag.trim()) {
-                $('#tag-div').append(
-                    `<div class="col-md-2" style="width: fit-content"><a href="#" class="tag" target="_blank">${tag}</a><input type="text" name="tag" value="${tag}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>`
-                );
-            }
-
-            $('#tag-input').val('');
-        });
-
-        // Remove bullet points
-        $(document).on('click', '#remove-tag-btn', function () {
-            const parentElement = $(this).parent();
-
-            parentElement.remove();
-        });
+        });        
 
         // Press enter for adding bullet points
         $('#bullet-input').on('keypress', function(e) {
@@ -1186,6 +1112,29 @@
         };
 
         $('#sub-category-dropdown').on('change', () => getServices());
+
+        // Function for adding new meta tag
+        $(document).on('input', '.search-field input', function () {
+            const text = $(this).val().trim();
+
+            if (text.endsWith(',')) {
+                const tag = text.replace(',', '');
+
+                const newOption = `<option value="${tag}" selected>${tag}</option>`;
+
+                const optionExists = $('select[name="meta_tag"] option').filter(function() {
+                    return $(this).val().toLowerCase() === tag.toLowerCase() | $(this).html().toLowerCase() === tag.toLowerCase();
+                }).length > 0;
+
+                if (!optionExists) {
+                    $('select[name="meta_tag"]').append(newOption);
+    
+                    $('.chosen-select').trigger("chosen:updated");
+                }
+
+                $(this).val('');
+            }
+        });
         
     });
 </script>

@@ -10,7 +10,9 @@ from .views import (
     ListBrandView, AddBrandView,
     ListProductCategoryView, AddProductCategoryView,
     ListProductSubCategoryView, AddProductSubCategoryView,
-    ListProductColorView, AddProductColorView,
+    ListProductColorView, AddProductColorView, UpdateProductColorView,
+
+    AddSizeView, UpdateSizeView, ListSizeView, DeleteSizeView,
 
     AddProductFaqView, ListProductFaqView, UpdateProductFaqView, DeleteProductFaqView,
     AddProductReviewView, ProductReviewListView, UpdateProductReviewView, DeleteProductReviewView,
@@ -21,6 +23,8 @@ from .views import (
     DeleteProductMultiPageView,
 
     AddProductMultiPageView, ProductMultiPageListView, ProductMultiPageDetailView, UpdateProductMultiPageView,
+
+    ProductBannerListView, CreateProductBannerView, UpdateProductBannerView, DeleteProductBannerView,
 
     # Educational Company
     AddCourseView, CourseListView, RemoveCourseView, UpdateCourseView,
@@ -33,6 +37,8 @@ from .views import (
 
     AddCourseMultiPageView, CourseMultiPageListView, CourseMultiPageDetailView, UpdateCourseMultiPageView,
     DeleteCourseMultiPageView,
+    
+    EducationBannerListView, CreateEducationBannerView, UpdateEducationBannerView, DeleteEducationBannerView,
 
     # Service Company
     ListServiceView, AddServiceView, RemoveServiceView, UpdateServiceView,
@@ -46,6 +52,8 @@ from .views import (
 
     AddServiceMultiPageView, ServiceMultiPageListView, ServiceMultiPageDetailView, UpdateServiceMultiPageView,
     DeleteServiceMultiPageView,
+
+    ServiceBannerListView, CreateServiceBannerView, UpdateServiceBannerView, DeleteServiceBannerView,
 
     # Registration Company
     ListRegistrationView, AddRegistrationView, RemoveRegistrationView, UpdateRegistrationView,
@@ -62,6 +70,8 @@ from .views import (
     AddRegistrationMultiPageView, RegistrationMultiPageListView, RegistrationMultiPageDetailView, UpdateRegistrationMultiPageView,
     DeleteRegistrationMultiPageView,
 
+    RegistrationBannerListView, CreateRegistrationBannerView, UpdateRegistrationBannerView, DeleteRegistrationBannerView,
+
     # Directory
     BaseDirectoryView,
     ListPostOfficeView, ListBankView, ListCourtView, ListPoliceStationView, ListDestinationView,
@@ -77,6 +87,13 @@ from .views import (
     ListPrivacyPolicyView, ListTermsAndConditionsView, AddShippingAndDeliveryPolicyPageView,
     ListShippingAndDeliveryPolicyView, ListCancellationAndRefundPolicyView,
     AddCancellationAndRefundPolicyPageView,
+
+    UpdateAboutUsPageView, UpdateContactUsPageView, UpdateFaqPageView, 
+    UpdatePrivacyPolicyPageView, UpdateTermsAndConditionsPageView,
+
+    DeleteAboutUsPageView, DeleteContactUsPageView, DeleteFaqPageView,
+    DeletePrivacyPolicyPageView, DeleteTermsAndConditionPageView,
+    DeleteShippingAndDeliveryPolicyPageView,
 
     # Clients
     AddClientView, ClientListView, UpdateClientView, DeleteClientView,
@@ -96,6 +113,10 @@ from .views import (
 
     # Home Content
     HomeContentView,
+
+    # Functions
+    UpdateCheckedServiceMultipageView, UpdateCheckedCourseMultipageView, 
+    UpdateCheckedRegistrationMultipageView, UpdateCheckedProductMultipageView
     )
 
 app_name = "superadmin"
@@ -132,8 +153,13 @@ urlpatterns = [
     path('add_sub_category/<str:slug>', AddProductSubCategoryView.as_view(), name="add_sub_category"),
     path('sub_categories/<str:slug>', ListProductSubCategoryView.as_view(), name="sub_categories"),
 
+    path('add_size/<str:slug>', AddSizeView.as_view(), name="add_size"),
+    path('sizes/<str:slug>', ListSizeView.as_view(), name="sizes"),
+    path('update_size/<str:slug>/<str:size_slug>', UpdateSizeView.as_view(), name="update_size"),
+
     path('add_color/<str:slug>', AddProductColorView.as_view(), name="add_color"),
     path('colors/<str:slug>', ListProductColorView.as_view(), name="colors"),
+    path('update_color/<str:slug>/<str:color_slug>', UpdateProductColorView.as_view(), name="update_color"),
 
     path('add_product_faq/<str:slug>', AddProductFaqView.as_view(), name="add_product_faq"),
     path('product_faqs/<str:slug>', ListProductFaqView.as_view(), name="product_faqs"),
@@ -149,16 +175,21 @@ urlpatterns = [
     path('delete_product_enquiry/<str:slug>/<str:enquiry_slug>/', DeleteProductEnquiryView.as_view(), name="delete_product_enquiry"),
 
     path('add_product_detail_page/<str:slug>', AddProductDetailPageView.as_view(), name="add_product_detail_page"),
-    path('update_product_detail_page/<str:slug>/<str:product_slug>', UpdateProductDetailPageView.as_view(), name="update_product_detail_page"),
+    path('update_product_detail_page/<str:slug>/<str:product_detail_slug>', UpdateProductDetailPageView.as_view(), name="update_product_detail_page"),
     path('product_detail_pages/<str:slug>', ProductDetailPageListView.as_view(), name="product_detail_pages"),
-    path('product_detail_page/<str:slug>/<str:product_slug>', ProductDetailPageView.as_view(), name="product_detail_page"),
+    path('product_detail_page/<str:slug>/<str:product_detail_slug>', ProductDetailPageView.as_view(), name="product_detail_page"),
     path('delete_product_detail_page/<str:slug>/<str:detail_page_slug>', DeleteProductDetailPageView.as_view(), name="delete_product_detail_page"),
 
     path('add_product_multipage/<str:slug>', AddProductMultiPageView.as_view(), name="add_product_multipage"),
-    path('update_product_multipage/<str:slug>/<str:multipage_slug>', UpdateProductMultiPageView.as_view(), name="update_product_multipage"),
     path('product_multipages/<str:slug>', ProductMultiPageListView.as_view(), name="product_multipages"),
+    path('update_product_multipage/<str:slug>/<str:multipage_slug>', UpdateProductMultiPageView.as_view(), name="update_product_multipage"),
     path('product_multipage/<str:slug>/<str:multipage_slug>', ProductMultiPageDetailView.as_view(), name="product_multipage"),
     path('delete_product_multipage/<str:slug>/<str:multipage_slug>', DeleteProductMultiPageView.as_view(), name="delete_product_multipage"),
+
+    path('add_product_banner/<str:slug>', CreateProductBannerView.as_view(), name="add_product_banner"),
+    path('product_banners/<str:slug>', ProductBannerListView.as_view(), name="product_banners"),
+    path('update_product_banner/<str:slug>/<str:banner_slug>/', UpdateProductBannerView.as_view(), name="update_product_banner"),
+    path('delete_product_banner/<str:slug>/<str:banner_slug>/', DeleteProductBannerView.as_view(), name="delete_product_banner"),
 
     # Education Company
     path('add_course/<str:slug>', AddCourseView.as_view(), name="add_course"),
@@ -168,6 +199,11 @@ urlpatterns = [
 
     path('course_enquiries/<str:slug>', ListCourseEnquiryView.as_view(), name="course_enquiries"),
     path('delete_course_enquiry/<str:slug>/<str:enquiry_slug>/', DeleteCourseEnquiryView.as_view(), name="delete_course_enquiry"),
+
+    path('add_education_banner/<str:slug>', CreateEducationBannerView.as_view(), name="add_education_banner"),
+    path('education_banners/<str:slug>', EducationBannerListView.as_view(), name="education_banners"),
+    path('update_education_banner/<str:slug>/<str:banner_slug>/', UpdateEducationBannerView.as_view(), name="update_education_banner"),
+    path('delete_education_banner/<str:slug>/<str:banner_slug>/', DeleteEducationBannerView.as_view(), name="delete_education_banner"),
 
     path('add_course_details/<str:slug>', AddCourseDetailView.as_view(), name="add_course_details"),
     path('update_course_details/<str:slug>/<str:course_detail_slug>', UpdateCourseDetailView.as_view(), name="update_course_details"),
@@ -190,15 +226,15 @@ urlpatterns = [
     path('remove_course_specialization/<str:slug>/<str:specialization_slug>/', RemoveCourseSpecializationView.as_view(), name="remove_course_specialization"),
     path('update_course_specialization/<str:slug>/<str:specialization_slug>/', UpdateCourseSpecializationView.as_view(), name="update_course_specialization"),
 
-    path('add_course_multipage/<str:slug>', AddCourseMultiPageView.as_view(), name="add_course_multipage"),
-    path('update_course_multipage/<str:slug>/<str:multipage_slug>', UpdateCourseMultiPageView.as_view(), name="update_course_multipage"),
-    path('course_multipages/<str:slug>', CourseMultiPageListView.as_view(), name="course_multipages"),
-    path('course_multipage/<str:slug>/<str:multipage_slug>', CourseMultiPageDetailView.as_view(), name="course_multipage"),
-    path('delete_course_multipage/<str:slug>/<str:multipage_slug>', DeleteCourseMultiPageView.as_view(), name="delete_course_multipage"),
+    path('<str:slug>/course_multipages/', CourseMultiPageListView.as_view(), name="course_multipages"),
+    path('<str:slug>/course_multipages/add', AddCourseMultiPageView.as_view(), name="add_course_multipage"),
+    path('<str:slug>/course_multipages/<str:multipage_slug>', CourseMultiPageDetailView.as_view(), name="course_multipage"),
+    path('<str:slug>/course_multipages/<str:multipage_slug>/update', UpdateCourseMultiPageView.as_view(), name="update_course_multipage"),
+    path('<str:slug>/course_multipages/<str:multipage_slug>/delete', DeleteCourseMultiPageView.as_view(), name="delete_course_multipage"),
 
     # Service Company
     path('companies/services/<str:slug>', ListServiceView.as_view(), name="services"),
-    path('companies/add_service/<str:slug>', AddServiceView.as_view(), name="add_service"),
+    path('companies/<str:slug>/add_service', AddServiceView.as_view(), name="add_service"),
     path('remove_service/<str:slug>/<str:category_slug>/', RemoveServiceView.as_view(), name="remove_service"),
     path('update_service/<str:slug>/<str:service_slug>/', UpdateServiceView.as_view(), name="update_service"),
     
@@ -222,16 +258,20 @@ urlpatterns = [
 
     path('add_service_details/<str:slug>', AddServiceDetailView.as_view(), name="add_service_details"),
     path('service_details/<str:slug>', ServiceDetailsListView.as_view(), name="service_details"),
-    path('service_detail/<str:slug>/<str:service_slug>', ServiceDetailView.as_view(), name="service_detail"),
-    path('update_service_details/<str:slug>/<str:service_slug>', UpdateServiceDetailView.as_view(), name="update_service_details"),
+    path('service_detail/<str:slug>/<str:detail_page_slug>', ServiceDetailView.as_view(), name="service_detail"),
+    path('update_service_details/<str:slug>/<str:detail_page_slug>', UpdateServiceDetailView.as_view(), name="update_service_details"),
     path('delete_service_detail_page/<str:slug>/<str:detail_page_slug>', DeleteServiceDetailPageView.as_view(), name="delete_service_detail_page"),
 
-    path('add_service_multipage/<str:slug>', AddServiceMultiPageView.as_view(), name="add_service_multipage"),
-    path('update_service_multipage/<str:slug>/<str:multipage_slug>', UpdateServiceMultiPageView.as_view(), name="update_service_multipage"),
-    path('service_multipages/<str:slug>', ServiceMultiPageListView.as_view(), name="service_multipages"),
-    path('service_multipage/<str:slug>/<str:service_slug>', ServiceMultiPageDetailView.as_view(), name="service_multipage"),
-    path('delete_service_multipage/<str:slug>/<str:multipage_slug>', DeleteServiceMultiPageView.as_view(), name="delete_service_multipage"),
-    
+    path('<str:slug>/service_multipages', ServiceMultiPageListView.as_view(), name="service_multipages"),
+    path('<str:slug>/service_multipages/add', AddServiceMultiPageView.as_view(), name="add_service_multipage"),
+    path('<str:slug>/service_multipages/<str:multipage_slug>', ServiceMultiPageDetailView.as_view(), name="service_multipage"),
+    path('<str:slug>/service_multipages/<str:multipage_slug>/update', UpdateServiceMultiPageView.as_view(), name="update_service_multipage"),
+    path('<str:slug>/service_multipages/<str:multipage_slug>/delete', DeleteServiceMultiPageView.as_view(), name="delete_service_multipage"),
+
+    path('add_service_banner/<str:slug>', CreateServiceBannerView.as_view(), name="add_service_banner"),
+    path('service_banners/<str:slug>', ServiceBannerListView.as_view(), name="service_banners"),
+    path('update_service_banner/<str:slug>/<str:banner_slug>/', UpdateServiceBannerView.as_view(), name="update_service_banner"),
+    path('delete_service_banner/<str:slug>/<str:banner_slug>/', DeleteServiceBannerView.as_view(), name="delete_service_banner"),
 
     # Registration Company
     path('companies/registrations/<str:slug>', ListRegistrationView.as_view(), name="registrations"),
@@ -259,8 +299,8 @@ urlpatterns = [
 
     path('add_registration_detail_page/<str:slug>', AddRegistrationDetailPageView.as_view(), name="add_registration_detail_page"),
     path('registration_detail_pages/<str:slug>', RegistrationDetailPageListView.as_view(), name="registration_detail_pages"),
-    path('registration_detail_page/<str:slug>/<str:registration_sub_type_slug>', RegistrationDetailPageView.as_view(), name="registration_detail_page"),
-    path('update_registration_detail_page/<str:slug>/<str:registration_sub_type_slug>', UpdateRegistrationDetailPageView.as_view(), name="update_registration_detail_page"),
+    path('registration_detail_page/<str:slug>/<str:detail_page_slug>', RegistrationDetailPageView.as_view(), name="registration_detail_page"),
+    path('update_registration_detail_page/<str:slug>/<str:detail_page_slug>', UpdateRegistrationDetailPageView.as_view(), name="update_registration_detail_page"),
     path('delete_registration_detail_page/<str:slug>/<str:detail_page_slug>', DeleteRegistrationDetailPageView.as_view(), name="delete_registration_detail_page"),
 
     path('add_registration_multipage/<str:slug>', AddRegistrationMultiPageView.as_view(), name="add_registration_multipage"),
@@ -268,6 +308,11 @@ urlpatterns = [
     path('registration_multipages/<str:slug>', RegistrationMultiPageListView.as_view(), name="registration_multipages"),
     path('registration_multipage/<str:slug>/<str:multipage_slug>', RegistrationMultiPageDetailView.as_view(), name="registration_multipage"),
     path('delete_registration_multipage/<str:slug>/<str:multipage_slug>', DeleteRegistrationMultiPageView.as_view(), name="delete_registration_multipage"),
+
+    path('add_registration_banner/<str:slug>', CreateRegistrationBannerView.as_view(), name="add_registration_banner"),
+    path('registration_banners/<str:slug>', RegistrationBannerListView.as_view(), name="registration_banners"),
+    path('update_registration_banner/<str:slug>/<str:banner_slug>/', UpdateRegistrationBannerView.as_view(), name="update_registration_banner"),
+    path('delete_registration_banner/<str:slug>/<str:banner_slug>/', DeleteRegistrationBannerView.as_view(), name="delete_registration_banner"),
 
     # Directory
 
@@ -287,23 +332,42 @@ urlpatterns = [
     path('settings/', SettingsView.as_view(), name="settings"),
     path('update_password/', UpdatePasswordView.as_view(), name="update_password"),
     path('update_user_details/', UpdateUserDetailView.as_view(), name="update_user_details"),
-
-    path('add_custom_page/', AddCustomPageView.as_view(), name="add_custom_page"),
-    path('add_about_us/', AddAboutUsPageView.as_view(), name="add_about_us"),
-    path('add_contact_us/', AddContactUsPageView.as_view(), name="add_contact_us"),
-    path('add_faq/', AddFaqPageView.as_view(), name="add_faq"),
-    path('add_privacy_policy/', AddPrivacyPolicyPageView.as_view(), name="add_privacy_policy"),
-    path('add_terms_and_conditions/', AddTermsAndConditionsPageView.as_view(), name="add_terms_and_conditions"),
-    path('add_shipping_and_delivery_policy/', AddShippingAndDeliveryPolicyPageView.as_view(), name="add_shipping_and_delivery_policy"),
-    path('add_cancellation_and_refund_policy/', AddCancellationAndRefundPolicyPageView.as_view(), name="add_cancellation_and_refund_policy"),
+    
+    path('add_custom_page/', AddCustomPageView.as_view(), name="add_custom_page"),    
     path('custom_pages/', BaseCustomPageView.as_view(), name="custom_pages"),
+
+    path('add_about_us/', AddAboutUsPageView.as_view(), name="add_about_us"),
     path('about_us/', ListAboutUsView.as_view(), name="about_us"),
+    path('delete_about_us/<str:about_us_slug>', DeleteAboutUsPageView.as_view(), name="delete_about_us"),
+    path('update_about_us/<str:about_us_slug>', UpdateAboutUsPageView.as_view(), name="update_about_us"),
+
+    path('add_contact_us/', AddContactUsPageView.as_view(), name="add_contact_us"),
     path('contact_us/', ListContactUsView.as_view(), name="contact_us"),
+    path('delete_contact_us/<str:contact_us_slug>', DeleteContactUsPageView.as_view(), name="delete_contact_us"),
+    path('update_contact_us/<str:contact_us_slug>', UpdateContactUsPageView.as_view(), name="update_contact_us"),
+
+    path('add_faq/', AddFaqPageView.as_view(), name="add_faq"),
     path('faq/', ListFaqView.as_view(), name="faq"),
+    path('delete_faq/<str:faq_slug>', DeleteFaqPageView.as_view(), name="delete_faq"),
+    path('update_faq/<str:faq_slug>', UpdateFaqPageView.as_view(), name="update_faq"),
+
+    path('add_privacy_policy/', AddPrivacyPolicyPageView.as_view(), name="add_privacy_policy"),
     path('privacy_policies/', ListPrivacyPolicyView.as_view(), name="privacy_policies"),
+    path('delete_privacy_policy/<str:privacy_policy_slug>', DeletePrivacyPolicyPageView.as_view(), name="delete_privacy_policy"),
+    path('update_privacy_policy/<str:privacy_policy_slug>', UpdatePrivacyPolicyPageView.as_view(), name="update_privacy_policy"),
+
+    path('add_terms_and_conditions/', AddTermsAndConditionsPageView.as_view(), name="add_terms_and_conditions"),
     path('terms_and_conditions/', ListTermsAndConditionsView.as_view(), name="terms_and_conditions"),
+    path('delete_terms_and_condition/<str:terms_and_condition_slug>', DeleteTermsAndConditionPageView.as_view(), name="delete_terms_and_condition"),
+    path('update_terms_and_condition/<str:terms_and_condition_slug>', UpdateTermsAndConditionsPageView.as_view(), name="update_terms_and_condition"),
+
+    path('add_shipping_and_delivery_policy/', AddShippingAndDeliveryPolicyPageView.as_view(), name="add_shipping_and_delivery_policy"),
     path('shipping_and_delivery_policies/', ListShippingAndDeliveryPolicyView.as_view(), name="shipping_and_delivery_policies"),
+    path('delete_shipping_and_delivery_policy/<str:shipping_and_delivery_policy_slug>', DeleteShippingAndDeliveryPolicyPageView.as_view(), name="delete_shipping_and_delivery_policy"),
+
+    path('add_cancellation_and_refund_policy/', AddCancellationAndRefundPolicyPageView.as_view(), name="add_cancellation_and_refund_policy"),
     path('cancellation_and_refund_policies/', ListCancellationAndRefundPolicyView.as_view(), name="cancellation_and_refund_policies"),
+    path('delete_cancellation_and_refund_policy/<str:cancellation_and_refund_policy_slug>', DeleteShippingAndDeliveryPolicyPageView.as_view(), name="delete_cancellation_and_refund_policy"),     
 
     # Clients
     path('add_client/<str:slug>', AddClientView.as_view(), name="add_client"),
@@ -340,4 +404,10 @@ urlpatterns = [
 
     # Home
     path('home_main_content/', HomeContentView.as_view(), name="home_main_content"),
+
+    # Functions
+    path('update_checked_service_multipage/', UpdateCheckedServiceMultipageView.as_view(), name="update_checked_service_multipage"),
+    path('update_checked_course_multipage/', UpdateCheckedCourseMultipageView.as_view(), name="update_checked_course_multipage"),
+    path('update_checked_registration_multipage/', UpdateCheckedRegistrationMultipageView.as_view(), name="update_checked_registration_multipage"),
+    path('update_checked_product_multipage/', UpdateCheckedProductMultipageView.as_view(), name="update_checked_product_multipage"),
 ]

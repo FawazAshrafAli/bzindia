@@ -30,7 +30,7 @@
 	<div class="col-md-12">
 		<div class="card">
 			<div class="card-header">									
-				<h5 class="card-title">{{detail_page.product.name}} Product detail_page</h5>
+				<h5 class="card-title">{{detail_page.product.name}}</h5>
 			</div>            
 		</div>
         <div class="card">
@@ -70,125 +70,7 @@
 			</div>
 		</div>
 		{% endif %}
-
-		{% if not detail_page.hide_vertical_tab %}
-		<div class="card">
-			<div class="card-body">
-				<h4>Vertical Tab</h4>
-				<table class="table table-borderless">
-					<tr>
-						<th>Title:</th>
-						<td>{{detail_page.vertical_title}}</td>
-					</tr>
-					{% for vertical_tab in detail_page.vertical_tabs.all %}
-					<tr>
-						<th>&nbsp;</th>
-						<td>&nbsp;</td>
-					</tr>
-					<tr>
-						<th>Tab No:</th>
-						<td>{{forloop.counter}}</td>
-					</tr>
-					<tr>
-						<th>Heading:</th>
-						<td>{{vertical_tab.heading}}</td>
-					</tr>
-					<tr>
-						<th>Sub Heading:</th>
-						<td>{{vertical_tab.sub_heading}}</td>
-					</tr>
-					<tr>
-						<th>Summary:</th>
-						<td>{{vertical_tab.summary}}</td>
-					</tr>
-					<tr>
-						<th>Bullets:</th>
-						<td>
-							<ol>
-							{% for bullet in vertical_tab.bullets.all %}
-							<li>{{bullet.bullet}}</li>
-							{% endfor %}
-							</ol>
-						</td>
-					</tr>
-					
-					{% endfor %}
-				</table>
-			</div>
-		</div>
-		{% endif %}
-
-		{% if not detail_page.hide_horizontal_tab %}
-		<div class="card">
-			<div class="card-body">
-				<h4>Horizontal Tab</h4>
-				<table class="table table-borderless">
-					<tr>
-						<th>Title:</th>
-						<td>{{detail_page.horizontal_title}}</td>
-					</tr>
-					{% for horizontal_tab in detail_page.horizontal_tabs.all %}
-					<tr>
-						<th>&nbsp;</th>
-						<td>&nbsp;</td>
-					</tr>
-					<tr>
-						<th>Tab No:</th>
-						<td>{{forloop.counter}}</td>
-					</tr>
-					<tr>
-						<th>Heading:</th>
-						<td>{{horizontal_tab.heading}}</td>
-					</tr>					
-					<tr>
-						<th>Summary:</th>
-						<td>{{horizontal_tab.summary}}</td>
-					</tr>
-					<tr>
-						<th>Bullets:</th>
-						<td>
-							<ol>
-							{% for bullet in horizontal_tab.bullets.all %}
-							<li>{{bullet.bullet}}</li>
-							{% endfor %}
-							</ol>
-						</td>
-					</tr>
-					
-					{% endfor %}
-				</table>
-			</div>
-		</div>
-		{% endif %}
-
-		{% if not detail_page.hide_table %}
-		<div class="card">
-			<div class="card-body">
-				<h4>Table</h4>
-				<hr>
-				<h5>Title: {{detail_page.table_title}}</h5>
-				<br>
-				<table class="table table-borderless">
-					<thead>
-						<tr>
-							{% for table in detail_page.tables.all %}
-							<th>{{table.heading}}</th>
-							{% endfor %}
-						</tr>
-					</thead>
-					<tbody>
-						{% for row in detail_page.get_data %}
-						<tr>
-							{% for item in row %}
-							<td>{{item}}</td>
-							{% endfor %}							
-						</tr>
-						{% endfor %}
-					</tbody>
-				</table>
-			</div>
-		</div>
-		{% endif %}
+				
 
 		{% if not detail_page.hide_bullets %}
 		<div class="card">

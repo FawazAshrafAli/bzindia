@@ -76,20 +76,24 @@
                 {% csrf_token %}
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title mb-0" >Update Registration Name</h4>
+                        <h4 class="card-title mb-0" >Update Registration MultiPage</h4>
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-sm-6">
+                            <div class="col-sm-4">
                                 <label class="col-form-label">Title</label>
                                 <input class="form-control"  type="text" id="title-input" name="title" placeholder="Title" value="{% if multipage.title %}{{multipage.title}}{% endif %}" required>
                             </div>
-                            <div class="col-sm-6">
+                            <div class="col-sm-4">
+                                <label class="col-form-label">Sub Title</label>
+                                <input class="form-control"  type="text" id="sub-title-input" name="sub_title" placeholder="Sub Title" value="{% if multipage.sub_title %}{{multipage.sub_title}}{% endif %}" required>
+                            </div>
+                            <div class="col-sm-4">
                                 <label for="registration-dropdown" class="col-form-label">Registration <span class="text-danger">*</span></label>
                                 <select class="form-control" name="registration" required>
                                     <option value="" disabled hidden {% if not multipage.registration %} selected {% endif %}>Select Registration</option>
                                     {% for registration in registrations %}
-                                    <option value="{{registration.slug}}" {% if registration.slug == multipage.registration.slug %}selected{% endif %}>{{registration.name}}</option>
+                                    <option value="{{registration.slug}}" {% if registration.slug == multipage.registration.slug %}selected{% endif %}>{{registration.title}}</option>
                                     {% endfor %}									
 								</select>
                             </div>
@@ -163,6 +167,59 @@
                                     <option value="{{state.slug}}" {% if state in multipage.available_states.all %}selected{% endif %}>{{state.name}}</option>
                                     {% endfor %}									
 								</select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row" id="slider-section">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="registration-type-dropdown" >Slider Type <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="registration-type-dropdown" name="type" required>
+                                        <option value="" hidden disabled selected>Select Type</option>
+                                        {% for type in registration_types %}
+                                        <option value="{{type.slug}}" {% if type.slug == multipage.slider_registration_type_slug %}selected{% endif %} >{{type.name}}</option>
+                                        {% endfor %}                                    
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Please provide the type.
+                                    </div>
+                                    <div class="valid-feedback">
+                                        Looks good!
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="registration-sub-type-dropdown" >Slider Sub Type <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="registration-sub-type-dropdown" name="sub_type" required>
+                                        <option value="" hidden disabled selected>Select Sub Type</option>                                       
+                                        {% for sub_type in registration_sub_types %}
+                                        <option value="{{sub_type.slug}}" {% if sub_type.slug == multipage.slider_registration_sub_type_slug %}selected{% endif %} >{{sub_type.name}}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Please provide the sub type.
+                                    </div>
+                                    <div class="valid-feedback">
+                                        Looks good!
+                                    </div>
+                                </div>
+                            </div>    
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="registration-detail-dropdown" >Slider Registration Details <span class="text-danger">*</span></label>
+                                    <select data-placeholder="Select Services Details" class="chosen-select" id="registration-detail-dropdown" name="registration_details" multiple required>
+                                        {% for detail in registration_details %}
+                                        <option value="{{detail.slug}}" {% if detail in multipage.slider_registrations.all %}selected{% endif %} >{{detail.registration.title}}</option>
+                                        {% endfor %}     
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Please provide the slider registration detail.
+                                    </div>
+                                    <div class="valid-feedback">
+                                        Looks good!
+                                    </div>
+                                </div>                 
+                                
                             </div>
                         </div>
 
@@ -444,40 +501,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="tasks__item crms-task-item active">
-                                        <div class="accordion-header js-accordion-header">Tags</div> 
-                                        <div class="accordion-body js-accordion-body">
-                                            <div class="accordion-body__contents">
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label>Title <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" placeholder="Title of Tags" name="tag_title" value="{% if multipage.tag_title %}{{multipage.tag_title}}{% endif %}" required>
-                                                    </div>
-                                                    <div class="col-md-6 mb-3 d-flex align-items-start justify-content-end">                                                    
-                                                        <label for="hide-tags">
-                                                            <input type="checkbox" class="form-control-checkbox" id="hide-tags" name="hide_tags" {% if multipage.hide_tags %}checked{% endif %}>&nbsp;Hide Tags
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <div style="display: flex; flex-direction: row;">
-                                                            <input type="text" class="form-control" id="tag-input" placeholder="Tag Name" required>
-                                                            <button class="add-button" type="button" id="add-tag-btn">ADD</button>
-                                                        </div>
-                                                        <br>
-                                                        <div class="row" id="tag-div">
-                                                            {% if multipage.tags.all|length > 0 %}
-                                                            {% for tag_obj in multipage.tags.all %}
-                                                            <div class="col-lg-4 col-md-12 mt-3"><a href="{{tag_obj.link}}" class="tag" target="_blank">{{tag_obj.tag}}</a><input type="text" name="tag" value="{{tag_obj.tag}}" hidden><input type="text" name="tag_link" value="{{tag_obj.link}}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>
-                                                            {% endfor %}
-                                                            {% endif %}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>                                    
                                     <div class="tasks__item crms-task-item active">
                                         <div class="accordion-header js-accordion-header">Timeline</div> 
@@ -618,31 +641,12 @@
 {% block scripts %}
 <script>
     $(document).ready(() => {
-        
-        let durationPattern = /^[1-9]\d*$/;
-        let pricePattern = /^(?!0(\.0{1,2})?$)(\$?)([1-9][0-9]*(\.[0-9]{1,2})?)$/;
-
         function validateForm() {  
             const formValid = true       
 
             let name = $('#name-input').val();
             if (name) {
                 name = name.trim();
-            }
-
-            const programDropdown = $('#program-dropdown').val();
-            const specializationDropdown = $('#specialization-dropdown').val();
-
-            const modeDropdown = $('#mode-dropdown').val();                                  
-            
-            let duration = $('#duration-input').val();
-            if (duration) {
-                duration = duration.trim();
-            }
-
-            let price = $('#price-input').val();
-            if (price) {
-                price = price.trim();
             }            
 
             if (!name) {
@@ -655,58 +659,6 @@
                 $('#name-input').blur();
                 
             }            
-
-            if (!programDropdown) {
-                $('#program-dropdown').addClass('is-invalid');
-                $('#program-dropdown').focus();
-                formValid = false;
-            } else {
-                $('#program-dropdown').addClass('is-valid');
-                $('#program-dropdown').blur();
-                
-            }
-
-            if (!specializationDropdown) {
-                $('#specialization-dropdown').addClass('is-invalid');
-                $('#specialization-dropdown').focus();
-                formValid = false;
-            } else {
-                $('#specialization-dropdown').addClass('is-valid');
-                $('#specialization-dropdown').blur();
-                
-            }
-
-            if (!modeDropdown) {
-                $('#mode-dropdown').addClass('is-invalid');
-                $('#mode-dropdown').focus();
-                formValid = false;
-            } else {
-                $('#mode-dropdown').addClass('is-valid');
-                $('#mode-dropdown').blur();
-                
-            }            
-            
-            if (duration && !durationPattern.test(duration)) {
-                $('#duration-input').removeClass('is-valid').addClass('is-invalid');
-                $('#duration-input').focus();
-                formValid = false;
-
-            } else {
-                $('#duration-input').removeClass('is-invalid').remove('is-valid');
-                $('#duration-input').blur();
-                
-            }
-
-            if (!price || !pricePattern.test(price)) {
-                $('#price-input').removeClass('is-valid').addClass('is-invalid');
-                $('#price-input').focus();
-                formValid = false;
-
-            } else {
-                $('#price-input').removeClass('is-invalid').addClass('is-valid');
-                $('#price-input').blur();
-                
-            }
             
             if (formValid == true) {
                 $('#add-registration-form').submit()
@@ -718,7 +670,7 @@
 
         // Inputting
 
-        $('#name-input, #duration-input, #price-input').on('input', function () {
+        $('#name-input').on('input', function () {
             let thisValue = $(this).val();
             if (thisValue) {
                 thisValue = thisValue.trim();
@@ -730,81 +682,10 @@
                 } else {
                     $(this).removeClass('is-valid').addClass('is-invalid');                
                 }
-            } else {
-                 if ($(this).prop('id') == "price-input" && !pricePattern.test(thisValue)) {
-                    $(this).removeClass('is-valid').addClass('is-invalid');
-                } else {
-                    $(this).removeClass('is-invalid').addClass('is-valid');
-                }
-            }
-
-            if (thisValue) {
-                if ($(this).prop('id') == "duration-input") {
-                    if (durationPattern.test(thisValue)) {
-                        $(this).removeClass('is-invalid').addClass('is-valid');                    
-                    } else {
-                        $(this).removeClass('is-valid').addClass('is-invalid');
-                    }
-                }
-                            
-            }
+            }            
             
         });
 
-        // changing
-
-        $('#program-dropdown, #specialization-dropdown, #mode-dropdown, #unit-dropdown, #image-input').on('change', function () {
-            if (($(this).prop('id') == 'program-dropdown' || $(this).prop('id') == 'sub-registration_type-dropdown' || $(this).prop('id') == 'brand-dropdown') && !$(this).val()) {
-                $(this).removeClass('is-valid').addClass('is-invalid');
-
-            } else {
-                $(this).removeClass('is-invalid').addClass('is-valid');
-            }
-
-            if ($(this).prop('id') == 'image-input' || $(this).prop('id') == 'logo-input') {
-                let imageInput = $('#image-input')[0];
-                let image = imageInput.files[0];                
-                if (!image) {
-                    $(this).removeClass('is-valid').addClass('is-invalid');
-                } else {
-                    $(this).removeClass('is-invalid').addClass('is-valid');
-                }
-            }
-                        
-        })        
-        
-
-        // Get Specialization
-        function getSpecializations(program) {
-            const company = `{{current_company.slug}}`
-            
-            $.ajax({
-                type: 'GET',
-                url: '/education/get_specializations/',
-                dataType: 'json',
-                data: {
-                    "program": program,
-                    "company": company
-                },
-                success: response => {
-                    let specializations = response.specializations;
-
-                    $('#specialization-dropdown').html(`<option value="" hidden disabled selected>Select Specialization</option>`);
-                    if (specializations && specializations.length) {
-                        specializations.forEach(specialization => {
-                            if (specialization.standard) {
-                                $('#specialization-dropdown').append(`<option value="${specialization.slug}">${specialization.name}&nbsp;&nbsp;&nbsp; ${specialization.standard}</option>`)
-                            } else {
-                                $('#specialization-dropdown').append(`<option value="${specialization.slug}">${specialization.name}</option>`)
-                            }
-                        })
-                    } else {
-                        $('#specialization-dropdown').html(`<option value="" disabled selected>No specialization for the selected program</option>`);
-                    }                    
-                },
-                error: error => console.error("Error: ", error),
-            })
-        }        
         
         // Add Multiple Feature 
         $('#add-feature-btn').click(function () {
@@ -1083,27 +964,7 @@
             }
 
             $('#bullet-input').val('');
-        });
-
-        // Adding tag for tags section
-        $(document).on('click', '#add-tag-btn', function () {
-            const tag = $('#tag-input').val();
-
-            if (tag.trim()) {
-                $('#tag-div').append(
-                    `<div class="col-lg-4 col-md-12 mt-3"><a href="#" class="tag" target="_blank">${tag}</a><input type="text" name="tag" value="${tag}" hidden>&nbsp;<button class="remove-button" type="button" id="remove-tag-btn" style="width: 17px; height: 17px; padding: 0; border-radius: 50%;" title="Remove '${tag}'"><i class="fa fa-close" style="padding: 0;"></i></button></div>`
-                );
-            }
-
-            $('#tag-input, #tag-link-input').val('');
-        });
-
-        // Remove bullet points
-        $(document).on('click', '#remove-tag-btn', function () {
-            const parentElement = $(this).parent();
-
-            parentElement.remove();
-        });
+        });        
 
         // Remove bullet points
         $(document).on('click', '#remove-bullet-btn', function () {
@@ -1256,6 +1117,97 @@
                 $('#state-dropdown-section').hide();
                 $('#state-dropdown').prop("required", false);
 
+            }
+        });
+
+        // Populate sub types
+        function getSubTypes(type) {
+            const currentCompany = `{{current_company.slug}}`;
+
+            $.ajax({
+                type: 'GET',
+                url: `/registration/get_registration_sub_types/`,
+                dataType: 'json',
+                data: {"type_slug": type, "company_slug": currentCompany},
+                success: response => {
+                    let subTypes = response.sub_types
+
+                    $('#registration-sub-type-dropdown').html(`<option value="" hidden disabled selected>Select Sub Type</option>`);
+                    if (subTypes && subTypes.length) {
+                        subTypes.forEach(subType => {
+                            if (subType.standard) {
+                                $('#registration-sub-type-dropdown').append(`<option value="${subType.slug}">${subType.name}&nbsp;&nbsp;&nbsp; ${subType.standard}</option>`)
+                            } else {
+                                $('#registration-sub-type-dropdown').append(`<option value="${subType.slug}">${subType.name}</option>`)
+                            }
+                        })
+                    } else {
+                        $('#registration-sub-type-dropdown').html(`<option value="" disabled selected>Select Sub Type</option>`);
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            })
+        }
+
+        $('#registration-type-dropdown').on('change', function () {
+            const type = $(this).val();
+
+            getSubTypes(type);
+        });
+
+        // Populate Registrations
+        function getRegistrationDetails() {
+            const sub_type = $('#registration-sub-type-dropdown').val();
+            const company = `{{current_company.slug}}`;
+
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'registration:get_registration_details' %}`,
+                dataType: 'json',
+                data: {
+                    "sub_type_slug": sub_type,
+                    "company_slug": company
+                },
+                success: response => {
+                    $('#registration-detail-dropdown').empty();
+                    if (response.registration_details && response.registration_details.length > 0) {
+                        response.registration_details.forEach(detail => {
+                            $('#registration-detail-dropdown').append(`<option value="${detail.slug}">${detail.registration__title}</option>`)
+                        })
+                    }
+
+                    if (response.error) {
+                        console.error("Error: ", response.error)
+                    }
+
+                    $('#registration-detail-dropdown').trigger("chosen:updated");
+                },
+                error: error => console.error("Error: ", error),
+            });            
+        };
+
+        $('#registration-sub-type-dropdown').on('change', () => getRegistrationDetails());
+
+        // Function for adding new meta tags
+        $(document).on('input', '.search-field input', function () {
+            const text = $(this).val().trim();
+
+            if (text.endsWith(',')) {
+                const tag = text.replace(',', '');
+
+                const newOption = `<option value="${tag}" selected>${tag}</option>`;
+
+                const optionExists = $('select[name="meta_tag"] option').filter(function() {
+                    return $(this).val().toLowerCase() === tag.toLowerCase() | $(this).html().toLowerCase() === tag.toLowerCase();
+                }).length > 0;
+
+                if (!optionExists) {
+                    $('select[name="meta_tag"]').append(newOption);
+    
+                    $('.chosen-select').trigger("chosen:updated");
+                }
+
+                $(this).val('');
             }
         });
 

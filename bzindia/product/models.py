@@ -12,7 +12,7 @@ from base.models import MetaTag
 class Category(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=150, unique=True)
-    slug = models.SlugField(blank=True, null=True)
+    slug = models.SlugField(blank=True, null=True, max_length=500)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -21,7 +21,7 @@ class Category(models.Model):
             base_slug = slugify(self.name)
             slug = base_slug
             count = 1
-            while Category.objects.filter(slug = slug).exists():
+            while Category.objects.filter(slug = slug).exclude(pk = self.pk).exists():
                 slug = f"{base_slug}-{count}"
                 count += 1
 
@@ -49,13 +49,13 @@ class SubCategory(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=150, unique=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    slug = models.SlugField(blank=True, null=True)
+    slug = models.SlugField(blank=True, null=True, max_length=500)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.name}-{self.category.name}")
+            base_slug = slugify(self.name)
             slug = base_slug
             count = 1
             while Category.objects.filter(slug = slug).exists():
@@ -77,7 +77,7 @@ class SubCategory(models.Model):
 class Brand(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=150, unique=True)
-    slug = models.SlugField(blank=True, null=True)
+    slug = models.SlugField(blank=True, null=True, max_length=500)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -107,7 +107,7 @@ class Size(models.Model):
     name = models.CharField(max_length=150, unique=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     standard = models.CharField(max_length=150, blank=True, null=True)
-    slug = models.SlugField(blank=True, null=True)
+    slug = models.SlugField(blank=True, null=True, max_length=500)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -134,9 +134,9 @@ class Size(models.Model):
 
 class Color(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    name = models.CharField(max_length=150, unique=True)
-    hexa = models.CharField(max_length=50, unique=True)
-    slug = models.SlugField(blank=True, null=True)
+    name = models.CharField(max_length=150)
+    hexa = models.CharField(max_length=50)
+    slug = models.SlugField(blank=True, null=True, max_length=500)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -162,12 +162,12 @@ class Color(models.Model):
         
 
 class Product(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="products")
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    sub_category = models.ForeignKey(SubCategory, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="products")
+    sub_category = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name="products")
     stock = models.PositiveIntegerField(default=0)
     sku = models.CharField(max_length=100, unique=True, blank=True, null=True)    
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
@@ -191,7 +191,7 @@ class Product(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.name}-{self.category.name}")
+            base_slug = slugify(self.name)
             slug = base_slug
             count = 1
             while Brand.objects.filter(slug = slug).exists():
@@ -289,7 +289,7 @@ class Faq(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.product.name}")
+            base_slug = slugify(self.product.name)
             slug = base_slug
 
             count = 1
@@ -332,7 +332,7 @@ class Review(models.Model):
         if not self.slug:
             user = self.user.username if not self.review_by else self.review_by            
 
-            base_slug = slugify(f"{self.company.name}-{self.product}-{user}")
+            base_slug = slugify(f"{self.product}-{user}")
 
             slug = base_slug
             count = 1
@@ -362,7 +362,6 @@ class Enquiry(models.Model):
     email = models.EmailField(max_length=254)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     state = models.ForeignKey(UniqueState, on_delete=models.CASCADE, related_name="product_enquiry_state")
-    message = models.TextField()
 
     slug = models.SlugField(null=True, blank=True, max_length=500)
 
@@ -371,7 +370,7 @@ class Enquiry(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.product.name}-{self.email}")
+            base_slug = slugify(f"{self.product.name}-{self.email}")
             slug = base_slug
 
             count = 1
@@ -424,24 +423,6 @@ class BulletPoint(models.Model):
         db_table = "product_bullet_points"
         ordering = ["created"]
 
-
-class Tag(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_tag_company")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-    tag = models.CharField(max_length=250)
-    link = models.URLField(max_length=200)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
-    
-    class Meta:
-        db_table = "product_tags"
-        ordering = ["created"]
-
     
 class Timeline(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_timeline_company")
@@ -475,18 +456,13 @@ class ProductDetailPage(models.Model):
     features = models.ManyToManyField(Feature)
     
     bullet_points = models.ManyToManyField(BulletPoint)
-
-    # Tag
-    tag_title = models.CharField(max_length=250, null=True, blank=True)
-    tags = models.ManyToManyField(Tag)
-
+    
     # Timeline
     timeline_title = models.CharField(max_length=250, null=True, blank=True)
     timelines = models.ManyToManyField(Timeline)
 
     hide_features = models.BooleanField(default=False)    
-    hide_bullets = models.BooleanField(default=False)
-    hide_tags = models.BooleanField(default=False)
+    hide_bullets = models.BooleanField(default=False)    
     hide_timeline = models.BooleanField(default=False)
 
     hide_support_languages = models.BooleanField(default=False)
@@ -505,7 +481,7 @@ class ProductDetailPage(models.Model):
             self.meta_title = f"{self.product.name} - {self.company.name}"
 
         if not self.slug:
-            base_slug = slugify(f"{self.company.name}-{self.product.name}")
+            base_slug = slugify(self.product.name)
             slug = base_slug
             count = 1
 
@@ -536,7 +512,6 @@ class ProductDetailPage(models.Model):
     @property
     def toc(self):
         options = {            
-            self.tag_title: self.hide_tags,
             self.timeline_title: self.hide_timeline
         }
 
@@ -587,23 +562,6 @@ class MultiPageBulletPoint(models.Model):
         ordering = ["created"]
 
 
-class MultiPageTag(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage_tag")
-    title = models.CharField(max_length=250)
-
-    tag = models.CharField(max_length=250)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
-    
-    class Meta:
-        db_table = "product_multipage_tags"
-        ordering = ["created"]
-
-
 class MultiPageTimeline(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage_timeline")
     title = models.CharField(max_length=250)
@@ -629,21 +587,39 @@ class MultiPageFaq(models.Model):
     question = models.CharField(max_length=250)
     answer = models.TextField()
 
+    slug = models.SlugField(null=True, blank=True, max_length=500)
+
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.company.name}-{self.product.name}"
+        return f"{self.company.name}-{self.company.name}"
     
     class Meta:
         db_table = "product_multipage_faqs"
         ordering = ["created"]
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.title)
+            slug = base_slug
+
+            count = 1
+            while MultiPageFaq.objects.filter(slug = slug).exists():
+                slug = f"{base_slug}-{count}"
+                count += 1
+
+            self.slug = slug
+
+        super().save(*args, **kwargs)
+
 
 class MultiPage(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_of_product_multipage")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_multipages")
 
     title = models.CharField(max_length=250)
+    sub_title = models.CharField(max_length = 250, blank=True, null=True)
+
     products = models.ManyToManyField(Product)
 
     summary = models.TextField(null=True, blank=True)
@@ -656,17 +632,13 @@ class MultiPage(models.Model):
     url_type = models.CharField(max_length=50, default="slug_filtered")
 
     product_region = models.CharField(max_length=250, default="all")
-    available_states = models.ManyToManyField(UniqueState, related_name="product_multipage_states")
+    available_states = models.ManyToManyField(UniqueState, related_name="product_multipages")
 
     features = models.ManyToManyField(MultiPageFeature)    
 
     # Bullet Point
     bullet_title = models.CharField(max_length=250, null=True, blank=True)
     bullet_points = models.ManyToManyField(MultiPageBulletPoint)
-
-    # Tag
-    tag_title = models.CharField(max_length=250, null=True, blank=True)
-    tags = models.ManyToManyField(MultiPageTag)
 
     # Timeline
     timeline_title = models.CharField(max_length=250, null=True, blank=True)
@@ -676,8 +648,7 @@ class MultiPage(models.Model):
     faqs = models.ManyToManyField(MultiPageFaq)
 
     hide_features = models.BooleanField(default=False)    
-    hide_bullets = models.BooleanField(default=False)
-    hide_tags = models.BooleanField(default=False)
+    hide_bullets = models.BooleanField(default=False)    
     hide_timeline = models.BooleanField(default=False)
     hide_faqs = models.BooleanField(default=False)
 
@@ -687,6 +658,8 @@ class MultiPage(models.Model):
     whatsapp = models.CharField(max_length=20, blank=True, null=True)
     external_link = models.URLField(max_length=500, blank=True, null=True)
 
+    home_footer_visibility = models.BooleanField(default=False)
+
     slug = models.SlugField(null=True, blank=True, max_length=500)
 
     created = models.DateTimeField(auto_now_add=True)
@@ -695,6 +668,9 @@ class MultiPage(models.Model):
     def save(self, *args, **kwargs):
         if not self.meta_title:
             self.meta_title = f"{self.title} - {self.company.name}"
+
+        if not self.home_footer_visibility and not MultiPage.objects.exclude(pk=self.pk).filter(company = self.company, home_footer_visibility=True).exists():
+            self.home_footer_visibility = True
 
         base_slug = slugify(self.title)
         slug = base_slug
@@ -708,7 +684,6 @@ class MultiPage(models.Model):
             slug = slug.replace("-in-place_name", "").replace("-in-district_name", "").replace("-in-state_name", "").replace("-place_name", "").replace("-district_name", "").replace("-state_name", "")
 
         self.slug = slug
-
 
         super().save(*args, **kwargs)
 
@@ -731,7 +706,6 @@ class MultiPage(models.Model):
     @property
     def toc(self):
         options = {            
-            self.tag_title: self.hide_tags,
             self.timeline_title: self.hide_timeline,
             "FAQs": self.hide_faqs
         }

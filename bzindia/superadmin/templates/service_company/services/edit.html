@@ -12,11 +12,25 @@
                     </div>
                     <div class="card-body">
                         <div class="form-row">
-                            <div class="col-md-12 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label for="name-input" > Service Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="name-input" placeholder="Service Name" name="name" value="{{service.name}}" required>
                                 <div class="invalid-feedback">
                                     Please enter a name for the service.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="image-input" > Image <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" id="image-input" placeholder="Service Name" name="image" required>
+                                {% if service.image %}
+                                <small id="current-image">Current image: <a href="{{service.image.url}}" target="_blank">{{service.image.name}}</a></small>
+                                {% endif %}
+                                <div class="invalid-feedback">
+                                    Please provide image.
                                 </div>
                                 <div class="valid-feedback">
                                     Looks good!
@@ -60,7 +74,7 @@
                         <div class="form-row">                       
                             <div class="col-md-6 mb-3">
                                 <label for="duration-input">Duration (in days)</label>
-                                <input type="number" class="form-control" id="duration-input" name="duration" placeholder="Duration" value="{% if service.duration %}{{service.duration.days}}{% endif %}" required>
+                                <input type="text" class="form-control" id="duration-input" name="duration" placeholder="Duration" value="{{service.duration}}" required>
                             </div> 
                             <div class="col-md-6 mb-3">
                                 <label for="price-input">Price </label>
@@ -104,10 +118,7 @@
 
 {% block scripts %}
 <script>
-    $(document).ready(() => {
-        let pricePattern = /^(?!0(\.0{1,2})?$)(\$?)([1-9][0-9]*(\.[0-9]{1,2})?)$/;
-        let distancePattern = /^(?!0(\.0{1,2})?$)[0-9]+(\.[0-9]{1,2})?$/;
-        let weightPattern = /^(?!0(\.0+)?$)([1-9][0-9]*|[0-9]*\.[0-9]+)\s?(kg|g|lb|oz)$/i;
+    $(document).ready(() => {        
 
         function validateForm() {  
             const formValid = true       
@@ -118,17 +129,7 @@
             }
 
             const categoryDropdown = $('#category-dropdown').val();
-            const subCategoryDropdown = $('#sub-category-dropdown').val();
-
-            let durations = $('#duration-input').val();
-            if (durations) {
-                durations = durations.trim();
-            }
-
-            let price = $('#price-input').val();
-            if (price) {
-                price = price.trim();
-            }
+            const subCategoryDropdown = $('#sub-category-dropdown').val();            
 
             if (!name) {
                 $('#name-input').removeClass('is-valid').addClass('is-invalid');
@@ -159,29 +160,7 @@
                 $('#sub-category-dropdown').addClass('is-valid');
                 $('#sub-category-dropdown').blur();
                 
-            }            
-
-            if (durations && durations < 0) {
-                $('#duration-input').removeClass('is-valid').addClass('is-invalid');
-                $('#duration-input').focus();
-                formValid = false;
-
-            } else {
-                $('#duration-input').removeClass('is-invalid').addClass('is-valid');
-                $('#duration-input').blur();
-                
-            }
-
-            if (price && !pricePattern.test(price)) {
-                $('#price-input').removeClass('is-valid').addClass('is-invalid');
-                $('#price-input').focus();
-                formValid = false;
-
-            } else {
-                $('#price-input').removeClass('is-invalid').addClass('is-valid');
-                $('#price-input').blur();
-                
-            }            
+            }                                    
 
             if (formValid == true) {
                 $('#edit-service-form').submit()
@@ -193,7 +172,7 @@
 
         // Inputting
 
-        $('#name-input, #duration-input, #price-input').on('input', function () {
+        $('#name-input').on('input', function () {
             let thisValue = $(this).val();
 
             if (thisValue) {
@@ -208,10 +187,7 @@
                 }
             }
 
-            if (thisValue) {
-                if ($(this).prop('id') == "duration-input" && thisValue < 0) {
-                    $(this).val(0);
-                };
+            if (thisValue) {                
 
                 if ($(this).prop('id') == "name-input") {
                     $('#name-input').removeClass('is-invalid').addClass('is-valid');
@@ -263,6 +239,16 @@
             const category = $(this).val();
 
             getSubCategories(category);
+        });
+
+        $(document).on('change', '#image-input', function () {
+            if ($(this).val()) {
+                $('#current-image').hide();
+            } else {
+                $('#current-image').show();
+            }
+
+
         });
     })
 </script>

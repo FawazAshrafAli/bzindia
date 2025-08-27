@@ -1,5 +1,5 @@
 import logging
-from locations.views import get_ksa_locations
+from locations.views import get_india_locations
 from celery import shared_task
 import os
 
@@ -20,54 +20,54 @@ def configure_logger(log_filename):
 @shared_task(queue="worker1_queue")
 def run1():
     logger = configure_logger("run1.log")
-    logger.info("Starting run1 (KSA Stage 1)\n")
+    logger.info("Starting run1 (India Stage 1)\n")
 
     # Stage 1
-    top_left = (32.2, 34.4)
-    bottom_right = (26.9, 55.7)
+    top_left = (37.1, 68.1)
+    bottom_right = (27.4, 97.5)
 
-    top_left = (27.42, 34.4)
+    top_left = (32.4, 68.1)
 
     api_key = os.getenv('OPENCAGE_API_KEY_1')
     opencage_cache = "opencage_requested_1"
 
-    get_ksa_locations(top_left, bottom_right, api_key, opencage_cache)
+    get_india_locations(top_left, bottom_right, api_key, opencage_cache)
 
 @shared_task(queue="worker2_queue")
 def run2():
     logger = configure_logger("run2.log")
-    logger.info("Starting run2 (KSA Stage 2)\n")
+    logger.info("Starting run2 (India Stage 2)\n")
 
     # Stage 2
-    top_left = (26.9, 34.4)
-    bottom_right = (21.6, 55.7)
+    top_left = (27.4, 68.1)
+    bottom_right = (17.7, 97.5) 
 
-    top_left = (22.16, 34.4)
+    top_left = (23.25, 68.1)
 
     api_key = os.getenv('OPENCAGE_API_KEY_2')
     opencage_cache = "opencage_requested_2"
 
-    get_ksa_locations(top_left, bottom_right, api_key, opencage_cache)
+    get_india_locations(top_left, bottom_right, api_key, opencage_cache)
 
 @shared_task(queue="worker3_queue")
 def run3():
     logger = configure_logger("run3.log")
-    logger.info("Starting run3 (KSA Stage 3)\n")
+    logger.info("Starting run3 (India Stage 3)\n")
 
     # Stage 3
-    top_left = (21.6, 34.4)
-    bottom_right = (16.3, 55.7) 
+    top_left = (17.7, 68.1)
+    bottom_right = (8.0, 97.5)
 
-    top_left = (17.02, 34.4)
+    top_left = (13.0, 68.1)
 
     api_key = os.getenv('OPENCAGE_API_KEY_3')
     opencage_cache = "opencage_requested_3"
 
-    get_ksa_locations(top_left, bottom_right, api_key, opencage_cache)
+    get_india_locations(top_left, bottom_right, api_key, opencage_cache)
 
 @shared_task(bind=True, queue="worker1_queue", autoretry_for=(Exception,), retry_backoff=10, max_retries=5)
-def fetch_locations_1(self):
-    logger.info("Starting destination location fetching task via Celery")
+def fetch_locations_1(self):    
+    logger.info("Starting destination location fetching task via Celery")       
     try:
         fetch_destination_locations()
         logger.info("Destination location fetching task completed successfully")
@@ -428,3 +428,94 @@ def save_locations():
     logger.info(f"Updated all place slugs of India.")    
 
     logger.info(f"Function Completed.")    
+
+
+
+#########################################3
+from .models import IndiaLocationData, PincodeAndCoordinate, UniquePlace
+
+def get_opencage_pincode_and_coordiante(json_item):
+    results = json_item.get("results")
+    if not results:
+        return {"pincode": None, "latitude": None, "longitude": None}
+
+    result = results[0]
+    components = result.get("components", {})
+    coordinate = result.get("geometry", {})
+
+    pincode = components.get("postcode")
+    latitude = coordinate.get("lat")
+    longitude = coordinate.get("lng")
+
+    return {
+        "pincode": pincode,
+        "latitude": latitude,
+        "longitude": longitude
+    }
+
+
+@shared_task(queue="worker5_queue")
+def update_pincodes():
+    import logging
+    from .models import PlacePincode, PlaceCoordinate
+
+    logger = logging.getLogger(__name__)
+
+    opencage_collection = IndiaLocationData.objects.all()
+    post_office_collection = PincodeAndCoordinate.objects.all()
+
+    opencage_place_slugs = set(opencage_collection.values_list("place__slug", flat=True))
+    post_office_place_slugs = set(post_office_collection.values_list("place__slug", flat=True))
+
+    updating_place_slugs = opencage_place_slugs | post_office_place_slugs
+    modifying_places = UniquePlace.objects.filter(slug__in=updating_place_slugs)
+
+    places_length = len(modifying_places)
+    progress = 0
+
+    for index, place in enumerate(modifying_places):
+        current_progress = int((index + 1) * 100 / places_length)
+
+        if current_progress > progress:
+            progress = current_progress
+            logger.info(f"{current_progress}% Completed")
+
+        pincodes = []
+        latitude = None
+        longitude = None
+
+        if place.slug in opencage_place_slugs:
+            for item in opencage_collection.filter(place__slug=place.slug):
+                place_data = get_opencage_pincode_and_coordiante(item.json_data)
+                pincode = place_data.get("pincode")
+                latitude = latitude or place_data.get("latitude")
+                longitude = longitude or place_data.get("longitude")
+                if pincode:
+                    pincodes.append(pincode)
+
+        if place.slug in post_office_place_slugs:
+            for item in post_office_collection.filter(place__slug=place.slug):
+                pincode = item.pincode
+                latitude = latitude or item.latitude
+                longitude = longitude or item.longitude
+                if pincode:
+                    pincodes.append(pincode)
+
+        pincodes = set(pincodes)
+
+        if pincodes:
+            PlacePincode.objects.filter(place=place).delete()
+            PlacePincode.objects.bulk_create([
+                PlacePincode(place=place, pincode=p) for p in pincodes
+            ])
+
+        if latitude and longitude:
+            PlaceCoordinate.objects.filter(place=place).delete()
+            PlaceCoordinate.objects.create(
+                place=place, latitude=latitude, longitude=longitude
+            )
+
+        place.pincodes.set(PlacePincode.objects.filter(place=place))
+        place.coordinates.set(PlaceCoordinate.objects.filter(place=place))
+
+    logger.info(f"Completed")

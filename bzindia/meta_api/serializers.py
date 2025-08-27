@@ -6,5 +6,5 @@ class MetaTagSerializer(serializers.ModelSerializer):
     class Meta:
         model = MetaTag
         fields = [
-            "name", "description", "meta_title", "meta_description", "slug"
+            "name", "description", "meta_title", "meta_description", "slug", "updated"
             ]

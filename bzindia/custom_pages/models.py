@@ -8,7 +8,7 @@ from ckeditor.fields import RichTextField
 from locations.models import UniquePlace, UniqueDistrict, UniqueState
 
 class AboutUs(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
 
     content = RichTextField()
 
@@ -19,7 +19,11 @@ class AboutUs(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.company.name)
+            base_slug = slugify("BZIndia")
+
+            if self.company:
+                base_slug = slugify(self.company.name)
+
             slug = base_slug
 
             count = 1
@@ -37,22 +41,22 @@ class AboutUs(models.Model):
 
 
 class ContactUs(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, related_name="contacts")
 
     email = models.EmailField(max_length=254)
-    phone = models.CharField(max_length=20)
+    tel = models.CharField(max_length=20)
+    mobile = models.CharField(max_length=20)
 
     provide_query = models.BooleanField(default=False)
+
+    address = models.TextField(blank=True, null=True)
 
     place = models.ForeignKey(UniquePlace, on_delete=models.CASCADE, null=True, blank=True)
     district = models.ForeignKey(UniqueDistrict, on_delete=models.CASCADE, null=True, blank=True)
     state = models.ForeignKey(UniqueState, on_delete=models.CASCADE, null=True, blank=True)
     pincode = models.PositiveIntegerField(blank=True, null=True)
 
-    facebook = models.URLField(max_length=250, blank=True, null=True)
-    x = models.URLField(max_length=250, blank=True, null=True)
-    youtube = models.URLField(max_length=250, blank=True, null=True)
-    instagram = models.URLField(max_length=250, blank=True, null=True)
+    web = models.URLField(max_length=250, blank=True, null=True)    
 
     lat = models.DecimalField(max_digits=10, decimal_places=7)
     lon = models.DecimalField(max_digits=10, decimal_places=7)
@@ -65,7 +69,9 @@ class ContactUs(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.company.name)
+            base_slug = slugify("BZIndia")
+            if self.company:
+                base_slug = slugify(self.company.name)            
             slug = base_slug
 
             count = 1
@@ -82,16 +88,17 @@ class ContactUs(models.Model):
         ordering = ["company__name"]
 
     @property
-    def address(self):
+    def full_address(self):
         address = [self.place.name, self.district.name, self.state.name]
         return ', '.join(address)
 
 
 class FAQ(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
 
     question = models.CharField(max_length=250)
-    answer = models.TextField()
+    short_answer = models.TextField()
+    answer = RichTextField()
 
     slug = models.SlugField(max_length=500, blank=True, null=True)
 
@@ -101,7 +108,7 @@ class FAQ(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.question[:15]}-{self.company.name}")
+            base_slug = slugify(self.question)
             slug = base_slug
 
             count = 1
@@ -119,7 +126,7 @@ class FAQ(models.Model):
 
 
 class PrivacyPolicy(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
 
     content = RichTextField()
     
@@ -137,7 +144,9 @@ class PrivacyPolicy(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.company.name)
+            base_slug = slugify("BZIndia")
+            if self.company:
+                base_slug = slugify(self.company.name)            
             slug = base_slug
 
             count = 1
@@ -154,8 +163,8 @@ class PrivacyPolicy(models.Model):
         ordering = ["company__name"]
 
 
-class TermsAndConditions(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+class TermsAndCondition(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
 
     content = RichTextField()
     
@@ -170,11 +179,13 @@ class TermsAndConditions(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.company.name)
+            base_slug = slugify("BZIndia")
+            if self.company:
+                base_slug = slugify(self.company.name)            
             slug = base_slug
 
             count = 1
-            while TermsAndConditions.objects.filter(slug = slug).exists():
+            while TermsAndCondition.objects.filter(slug = slug).exists():
                 slug = f"{base_slug}-{count}"
                 count += 1
 
@@ -193,7 +204,7 @@ class TermsAndConditions(models.Model):
     
 
 class ShippingAndDeliveryPolicy(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
 
     content = RichTextField()
 
@@ -204,7 +215,9 @@ class ShippingAndDeliveryPolicy(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.company.name)
+            base_slug = slugify("BZIndia")
+            if self.company:
+                base_slug = slugify(self.company.name)            
             slug = base_slug
 
             count = 1
@@ -222,7 +235,7 @@ class ShippingAndDeliveryPolicy(models.Model):
 
 
 class CancellationAndRefundPolicy(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
 
     content = RichTextField()
 
@@ -233,7 +246,9 @@ class CancellationAndRefundPolicy(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.company.name)
+            base_slug = slugify("BZIndia")
+            if self.company:
+                base_slug = slugify(self.company.name)            
             slug = base_slug
 
             count = 1

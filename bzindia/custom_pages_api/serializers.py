@@ -3,10 +3,12 @@ from rest_framework import serializers
 from custom_pages.models import FAQ, AboutUs, ContactUs
 
 class FaqSerializer(serializers.ModelSerializer):
+    company_slug = serializers.CharField(source="company.slug", read_only = True)
+
     class Meta:
         model = FAQ
         fields = [
-            "question", "answer", "slug"
+            "question", "short_answer", "answer", "slug", "updated", "created", "company_slug"
         ]
 
 
@@ -25,7 +27,7 @@ class ContactUsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactUs
         fields = [
-            "email", "phone", "provide_query", "place_name", "district_name",
-            "state_name", "pincode", "facebook", "x", "youtube", 
-            "instagram", "lat", "lon", "slug", "address"
+            "email", "tel", "mobile", "provide_query", "place_name", "district_name",
+            "state_name", "pincode", "web", "address", 
+            "lat", "lon", "slug", "address"
         ]

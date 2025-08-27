@@ -401,22 +401,7 @@ class Destination(models.Model):
         ordering = ["created"]
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            if self.name:
-                base_slug = slugify(self.name)
-
-                slug = base_slug
-                count = 1
-
-                while Destination.objects.filter(slug = slug).exists():
-                    slug = f"{base_slug}-{count}"
-                    count += 1
-
-                self.slug = slug
-
-            else:
-                self.slug = uuid.uuid4()
-        
+        base_name = self.name
         if not self.name:
             names = [
                 self.name, self.old_name, self.alternative_name,
@@ -439,6 +424,23 @@ class Destination(models.Model):
 
             if available_names:
                 self.name = available_names[0]
+                base_name = self.name
+
+        if not self.slug:
+            if base_name and slugify(base_name) != "":
+                base_slug = slugify(base_name)
+
+                slug = base_slug
+                count = 1
+
+                while Destination.objects.filter(slug = slug).exists():
+                    slug = f"{base_slug}-{count}"
+                    count += 1
+
+                self.slug = slug
+
+            else:
+                self.slug = uuid.uuid4()        
 
         super().save(*args, **kwargs)
 

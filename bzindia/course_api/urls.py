@@ -6,7 +6,7 @@ from .views import (
     CourseApiViewset, EducationCompanyViewSet, CorporatePartnersViewSet, 
     StudentTestimonialViewSet, EnquiryViewSet,
     ProgramViewset, DetailViewSet, InstituteCourseDetailViewSet,
-    CompanyCoursesViewSet
+    CompanyCoursesViewSet, SpecializationViewset
     )
 
 app_name = "course_api" 
@@ -17,10 +17,12 @@ router.register(r'courses', CourseApiViewset, basename="course")
 router.register(r'companies', EducationCompanyViewSet, basename="company")
 
 # router.register(r'enquiry', EnquiryViewSet)
-router.register(r'programs', ProgramViewset)
+# router.register(r'programs', ProgramViewset)
 
 companies_router = NestedDefaultRouter(router, r'companies', lookup="company")
 
+companies_router.register(r'programs', ProgramViewset, basename="company-program")
+companies_router.register(r'specializations', SpecializationViewset, basename="company-specialization")
 companies_router.register(r'enquiries', EnquiryViewSet, basename="company-enquiry")
 companies_router.register(r'courses', CompanyCoursesViewSet, basename="company-course")
 companies_router.register(r'details', DetailViewSet, basename="company-detail")

@@ -189,18 +189,22 @@
         function renderRegistrationContent() {
             $('#dynamic-content').html(`
                 <div class="row">
-                    <div class="col-sm-12 mb-3">
+                    <div class="col-sm-4 mb-3">
                         <label for="registration-type-dropdown">Registration Type <span class="text-danger">*</span></label>
                         <select name="registration_type" id="registration-type-dropdown" class="form-control" required>
                             <option value="" selected disabled hidden>Select Registration Type</option>                        
                         </select>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-sm-12 mb-3">
+                    <div class="col-sm-4 mb-3">
                         <label for="registration-sub-type-dropdown">Registration Sub Type <span class="text-danger">*</span></label>
-                        <select name="registration_sub_type" id="registration-sub-type-dropdown" class="form-control" multiple required>
+                        <select name="registration_sub_type" id="registration-sub-type-dropdown" class="form-control" required>
                             <option value="" selected disabled hidden>Select Registration Sub Type</option>                        
+                        </select>
+                    </div>
+                    <div class="col-sm-4 mb-3">
+                        <label for="registration-dropdown">Registration<span class="text-danger">*</span></label>
+                        <select name="registration" id="registration-dropdown" class="form-control" required>
+                            <option value="" selected disabled hidden>Select Registration</option>                            
                         </select>
                     </div>
                 </div>
@@ -468,6 +472,34 @@
             });
         };
 
+        function getRegistrations(selectedCompany, selectedSubType ) {
+            $.ajax({
+                type: 'GET',
+                url: `{% url 'registration:get_registrations' %}`,
+                dataType: 'json',
+                data: {
+                    'company_slug': selectedCompany,
+                    'sub_type_slug': selectedSubType                
+                },
+                success: response => {
+                    if (response.registrations) {
+                        $('#registration-dropdown').html(`<option value="" selected disabled hidden>Select Registration</option>`);                            
+
+                        response.registrations.forEach(registration => {
+                            $('#registration-dropdown').append(`<option value="${registration.slug}">${registration.title}</option>`);
+                        })
+
+                    }
+
+                    if (response.status === "failed" && response.message) {
+                        console.error("Error: ", error);
+                    }
+                },
+                error: error => console.error("Error: ", error),
+            });
+        };
+
+
         function getServiceCategories(selectedCompany) {
             $.ajax({
                 type: 'GET',
@@ -592,6 +624,13 @@
             const selectedCompany = $('#company-dropdown').val();
 
             getRegistrationSubTypes(selectedCompany, selectedType);
+        });
+
+        $(document).on('change', '#registration-sub-type-dropdown', function () {
+            const selectedSubType = $(this).val();
+            const selectedCompany = $('#company-dropdown').val();
+
+            getRegistrations(selectedCompany, selectedSubType);
         });
 
         $(document).on('change', '#service-category-dropdown', function () {

@@ -17,7 +17,7 @@ class PlacePincodeSerializer(serializers.ModelSerializer):
 class DistrictMiniSerializer(serializers.ModelSerializer):
     class Meta:
         model = UniqueDistrict
-        fields = ["name", "slug"]
+        fields = ["name", "slug", "updated"]
 
 
 class StateSerializer(serializers.ModelSerializer):
@@ -25,13 +25,13 @@ class StateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UniqueState
-        fields = ["name", "slug", "districts"]
+        fields = ["name", "slug", "districts", "updated"]
 
 
 class PlaceMiniSerializer(serializers.ModelSerializer):    
     class Meta:
         model = UniquePlace
-        fields = ["name", "slug"]
+        fields = ["name", "slug", "updated"]
 
         
 class DistrictSerializer(serializers.ModelSerializer):
@@ -41,7 +41,7 @@ class DistrictSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UniqueDistrict
-        fields = ["name", "slug", "state", "places"]    
+        fields = ["name", "slug", "state", "places", "updated"]    
 
 
 class PlaceSerializer(serializers.ModelSerializer):
@@ -52,7 +52,7 @@ class PlaceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UniquePlace
-        fields = ["name", "pincodes", "coordinates", "slug", "state", "district"]
+        fields = ["name", "pincodes", "coordinates", "slug", "state", "district", "updated"]
 
 
 
@@ -63,4 +63,4 @@ class SimplePlaceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UniquePlace
-        fields = ["name", "slug", "district", "coordinates", "pincodes"]
+        fields = ["name", "slug", "district", "coordinates", "pincodes", "updated"]

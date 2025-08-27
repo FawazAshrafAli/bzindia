@@ -1,5 +1,7 @@
 from django.db import models
+from django.utils.text import slugify
 from ckeditor.fields import RichTextField
+
 
 class HomeContent(models.Model):
     title = models.CharField(max_length=250, default="BZ India")
@@ -18,4 +20,3 @@ class HomeContent(models.Model):
     
     class Meta:
         db_table = "home_main_content"
-

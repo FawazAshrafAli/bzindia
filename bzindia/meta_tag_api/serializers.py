@@ -6,7 +6,7 @@ class MetaTagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MetaTag
-        fields = ["name", "slug", "description", "meta_description"]
+        fields = ["name", "slug", "description", "meta_description", "updated"]
     
 
 class ItemSerializer(serializers.Serializer):
@@ -28,3 +28,6 @@ class ItemSerializer(serializers.Serializer):
     category = serializers.CharField(allow_blank=True, required=False)
     rating = serializers.CharField(allow_blank=True, required=False)
     rating_count = serializers.CharField(allow_blank=True, required=False)
+
+    url = serializers.CharField(allow_blank=True, required=False)
+    updated  = serializers.CharField(allow_blank=True, required=False)

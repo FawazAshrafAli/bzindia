@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.conf import settings
 
-from company.models import Company, CompanyType, Client, ContactEnquiry, Testimonial
+from company.models import Company, CompanyType, Client, ContactEnquiry, Testimonial, Banner
 
 from blog_api.serializers import BlogSerializer
 from meta_api.serializers import MetaTagSerializer
@@ -29,13 +29,27 @@ class ClientSerializer(serializers.ModelSerializer):
 class TestimonialSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     place_name = serializers.CharField(source = "place.name", read_only = True)
+    company_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Testimonial
         fields = [
             "name", "image_url", "slug", "client_company", "place_name",
-            "text", "rating"
+            "text", "rating", "company_rating"
             ]
+        
+    
+    def get_company_rating(self, obj):
+        from django.db.models import Avg
+
+        if not obj.company:
+            return 0
+        
+        testimonials = obj.company.testimonials.values_list("rating", flat=True)
+
+        return testimonials.aggregate(Avg('rating'))['rating__avg'] if testimonials else 0
+        
+    
 
     def get_image_url(self, obj):
         request = self.context.get('request')
@@ -54,21 +68,33 @@ class CompanySerializer(serializers.ModelSerializer):
     faqs = FaqSerializer(many=True, read_only = True)
     meta_tags = MetaTagSerializer(many=True, read_only = True)
     clients = ClientSerializer(many=True, read_only=True)
-    social_media_links = serializers.SerializerMethodField()
     type_slug = serializers.CharField(source = "type.slug", read_only=True)    
+    detail_pages = serializers.SerializerMethodField()
+    multipages = serializers.SerializerMethodField()
+    phone = serializers.SerializerMethodField()
 
     class Meta:
         model = Company 
         fields = [
             "name", "logo_url", "description" , "categories", 
-            "social_media_links", "get_absolute_url", "slug", 
+            "get_absolute_url", "slug", "summary",  
             "company_type", "footer_content", "meta_title",
             "phone1", "phone2", "blogs", "faqs", "whatsapp", 
             "email", "meta_tags", "meta_description", 
-            "favicon_url", "price_range", "twitter", "facebook",
-            "created", "updated", "clients", "rating", "social_media_links",
-            "sub_type", "type_slug"
+            "favicon_url", "price_range", "phone",
+            "created", "updated", "clients", "rating",
+            "sub_type", "type_slug", "detail_pages", "multipages"
         ]
+
+    read_only_fields = "__all__"
+
+    def get_phone(self, obj):
+        first_contact_obj_of_company = obj.contacts.first()
+
+        if first_contact_obj_of_company:
+            return first_contact_obj_of_company.mobile or first_contact_obj_of_company.tel or None
+        
+        return None
 
     def get_logo_url(self, obj):
         request = self.context.get('request')
@@ -88,22 +114,113 @@ class CompanySerializer(serializers.ModelSerializer):
     
     def get_categories(self, obj):
         categories = obj.categories
-        return list(categories) if categories else []   
+        return list(categories) if categories else []      
     
-    def get_social_media_links(self, obj):
-        if not obj:
+    def get_detail_pages(self, obj):
+        from educational.models import CourseDetail
+        from service.models import ServiceDetail
+        from product.models import ProductDetailPage
+        from registration.models import RegistrationDetailPage
+
+        if not obj.type:
             return None
         
-        return obj.social_media_links
+        if obj.type.name == "Education":
+            detail_pages = CourseDetail.objects.filter(company = obj).order_by("course__name")
+
+            return [{
+                "title": page.course.name,
+                "slug": page.slug,
+                "url": f'/{page.company.slug}/{page.course.program.slug}/{page.course.specialization.slug}/{page.slug}'
+            } for page in detail_pages]
+        
+        elif obj.type.name == "Service":
+            detail_pages = ServiceDetail.objects.filter(company = obj).order_by("service__name")
+
+            return [{
+                "title": page.service.name,
+                "slug": page.slug,
+                "url": f'/{page.company.slug}/{page.service.category.slug}/{page.service.sub_category.slug}/{page.slug}'
+            } for page in detail_pages]
+        
+        elif obj.type.name == "Product":
+            detail_pages = ProductDetailPage.objects.filter(company = obj).order_by("product__name")
+
+            return [{
+                "title": page.product.name,
+                "slug": page.slug,
+                "url": f'/{page.company.slug}/{page.product.category.slug}/{page.product.sub_category.slug}/{page.slug}'
+            } for page in detail_pages]
+        
+        elif obj.type.name == "Registration":
+            detail_pages = RegistrationDetailPage.objects.filter(company = obj).order_by("registration__title")
+
+            return [{
+                "title": page.registration.title,
+                "slug": page.slug,
+                "url": f'/{page.company.slug}/{page.registration.registration_type.slug}/{page.registration.sub_type.slug}/{page.slug}'
+            } for page in detail_pages]
+        
+        else: return None
+    
+    def get_multipages(self, obj):
+        from educational.models import MultiPage as CourseMultiPage
+        from service.models import MultiPage as  ServiceMultiPage
+        from product.models import MultiPage as ProductMultiPage
+        from registration.models import MultiPage as RegistrationMultiPage
+
+        if not obj.type.name:
+            return None
+        
+        if obj.type.name == "Education":
+            multipages = CourseMultiPage.objects.filter(company = obj).order_by("title")
+
+            return [{
+                "title": page.title,
+                "slug": page.slug,
+                "home_footer_visibility": page.home_footer_visibility if page.home_footer_visibility else None
+                # "url": f'/{page.company.slug}/{page.course.program.slug}/{page.course.specialization.slug}/{page.slug}'
+            } for page in multipages]
+        
+        elif obj.type.name == "Service":
+            multipages = ServiceMultiPage.objects.filter(company = obj).order_by("title")
+
+            return [{
+                "title": page.title,
+                "slug": page.slug,
+                "home_footer_visibility": page.home_footer_visibility
+                # "url": f'/{page.company.slug}/{page.service.category.slug}/{page.service.sub_category.slug}/{page.slug}'
+            } for page in multipages]
+        
+        elif obj.type.name == "Product":
+            multipages = ProductMultiPage.objects.filter(company = obj).order_by("title")
+
+            return [{
+                "title": page.title,
+                "slug": page.slug,
+                "home_footer_visibility": page.home_footer_visibility
+                # "url": f'/{page.company.slug}/{page.product.category.slug}/{page.product.sub_category.slug}/{page.slug}'
+            } for page in multipages]
+        
+        elif obj.type.name == "Registration":
+            multipages = RegistrationMultiPage.objects.filter(company = obj).order_by("title")
+
+            return [{
+                "title": page.title,
+                "slug": page.slug,
+                "home_footer_visibility": page.home_footer_visibility
+                # "url": f'/{page.company.slug}/{page.registration_sub_type.type.slug}/{page.registration_sub_type.slug}/{page.slug}'
+            } for page in multipages]
+        
+        else: return None
     
 
 class CompanyTypeSerializer(serializers.ModelSerializer):
-    companies = CompanySerializer(many=True, read_only=True)
+    companies = CompanySerializer(many=True, read_only=True)    
 
     class Meta:
         model = CompanyType
         fields = ["name", "slug", "companies", "categories"]
-    
 
 class ContactEnquirySerializer(serializers.ModelSerializer):
     company = serializers.SerializerMethodField()
@@ -173,3 +290,19 @@ class ContactEnquirySerializer(serializers.ModelSerializer):
                 )
         
         return data
+    
+
+class BannerSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Banner
+        fields = ["title", "description", "link", "image_url", "slug"]
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            if request is not None:
+                return request.build_absolute_uri(obj.image.url)
+            return f"{settings.SITE_URL}{obj.image.url}"
+        return None

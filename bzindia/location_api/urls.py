@@ -21,7 +21,7 @@ router.register(r'districts', DistrictViewset, basename="district")
 router.register(r'places', PlaceViewset, basename="place")
 router.register(r'nearby_locations', GetNearbyLocationsViewSet, basename="location")
 router.register(r'nearby_csc_centers', GetNearbyCscCentersViewSet, basename="csc_center")
-router.register(r'get_location', LocationMatchViewSet, basename="get_location")
+# router.register(r'get_location', LocationMatchViewSet, basename="get_location")
 router.register(r'popular_cities', PopularCityViewSet, basename="popular_city")
 
 states_router = NestedDefaultRouter(router, r'states', lookup="state")
@@ -40,5 +40,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('', include(states_router.urls)),
     path('', include(districts_router.urls)),
-    path('nearest_place/', GetNearestLocationViewSet.as_view({"get":"get"}))
+    path('nearest_place/', GetNearestLocationViewSet.as_view({"get":"get"})),
+    path('get_location/<str:location_type>/<str:slug>/', LocationMatchViewSet.as_view({"get":"retrieve"}), name="get_location"),
 ]
