@@ -15,7 +15,7 @@ class ClientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Client
-        fields = ["name", "image_url", "slug"]
+        fields = ["id","name", "image_url", "slug"]
 
     def get_image_url(self, obj):
         request = self.context.get('request')
@@ -33,7 +33,7 @@ class TestimonialSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Testimonial
-        fields = [
+        fields = ["id",
             "name", "image_url", "slug", "client_company", "place_name",
             "text", "rating", "company_rating"
             ]
@@ -60,6 +60,82 @@ class TestimonialSerializer(serializers.ModelSerializer):
         return None
     
 
+class MiniCompanySerializer(serializers.ModelSerializer):
+    logo_url = serializers.SerializerMethodField()
+    type_slug = serializers.CharField(source = "type.slug", read_only=True)    
+    company_type = serializers.CharField(source = "type.name", read_only=True)    
+
+    class Meta:
+        model = Company 
+        fields = ["id",
+            "name", "logo_url", "description", 
+            "slug", "summary", "get_absolute_url",  
+            "company_type", "meta_title",
+            "meta_description", "type_slug",
+            "slug"
+        ]
+
+    def get_logo_url(self, obj):
+        request = self.context.get('request')
+        if obj.logo and hasattr(obj.logo, 'url'):
+            if request is not None:
+                return request.build_absolute_uri(obj.logo.url)
+            return f"{settings.SITE_URL}{obj.logo.url}"
+        return None
+    
+
+class NavbarCompanySerializer(serializers.ModelSerializer):
+    detail_pages = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Company 
+        fields = ["id", "name", "slug", "detail_pages"]
+
+    
+    def get_detail_pages(self, obj):        
+
+        if not obj.type:
+            return None
+        
+        if obj.type.name == "Education":
+            detail_pages = obj.course_details.order_by("?")[:32]
+
+            return [{
+                "title": page.course.name,
+                "slug": page.slug,
+                "url": f'/{page.company.slug}/{page.course.program.slug}/{page.course.specialization.slug}/{page.slug}'
+            } for page in detail_pages]
+        
+        elif obj.type.name == "Service":
+            detail_pages = obj.service_details.order_by("?")[:32]
+
+            return [{
+                "title": page.service.name,
+                "slug": page.slug,
+                "url": f'/{page.company.slug}/{page.service.category.slug}/{page.service.sub_category.slug}/{page.slug}'
+            } for page in detail_pages]
+        
+        elif obj.type.name == "Product":
+            detail_pages = obj.product_details.order_by("?")[:32]
+
+            return [{
+                "title": page.product.name,
+                "slug": page.slug,
+                "url": f'/{page.company.slug}/{page.product.category.slug}/{page.product.sub_category.slug}/{page.slug}'
+            } for page in detail_pages]
+        
+        elif obj.type.name == "Registration" and obj.registration_details:
+            detail_pages = obj.registration_details.order_by("?")[:32]
+
+            return [{
+                "title": page.registration.title,
+                "slug": page.slug,
+                "url": f'/{page.company.slug}/{page.registration.registration_type.slug}/{page.registration.sub_type.slug}/{page.slug}'
+            } for page in detail_pages]
+        
+        else: return None
+
+
 class CompanySerializer(serializers.ModelSerializer):
     logo_url = serializers.SerializerMethodField()
     favicon_url = serializers.SerializerMethodField()
@@ -70,12 +146,13 @@ class CompanySerializer(serializers.ModelSerializer):
     clients = ClientSerializer(many=True, read_only=True)
     type_slug = serializers.CharField(source = "type.slug", read_only=True)    
     detail_pages = serializers.SerializerMethodField()
-    multipages = serializers.SerializerMethodField()
+    # multipages = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
+    items_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Company 
-        fields = [
+        fields = ["id",
             "name", "logo_url", "description" , "categories", 
             "get_absolute_url", "slug", "summary",  
             "company_type", "footer_content", "meta_title",
@@ -83,7 +160,9 @@ class CompanySerializer(serializers.ModelSerializer):
             "email", "meta_tags", "meta_description", 
             "favicon_url", "price_range", "phone",
             "created", "updated", "clients", "rating",
-            "sub_type", "type_slug", "detail_pages", "multipages"
+            "sub_type", "type_slug", "detail_pages", 
+            # "multipages",
+            "items_url"
         ]
 
     read_only_fields = "__all__"
@@ -161,56 +240,23 @@ class CompanySerializer(serializers.ModelSerializer):
                 "url": f'/{page.company.slug}/{page.registration.registration_type.slug}/{page.registration.sub_type.slug}/{page.slug}'
             } for page in detail_pages]
         
-        else: return None
-    
-    def get_multipages(self, obj):
-        from educational.models import MultiPage as CourseMultiPage
-        from service.models import MultiPage as  ServiceMultiPage
-        from product.models import MultiPage as ProductMultiPage
-        from registration.models import MultiPage as RegistrationMultiPage
+        else: return None        
 
-        if not obj.type.name:
+    def get_items_url(self, obj):        
+        if not obj.type:
             return None
         
         if obj.type.name == "Education":
-            multipages = CourseMultiPage.objects.filter(company = obj).order_by("title")
-
-            return [{
-                "title": page.title,
-                "slug": page.slug,
-                "home_footer_visibility": page.home_footer_visibility if page.home_footer_visibility else None
-                # "url": f'/{page.company.slug}/{page.course.program.slug}/{page.course.specialization.slug}/{page.slug}'
-            } for page in multipages]
+            return "courses"            
         
         elif obj.type.name == "Service":
-            multipages = ServiceMultiPage.objects.filter(company = obj).order_by("title")
-
-            return [{
-                "title": page.title,
-                "slug": page.slug,
-                "home_footer_visibility": page.home_footer_visibility
-                # "url": f'/{page.company.slug}/{page.service.category.slug}/{page.service.sub_category.slug}/{page.slug}'
-            } for page in multipages]
+            return "services"
         
         elif obj.type.name == "Product":
-            multipages = ProductMultiPage.objects.filter(company = obj).order_by("title")
-
-            return [{
-                "title": page.title,
-                "slug": page.slug,
-                "home_footer_visibility": page.home_footer_visibility
-                # "url": f'/{page.company.slug}/{page.product.category.slug}/{page.product.sub_category.slug}/{page.slug}'
-            } for page in multipages]
+            return "products"
         
         elif obj.type.name == "Registration":
-            multipages = RegistrationMultiPage.objects.filter(company = obj).order_by("title")
-
-            return [{
-                "title": page.title,
-                "slug": page.slug,
-                "home_footer_visibility": page.home_footer_visibility
-                # "url": f'/{page.company.slug}/{page.registration_sub_type.type.slug}/{page.registration_sub_type.slug}/{page.slug}'
-            } for page in multipages]
+            return "registrations"
         
         else: return None
     
@@ -220,7 +266,22 @@ class CompanyTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CompanyType
-        fields = ["name", "slug", "companies", "categories"]
+        fields = ["id","name", "slug", "companies", "categories"]
+
+
+class NavbarCompanyTypeSerializer(serializers.ModelSerializer):
+    companies = NavbarCompanySerializer(many=True, read_only=True)    
+
+    class Meta:
+        model = CompanyType
+        fields = ["id","name", "slug", "companies"]
+
+    
+class MiniCompanyTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompanyType
+        fields = ["id","name"]
+
 
 class ContactEnquirySerializer(serializers.ModelSerializer):
     company = serializers.SerializerMethodField()
@@ -246,7 +307,7 @@ class ContactEnquirySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = ContactEnquiry
-        fields = ["company", "name", "phone", "email", "state", "message"]
+        fields = ["id","company", "name", "phone", "email", "state", "message"]
         extra_kwargs = {
             'company': {'required': False},
             'name': {'required': True},
@@ -259,7 +320,7 @@ class ContactEnquirySerializer(serializers.ModelSerializer):
     def validate(self, data):
         # Clean string fields
         cleaned_data = {}
-        string_fields = ['name', 'message']
+        string_fields = ["id",'name', 'message']
         
         for field in string_fields:
             value = data.get(field, '').strip()
@@ -297,7 +358,7 @@ class BannerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Banner
-        fields = ["title", "description", "link", "image_url", "slug"]
+        fields = ["id","title", "description", "link", "image_url", "slug"]
 
     def get_image_url(self, obj):
         request = self.context.get('request')

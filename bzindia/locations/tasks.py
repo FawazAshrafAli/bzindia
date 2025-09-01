@@ -26,7 +26,7 @@ def run1():
     top_left = (37.1, 68.1)
     bottom_right = (27.4, 97.5)
 
-    top_left = (32.4, 68.1)
+    top_left = (29.95, 68.1)
 
     api_key = os.getenv('OPENCAGE_API_KEY_1')
     opencage_cache = "opencage_requested_1"
@@ -42,7 +42,7 @@ def run2():
     top_left = (27.4, 68.1)
     bottom_right = (17.7, 97.5) 
 
-    top_left = (23.25, 68.1)
+    top_left = (20.45, 68.1)
 
     api_key = os.getenv('OPENCAGE_API_KEY_2')
     opencage_cache = "opencage_requested_2"
@@ -58,7 +58,7 @@ def run3():
     top_left = (17.7, 68.1)
     bottom_right = (8.0, 97.5)
 
-    top_left = (13.0, 68.1)
+    top_left = (10.15, 68.1)
 
     api_key = os.getenv('OPENCAGE_API_KEY_3')
     opencage_cache = "opencage_requested_3"

@@ -249,12 +249,7 @@
 
 {% block scripts %}
 <script>
-    $(document).ready(() => {
-        
-        let namePattern = /^[a-zA-Z\s'-]+$/;
-        let slugPattern = /^[a-zA-Z0-9_-]+$/;
-        let phonePattern = /^[+]?(\d{1,3})?[-.\s]?(\d{1,4})[-.\s]?(\d{1,4})[-.\s]?(\d{1,9})$/;
-        let emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    $(document).ready(() => {        
 
         function validateForm() {  
             const data = {}   
@@ -277,7 +272,7 @@
             const email = $('#email-input').val().trim();
 
 
-            if (!company || !namePattern.test(company)) {
+            if (!company) {
                 $('#company-input').addClass('is-invalid');
                 $('#company-input').focus();
                 formValid = false;
@@ -300,7 +295,7 @@
                 data["companyTypeDropdown"] = companyTypeDropdown
             }
 
-            if (!slug || !slugPattern.test(slug)) {
+            if (!slug) {
                 $('#slug-input').addClass('is-invalid');
                 $('#slug-input').focus();
                 formValid = false;
@@ -333,7 +328,7 @@
                 data["logo"] = logo
             }
 
-            if (!phone1 || !phonePattern.test(phone1)) {
+            if (!phone1) {
                 $('#phone1-input').addClass('is-invalid');
                 $('#phone1-input').focus();
                 formValid = false;
@@ -344,7 +339,7 @@
                 data["phone1"] = phone1
             }
 
-            if (!phone2 || !phonePattern.test(phone2)) {
+            if (!phone2) {
                 $('#phone2-input').addClass('is-invalid');
                 $('#phone2-input').focus();
                 formValid = false;
@@ -355,7 +350,7 @@
                 data["phone2"] = phone2
             }
 
-            if (!whatsapp || !phonePattern.test(whatsapp)) {
+            if (!whatsapp) {
                 $('#whatsapp-input').addClass('is-invalid');
                 $('#whatsapp-input').focus();
                 formValid = false;
@@ -366,7 +361,7 @@
                 data["whatsapp"] = whatsapp
             }
 
-            if (!email || !emailPattern.test(email)) {
+            if (!email) {
                 $('#email-input').addClass('is-invalid');
                 $('#email-input').focus();
                 formValid = false;
@@ -411,36 +406,11 @@
                 $(this).addClass('is-invalid');
                 $(this).removeClass('is-valid');
             } else {
-                if ($(this).prop('id') == "slug-input" && !slugPattern.test($(this).val().trim())) {
-                    $(this).addClass('is-invalid');
-                    $(this).removeClass('is-valid');
-
-                } else if ($(this).prop('id') == "company-input" && !namePattern.test($(this).val().trim())) {
-                    $(this).addClass('is-invalid');
-                    $(this).removeClass('is-valid');
-
-                } else if ($(this).prop('id') == "phone1-input" && !phonePattern.test($(this).val().trim())) {
-                    $(this).addClass('is-invalid');
-                    $(this).removeClass('is-valid');
-
-                } else if ($(this).prop('id') == "phone2-input" && !phonePattern.test($(this).val().trim())) {
-                    $(this).addClass('is-invalid');
-                    $(this).removeClass('is-valid');
-
-                } else if ($(this).prop('id') == "whatsapp-input" && !phonePattern.test($(this).val().trim())) {
-                    $(this).addClass('is-invalid');
-                    $(this).removeClass('is-valid');
-
-                } else if ($(this).prop('id') == "email-input" && !emailPattern.test($(this).val().trim())) {
-                    $(this).addClass('is-invalid');
-                    $(this).removeClass('is-valid');
-
-                } else {
-                    $(this).addClass('is-valid');
-                    $(this).removeClass('is-invalid');
-                }                
+                $(this).addClass('is-valid');
+                $(this).removeClass('is-invalid');
+            }                
             }
-        });
+        );
 
         // changing
 
@@ -490,6 +460,29 @@
                 )
             }
             $('#other-services').html()
+        });
+
+        // Function for adding new meta tags
+        $(document).on('input', '.search-field input', function () {
+            const text = $(this).val().trim();
+
+            if (text.endsWith(',')) {
+                const tag = text.replace(',', '');
+
+                const newOption = `<option value="${tag}" selected>${tag}</option>`;
+
+                const optionExists = $('select[name="meta_tag"] option').filter(function() {
+                    return $(this).val().toLowerCase() === tag.toLowerCase() | $(this).html().toLowerCase() === tag.toLowerCase();
+                }).length > 0;
+
+                if (!optionExists) {
+                    $('select[name="meta_tag"]').append(newOption);
+    
+                    $('.chosen-select').trigger("chosen:updated");
+                }
+
+                $(this).val('');
+            }
         });
 
     })

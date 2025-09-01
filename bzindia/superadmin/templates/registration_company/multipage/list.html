@@ -37,8 +37,10 @@
 									<td>										
 										<a href="{% url 'superadmin:registration_multipage' current_company.slug multipage.slug %}" >{{multipage.title}}</a>
 									</td>
-									<td class="text-center">										
+									<td class="text-center">
+										{% if multipage.registration_region == "all" %}
 										<input type="checkbox" class="multipage-checkbox" name="multipage_checkbox" {% if multipage.home_footer_visibility %}checked{% endif %}  value="{{multipage.slug}}">
+										{% endif %}
 									</td>									
 									
 									<td class="text-center">

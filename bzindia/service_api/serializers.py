@@ -24,13 +24,37 @@ class FaqSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Faq
-        fields = ["company", "question", "answer", "slug"]
+        fields = ["id","company", "question", "answer", "slug"]
 
     def get_company(self, obj):
         if obj.company:
             return {"name": obj.company.name, "slug": obj.company.slug}
         
         return {}
+    
+
+class MiniServiceSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    category_name = serializers.CharField(source="category.name", read_only = True)
+    sub_category_name = serializers.CharField(source="sub_category.name", read_only = True)
+
+    class Meta:
+        model = Service
+        fields = ["id",
+            "name", "image_url", "category_name", 
+            "price", "sub_category_name",            
+            ]
+
+        read_only_fields = fields
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            if request is not None:
+                return request.build_absolute_uri(obj.image.url)
+            return f"{settings.SITE_URL}{obj.image.url}"
+        
+        return None
 
 class ServiceSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
@@ -44,19 +68,18 @@ class ServiceSerializer(serializers.ModelSerializer):
     company_logo_url = serializers.SerializerMethodField()
     faqs = serializers.SerializerMethodField()
     testimonials = serializers.SerializerMethodField()
-    blogs = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
-        fields = [
+        fields = ["id",
             "name", "image_url", "company_name", "category_name", 
             "duration_count", "price", "company_logo_url", 
             "company_social_medias", "slug", "sub_category_name",
-            "faqs", "testimonials", "blogs", "category_slug", 
+            "faqs", "testimonials", "category_slug", 
             "sub_category_slug"
             ]
 
-        read_only_fields = ["company_name"]
+        read_only_fields = ["id","company_name"]
 
     def get_image_url(self, obj):
         request = self.context.get('request')
@@ -103,17 +126,7 @@ class ServiceSerializer(serializers.ModelSerializer):
 
         serializer = TestimonialSerializer(testimonials, many=True)
 
-        return serializer.data
-    
-    def get_blogs(self, obj):
-        if not obj:
-            return None
-        
-        blogs = Blog.objects.filter(company = obj.company, service = obj, is_published = True)
-
-        serializer = BlogSerializer(blogs, many=True)
-
-        return serializer.data
+        return serializer.data    
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -124,7 +137,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ["name", "slug", "updated", "detail_pages", "blogs", "testimonials",
+        fields = ["id","name", "slug", "updated", "detail_pages", "blogs", "testimonials",
                   "image_url"]
         
     def get_image_url(self, obj):
@@ -172,7 +185,7 @@ class SubCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SubCategory
-        fields = [
+        fields = ["id",
             "name", "slug", "updated", "image_url", "category_name", 
             "category_slug", "testimonials", "blogs"
             ]
@@ -199,7 +212,7 @@ class SubCategorySerializer(serializers.ModelSerializer):
 
         service = obj.services.filter(image__isnull = False).first()
 
-        if service.image and hasattr(service.image, 'url'):
+        if service and service.image and hasattr(service.image, 'url'):
             if request is not None:
                 return request.build_absolute_uri(service.image.url)
             return f"{settings.SITE_URL}{service.image.url}"
@@ -211,19 +224,19 @@ class SubCategorySerializer(serializers.ModelSerializer):
 class FeatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feature
-        fields = ["feature", "id"]
+        fields = ["id","feature", "id"]
 
 
 class VerticalBulletSerializer(serializers.ModelSerializer):
     class Meta:
         model = VerticalBullet
-        fields = ["id", "bullet"]
+        fields = ["id","id", "bullet"]
 
 
 class HorizontalBulletSerializer(serializers.ModelSerializer):
     class Meta:
         model = HorizontalBullet
-        fields = ["id", "bullet"]
+        fields = ["id","id", "bullet"]
 
     
 class VerticalTabSerializer(serializers.ModelSerializer):
@@ -231,7 +244,7 @@ class VerticalTabSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VerticalTab
-        fields = [
+        fields = ["id",
             "id", "heading", "sub_heading", "summary", "bullets"
             ]
         
@@ -241,7 +254,7 @@ class HorizontalTabSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HorizontalTab
-        fields = [
+        fields = ["id",
             "id", "heading", "summary", "bullets"
             ]
         
@@ -249,7 +262,7 @@ class HorizontalTabSerializer(serializers.ModelSerializer):
 class TableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Table
-        fields = [
+        fields = ["id",
             "id", "heading"
             ]
 
@@ -257,7 +270,7 @@ class TableSerializer(serializers.ModelSerializer):
 class BulletPointSerializer(serializers.ModelSerializer):
     class Meta:
         model = BulletPoints
-        fields = [
+        fields = ["id",
             "id", "bullet_point"
             ]
         
@@ -265,10 +278,36 @@ class BulletPointSerializer(serializers.ModelSerializer):
 class TimelineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Timeline
-        fields = [
+        fields = ["id",
             "id", "heading", "summary"
             ]
 
+
+class MiniDetailSerializer(serializers.ModelSerializer):
+    service = MiniServiceSerializer()
+           
+    company_slug = serializers.CharField(source="company.slug", read_only=True)
+    company_sub_type = serializers.CharField(source="company.sub_type", read_only=True)
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ServiceDetail
+        fields = ["id",
+            "meta_description", "service", "company_slug",
+            "company_sub_type", "url"
+            ] 
+        
+    def get_url(self, obj):
+        try:
+            company_slug = obj.company.slug
+            category_slug = obj.service.category.slug
+            sub_category_slug = obj.service.sub_category.slug
+            slug = obj.slug
+        except AttributeError:
+            return None
+
+        return f"{company_slug}/{category_slug}/{sub_category_slug}/{slug}"
+        
 
 class DetailSerializer(serializers.ModelSerializer):
     service = ServiceSerializer()
@@ -279,7 +318,6 @@ class DetailSerializer(serializers.ModelSerializer):
     tables = TableSerializer(many=True, read_only=True)
     bullet_points = BulletPointSerializer(many=True, read_only=True)    
     timelines = TimelineSerializer(many=True, read_only=True)
-    blogs = BlogSerializer(many=True, read_only=True)
     meta_tags = MetaTagSerializer(many=True, read_only=True)    
     company_slug = serializers.CharField(source="company.slug", read_only=True)
     company_sub_type = serializers.CharField(source="company.sub_type", read_only=True)
@@ -287,7 +325,7 @@ class DetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ServiceDetail
-        fields = [
+        fields = ["id",
             "meta_title", "meta_description", "company_slug",
             "summary", "description", "features", "service", "slug",
             "vertical_title", "horizontal_title", "vertical_tabs", 
@@ -296,7 +334,7 @@ class DetailSerializer(serializers.ModelSerializer):
             "timeline_title", "timelines", "toc", "hide_features", 
             "hide_vertical_tab", "hide_horizontal_tab", "hide_table",
             "hide_bullets", "hide_timeline", "hide_support_languages",
-            "blogs", "meta_tags", "published", "company_sub_type",
+            "meta_tags", "published", "company_sub_type",
             "modified", "updated", "created", "url"
             ] 
         
@@ -342,7 +380,7 @@ class EnquirySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Enquiry
-        fields = ["company", "name", "phone", "email", "service", "state"]
+        fields = ["id","company", "name", "phone", "email", "service", "state"]
         extra_kwargs = {
             'company': {'required': False}, 
             'name': {'required': True},
@@ -363,7 +401,7 @@ class EnquirySerializer(serializers.ModelSerializer):
     def validate(self, data):
         # Clean string fields
         cleaned_data = {}
-        string_fields = ['name']
+        string_fields = ["id",'name']
         
         for field in string_fields:
             value = data.get(field, '').strip()
@@ -391,19 +429,19 @@ class EnquirySerializer(serializers.ModelSerializer):
 class MultipageFeatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageFeature
-        fields = ["feature", "id"]
+        fields = ["id","feature", "id"]
 
 
 class MultipageVerticalBulletSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageVerticalBullet
-        fields = ["id", "bullet"]
+        fields = ["id","id", "bullet"]
 
 
 class MultipageHorizontalBulletSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageHorizontalBullet
-        fields = ["id", "bullet"]
+        fields = ["id","id", "bullet"]
 
     
 class MultipageVerticalTabSerializer(serializers.ModelSerializer):
@@ -411,7 +449,7 @@ class MultipageVerticalTabSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MultiPageVerticalTab
-        fields = [
+        fields = ["id",
             "id", "heading", "sub_heading", "summary", "bullets"
             ]
         
@@ -421,7 +459,7 @@ class MultipageHorizontalTabSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MultiPageHorizontalTab
-        fields = [
+        fields = ["id",
             "id", "heading", "summary", "bullets"
             ]
         
@@ -429,7 +467,7 @@ class MultipageHorizontalTabSerializer(serializers.ModelSerializer):
 class MultipageTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageTable
-        fields = [
+        fields = ["id",
             "id", "heading"
             ]
 
@@ -437,7 +475,7 @@ class MultipageTableSerializer(serializers.ModelSerializer):
 class MultipageBulletPointSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageBulletPoint
-        fields = [
+        fields = ["id",
             "id", "bullet_point"
             ]
         
@@ -445,7 +483,7 @@ class MultipageBulletPointSerializer(serializers.ModelSerializer):
 class MultipageTimelineSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageTimeline
-        fields = [
+        fields = ["id",
             "id", "heading", "summary"
             ]
         
@@ -455,7 +493,7 @@ class MultipageFaqSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MultiPageFaq
-        fields = ["company", "question", "answer", "slug"]
+        fields = ["id","company", "question", "answer", "slug"]
 
     def get_company(self, obj):
         if obj.company:
@@ -487,7 +525,7 @@ class MultipageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MultiPage
-        fields = [
+        fields = ["id",
             "title", "summary", "description", "slider_services", "features", "slug",
             "vertical_title", "horizontal_title", "vertical_tabs", 
             "horizontal_tabs", "table_title", "tables", "get_data",

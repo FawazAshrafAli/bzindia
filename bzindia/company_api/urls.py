@@ -6,7 +6,9 @@ from .views import (
     CompanyBlogArchivesViewSets, CompanyAboutUsViewSet,
     ContactEnquiryViewSet, CompanyProgramViewSet,
     CompanyClientViewset, CompanyTestimonialViewset,
-    CompanyReviewViewset, CompanyBannerViewset, CompanyContactUsViewset
+    CompanyReviewViewset, CompanyBannerViewset, CompanyContactUsViewset,
+    MiniCompanyApiViewset, BriefCompanyTypeApiViewset, 
+    NavbarCompanyTypeApiViewset
     )
 
 app_name = "company_api"
@@ -14,7 +16,10 @@ app_name = "company_api"
 router = DefaultRouter()
 
 router.register(r'companies', CompanyApiViewset, basename="company")
+router.register(r'brief-companies', MiniCompanyApiViewset, basename="brief-company")
 router.register(r'company_types', CompanyTypeApiViewset, basename="company_type")
+router.register(r'brief-company-types', BriefCompanyTypeApiViewset, basename="brief-company-type")
+router.register(r'navbar-company-types', NavbarCompanyTypeApiViewset, basename="navbar-company-type")
 
 companies_router = NestedDefaultRouter(router, r'companies', lookup="company")
 

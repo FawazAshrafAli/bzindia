@@ -26,6 +26,32 @@
 		</div>
 	</div>
 	<!-- /Page Header -->
+
+    <div class="settings-menu-links">
+        <ul class="nav nav-tabs menu-tabs">							
+            <li class="nav-item {% if current_custom_page == "About Us" %}active{% endif %}">
+                <a class="nav-link" href="{% url 'superadmin:about_us' %}">About Us</a>
+            </li>
+            <li class="nav-item {% if current_custom_page == "Contact Us" %}active{% endif %}">
+                <a class="nav-link" href="{% url 'superadmin:contact_us' %}">Contact Us</a>
+            </li>
+            <li class="nav-item {% if current_custom_page == "FAQ" %}active{% endif %}">
+                <a class="nav-link" href="{% url 'superadmin:faq' %}">FAQ</a>
+            </li>
+            <li class="nav-item {% if current_custom_page == "Privacy Policy" %}active{% endif %}">
+                <a class="nav-link" href="{% url 'superadmin:privacy_policies' %}">Privacy Policy</a>
+            </li>
+            <li class="nav-item {% if current_custom_page == "Terms And Conditions" %}active{% endif %}">
+                <a class="nav-link" href="{% url 'superadmin:terms_and_conditions' %}">Terms &amp; Conditions</a>
+            </li>
+            <li class="nav-item {% if current_custom_page == "Shipping And Delivery Policy" %}active{% endif %}">
+                <a class="nav-link" href="{% url 'superadmin:shipping_and_delivery_policies' %}">Shipping &amp; Delivery Policy</a>
+            </li>
+            <li class="nav-item {% if current_custom_page == "Cancellation And Refund Policy" %}active{% endif %}">
+                <a class="nav-link" href="{% url 'superadmin:cancellation_and_refund_policies' %}">Cancellation &amp; Refund Policy</a>
+            </li>
+        </ul>
+    </div>
 	
 	<!-- Content Starts -->
     <div class="row">

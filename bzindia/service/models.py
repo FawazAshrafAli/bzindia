@@ -297,7 +297,7 @@ class Timeline(models.Model):
 
 
 class ServiceDetail(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="service_details")
     service = models.ForeignKey(Service, on_delete=models.CASCADE)
 
     summary = models.TextField()

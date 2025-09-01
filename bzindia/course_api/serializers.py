@@ -25,6 +25,31 @@ from meta_api.serializers import MetaTagSerializer
 
 from .paginations import CoursePagination
 
+class MiniCourseSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    program_name = serializers.CharField(source='program.name', read_only=True)
+    company_name = serializers.CharField(source='company.name', read_only=True)     
+
+    class Meta:
+        model = Course
+        fields = ["id",
+            "name", "program_name", "image_url",
+            "company_name", "mode", 
+            "starting_date", "ending_date", "duration",
+            "price", "rating", "rating_count"          
+            ]
+        
+        read_only_fields = fields
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            if request is not None:
+                return request.build_absolute_uri(obj.image.url)
+            return f"{settings.SITE_URL}{obj.image.url}"
+        return None
+    
+
 class CourseSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     program_name = serializers.CharField(source='program.name', read_only=True)
@@ -37,7 +62,7 @@ class CourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = [
+        fields = ["id",
             "name", "program_name", "image_url", "company_sub_type",
             "description", "company_name", "company_slug", "mode", 
             "starting_date", "ending_date", "duration", "program_slug",
@@ -59,19 +84,19 @@ class CourseSerializer(serializers.ModelSerializer):
 class FeatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feature
-        fields = ["feature", "id"]
+        fields = ["id","feature", "id"]
 
 
 class VerticalBulletSerializer(serializers.ModelSerializer):
     class Meta:
         model = VerticalBullet
-        fields = ["id", "bullet"]
+        fields = ["id","id", "bullet"]
 
 
 class HorizontalBulletSerializer(serializers.ModelSerializer):
     class Meta:
         model = HorizontalBullet
-        fields = ["id", "bullet"]
+        fields = ["id","id", "bullet"]
 
     
 class VerticalTabSerializer(serializers.ModelSerializer):
@@ -79,7 +104,7 @@ class VerticalTabSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VerticalTab
-        fields = [
+        fields = ["id",
             "id", "heading", "sub_heading", "summary", "bullets"
             ]
         
@@ -89,7 +114,7 @@ class HorizontalTabSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HorizontalTab
-        fields = [
+        fields = ["id",
             "id", "heading", "summary", "bullets"
             ]
         
@@ -97,7 +122,7 @@ class HorizontalTabSerializer(serializers.ModelSerializer):
 class TableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Table
-        fields = [
+        fields = ["id",
             "id", "heading"
             ]
 
@@ -105,14 +130,14 @@ class TableSerializer(serializers.ModelSerializer):
 class BulletPointSerializer(serializers.ModelSerializer):
     class Meta:
         model = BulletPoints
-        fields = [
+        fields = ["id",
             "id", "bullet_point"
             ]
 
 class TimelineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Timeline
-        fields = [
+        fields = ["id",
             "id", "heading", "summary"
             ]
 
@@ -124,7 +149,7 @@ class StudentTestimonialSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Testimonial
-        fields = ["name", "image_url", "course_name", "place_name", "text", "rating", "slug"]
+        fields = ["id","name", "image_url", "course_name", "place_name", "text", "rating", "slug"]
 
     def get_image_url(self, obj):
         request = self.context.get('request')
@@ -138,7 +163,29 @@ class StudentTestimonialSerializer(serializers.ModelSerializer):
 class CourseFaqSerializer(serializers.ModelSerializer):
     class Meta:
         model = Faq
-        fields = ["question", "answer", "slug"]
+        fields = ["id","question", "answer", "slug"]
+
+    
+class MiniCourseDetailSerializer(serializers.ModelSerializer):    
+    course = MiniCourseSerializer()        
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CourseDetail
+        fields = ["id",
+            "meta_description","course","url"
+            ]
+        
+    def get_url(self, obj):
+        try:
+            company_slug = obj.company.slug
+            program_slug = obj.course.program.slug
+            specialization_slug = obj.course.specialization.slug
+            slug = obj.slug
+        except AttributeError:
+            return None
+
+        return f"{company_slug}/{program_slug}/{specialization_slug}/{slug}"
         
 
 class DetailSerializer(serializers.ModelSerializer):
@@ -149,7 +196,6 @@ class DetailSerializer(serializers.ModelSerializer):
     tables = TableSerializer(many=True, read_only=True)
     bullet_points = BulletPointSerializer(many=True, read_only=True)    
     timelines = TimelineSerializer(many=True, read_only=True)
-    blogs = BlogSerializer(many=True, read_only=True)
     faqs = CourseFaqSerializer(many=True, read_only=True)
     testimonials = StudentTestimonialSerializer(many=True, read_only=True)
     meta_tags = MetaTagSerializer(many=True, read_only=True)
@@ -159,7 +205,7 @@ class DetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CourseDetail
-        fields = [
+        fields = ["id",
             "meta_title", "meta_description", "company_slug",
             "summary", "description", "features", "course", "slug",
             "vertical_title", "horizontal_title", "vertical_tabs", 
@@ -168,7 +214,7 @@ class DetailSerializer(serializers.ModelSerializer):
             "timeline_title", "timelines", "toc", "hide_features", 
             "hide_vertical_tab", "hide_horizontal_tab", "hide_table",
             "hide_bullets", "hide_timeline", "hide_support_languages",
-            "blogs", "faqs", "testimonials", "meta_tags", "published",
+            "faqs", "testimonials", "meta_tags", "published",
             "modified", "item_name", "created", "updated", "url"
             ]
         
@@ -214,7 +260,7 @@ class EnquirySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Enquiry
-        fields = ["company", "name", "phone", "email", "course", "state"]
+        fields = ["id","company", "name", "phone", "email", "course", "state"]
         extra_kwargs = {
             'company': {'required': False},  # Typically set server-side
             'name': {'required': True},
@@ -236,7 +282,7 @@ class EnquirySerializer(serializers.ModelSerializer):
     def validate(self, data):
         # Clean string fields
         cleaned_data = {}
-        string_fields = ['name']
+        string_fields = ["id",'name']
         
         for field in string_fields:
             value = data.get(field, '').strip()
@@ -269,7 +315,7 @@ class ProgramSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Program
-        fields = ["name", "slug", "courses", "blogs", "detail_pages", "testimonials", "updated"]
+        fields = ["id","name", "slug", "courses", "blogs", "detail_pages", "testimonials", "updated"]
 
     def get_testimonials(self, obj):
 
@@ -311,7 +357,7 @@ class SpecializationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Specialization
-        fields = ["name", "slug", "program", "updated", "image_url", "blogs", "updated"]
+        fields = ["id","name", "slug", "program", "updated", "image_url", "blogs", "updated"]
 
     read_only_fields = "__all__"
 
@@ -338,19 +384,19 @@ class SpecializationSerializer(serializers.ModelSerializer):
 class MultipageFeatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageFeature
-        fields = ["feature", "id"]
+        fields = ["id","feature", "id"]
 
 
 class MultipageVerticalBulletSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageVerticalBullet
-        fields = ["id", "bullet"]
+        fields = ["id","id", "bullet"]
 
 
 class MultipageHorizontalBulletSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageHorizontalBullet
-        fields = ["id", "bullet"]
+        fields = ["id","id", "bullet"]
 
     
 class MultipageVerticalTabSerializer(serializers.ModelSerializer):
@@ -358,7 +404,7 @@ class MultipageVerticalTabSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MultiPageVerticalTab
-        fields = [
+        fields = ["id",
             "id", "heading", "sub_heading", "summary", "bullets"
             ]
         
@@ -368,7 +414,7 @@ class MultipageHorizontalTabSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MultiPageHorizontalTab
-        fields = [
+        fields = ["id",
             "id", "heading", "summary", "bullets"
             ]
         
@@ -376,7 +422,7 @@ class MultipageHorizontalTabSerializer(serializers.ModelSerializer):
 class MultipageTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageTable
-        fields = [
+        fields = ["id",
             "id", "heading"
             ]
 
@@ -384,7 +430,7 @@ class MultipageTableSerializer(serializers.ModelSerializer):
 class MultipageBulletPointSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageBulletPoints
-        fields = [
+        fields = ["id",
             "id", "bullet_point"
             ]
         
@@ -392,7 +438,7 @@ class MultipageBulletPointSerializer(serializers.ModelSerializer):
 class MultiPageFaqSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageFaq
-        fields = [
+        fields = ["id",
             "question", "answer", "slug"
         ]
         
@@ -400,7 +446,7 @@ class MultiPageFaqSerializer(serializers.ModelSerializer):
 class MultipageTimelineSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageTimeline
-        fields = [
+        fields = ["id",
             "id", "heading", "summary"
             ]
 
@@ -425,7 +471,7 @@ class MultiPageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MultiPage
-        fields = [
+        fields = ["id",
             "title", "summary", "description", "slider_courses", "features", "slug",
             "vertical_title", "horizontal_title", "vertical_tabs", 
             "horizontal_tabs", "table_title", "tables", "get_data",

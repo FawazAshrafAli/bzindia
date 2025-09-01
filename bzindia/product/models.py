@@ -311,7 +311,7 @@ class Faq(models.Model):
 
 class Review(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="review_company")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     email = models.EmailField(max_length=254, null=True, blank=True)
@@ -443,7 +443,7 @@ class Timeline(models.Model):
 
 
 class ProductDetailPage(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="product_details")
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
     summary = models.TextField(null=True, blank=True)

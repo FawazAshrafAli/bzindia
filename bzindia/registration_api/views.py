@@ -7,7 +7,8 @@ from django.http import Http404
 
 from .serializers import (
     SubTypeSerializer, DetailSerializer, TypeSerializer, 
-    EnquirySerializer, RegistrationSerializer
+    EnquirySerializer, RegistrationSerializer, 
+    MiniDetailSerializer
     )
 from company_api.serializers import CompanySerializer
 
@@ -98,6 +99,42 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
                 filters["registration__sub_type__slug"] = sub_type_slug
 
             return RegistrationDetailPage.objects.filter(**filters)
+        
+        return RegistrationDetailPage.objects.none()
+    
+
+class DetailSliderViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = MiniDetailSerializer
+    lookup_field = "slug"
+    pagination_class = RegistrationPagination
+
+    def get_queryset(self):
+        slug = self.kwargs.get("company_slug")        
+
+        if slug:
+            if slug == "all":
+                return (
+                    RegistrationDetailPage.objects.select_related("registration")
+                    .only(
+                        "id", "slug", "meta_description",
+                        "meta_title", "registration"
+                        )
+                    .order_by("?")[:12]
+                )
+
+            filters = {"company__slug": slug}          
+
+            details = (
+                RegistrationDetailPage.objects.filter(**filters)
+                .select_related("registration")
+                .only(
+                    "id", "slug", "meta_description",
+                    "meta_title", "registration"
+                    )
+                .order_by("?")[:12]
+                )
+
+            return details
         
         return RegistrationDetailPage.objects.none()
 

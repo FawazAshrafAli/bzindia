@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 
 from .serializers import (
     ServiceSerializer, DetailSerializer, EnquirySerializer, SubCategorySerializer, 
-    CategorySerializer
+    CategorySerializer, MiniDetailSerializer
     )
 from company_api.serializers import CompanySerializer
 
@@ -101,7 +101,46 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
             if sub_category_slug:
                 filters["service__sub_category__slug"] = sub_category_slug
 
+                print(sub_category_slug)
+
             return ServiceDetail.objects.filter(**filters)
+        
+        return ServiceDetail.objects.none()
+    
+
+class ServiceSliderDetailViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = MiniDetailSerializer
+    pagination_class = ServiceDetailPagination
+    lookup_field = "slug"
+
+    def get_queryset(self):
+        slug = self.kwargs.get("company_slug")        
+
+        if slug:
+            if slug == "all":
+                return (
+                    ServiceDetail.objects.select_related("service")
+                    .only(
+                        "id", "slug", "meta_description",
+                        "meta_title", "service"
+                        )
+                    .order_by("?")[:12]
+                    )
+                
+
+            filters = {"company__slug": slug}      
+
+            details = (
+                ServiceDetail.objects.filter(**filters)
+                .select_related("service")
+                .only(
+                    "id", "slug", "meta_description",
+                    "meta_title", "service"
+                    )
+                .order_by("?")[:12]
+                )
+
+            return details
         
         return ServiceDetail.objects.none()
 

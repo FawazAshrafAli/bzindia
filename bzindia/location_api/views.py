@@ -474,11 +474,44 @@ class GetNearbyCscCentersViewSet(viewsets.ModelViewSet):
         return CscCenter.objects.none()
 
 
+# class PopularCityViewSet(viewsets.ModelViewSet):
+#     serializer_class = PlaceSerializer 
+
+#     def get_queryset(self):
+
+#         popular_cities = [
+#             "Mumbai", "Bengaluru", "Hyderabad", "Kolkata", "Chennai", "Pune", "Ahmedabad", "Surat", 
+#             "Jaipur", "Lucknow", "Kanpur", "Indore", "Patna", "Nagpur", "Visakhapatnam", "Meerut", 
+#             "Bhopal", "Varanasi", "Agra", "Nashik", "Vijayawada", "Guwahati", "Rajkot", "Warangal", 
+#             "Coimbatore", "Thiruvananthapuram", "Faridabad", "Ghaziabad", "Chandigarh", "Ludhiana", 
+#             "Vadodara", "Raipur", "Jodhpur", "Mangalore", "Gwalior", "Tiruchirappalli", "Jamshedpur", 
+#             "Ranchi", "Prayagraj", "Jalandhar", "Jabalpur", "Chhatrapati Sambhaji Nagar", "Bhubaneswar", 
+#             "Asansol", "Gurugram", "Mysuru", "Noida", "Kochi", "Amritsar", "Saharanpur"
+#             ]
+
+#         place_objs = []
+#         for place in popular_cities:
+#             place_obj = None
+
+#             try:
+#                 place_obj = UniquePlace.objects.get(name=place)
+#             except UniquePlace.MultipleObjectsReturned:
+#                 place_obj = UniquePlace.objects.filter(name=place, district__name=place).order_by('created').first()
+#                 if not place_obj:
+#                     place_obj = UniquePlace.objects.filter(name=place).order_by('created').first()
+#             except UniquePlace.DoesNotExist:
+#                 pass
+
+#             if place_obj:
+#                 place_objs.append(place_obj)        
+
+
+#         return place_objs
+
 class PopularCityViewSet(viewsets.ModelViewSet):
-    serializer_class = PlaceSerializer 
+    serializer_class = PlaceSerializer
 
     def get_queryset(self):
-
         popular_cities = [
             "Mumbai", "Bengaluru", "Hyderabad", "Kolkata", "Chennai", "Pune", "Ahmedabad", "Surat", 
             "Jaipur", "Lucknow", "Kanpur", "Indore", "Patna", "Nagpur", "Visakhapatnam", "Meerut", 
@@ -487,25 +520,21 @@ class PopularCityViewSet(viewsets.ModelViewSet):
             "Vadodara", "Raipur", "Jodhpur", "Mangalore", "Gwalior", "Tiruchirappalli", "Jamshedpur", 
             "Ranchi", "Prayagraj", "Jalandhar", "Jabalpur", "Chhatrapati Sambhaji Nagar", "Bhubaneswar", 
             "Asansol", "Gurugram", "Mysuru", "Noida", "Kochi", "Amritsar", "Saharanpur"
-            ]
+        ]
 
-        place_objs = []
-        for place in popular_cities:
-            place_obj = None
+        # ✅ Single query for all places
+        qs = UniquePlace.objects.filter(name__in=popular_cities).order_by("created")
 
-            try:
-                place_obj = UniquePlace.objects.get(name=place)
-            except UniquePlace.MultipleObjectsReturned:
-                place_obj = UniquePlace.objects.filter(name=place, district__name=place).order_by('created').first()
-                if not place_obj:
-                    place_obj = UniquePlace.objects.filter(name=place).order_by('created').first()
-            except UniquePlace.DoesNotExist:
-                pass
+        # ✅ Build dict to pick first created per city
+        place_map = {}
+        for obj in qs:
+            if obj.name not in place_map:  # first occurrence (earliest created because of order_by)
+                place_map[obj.name] = obj
 
-            if place_obj:
-                place_objs.append(place_obj)        
-
+        # Return them in the same order as popular_cities
+        place_objs = [place_map[city] for city in popular_cities if city in place_map]
 
         return place_objs
+
 
 

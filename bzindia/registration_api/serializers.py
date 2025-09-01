@@ -24,7 +24,7 @@ class FaqSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Faq
-        fields = ["company", "question", "answer", "slug"]
+        fields = ["id","company", "question", "answer", "slug"]
 
     def get_company(self, obj):
         if obj.company:
@@ -45,7 +45,7 @@ class SubTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RegistrationSubType
-        fields = [
+        fields = ["id",
             "name", "type_name", "company_slug", "description", "slug",
             "price", "type_slug", "testimonials",
             "rating", "updated", "image_url"
@@ -99,19 +99,19 @@ class SubTypeSerializer(serializers.ModelSerializer):
 class FeatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feature
-        fields = ["feature", "id"]
+        fields = ["id","feature", "id"]
 
 
 class VerticalBulletSerializer(serializers.ModelSerializer):
     class Meta:
         model = VerticalBullet
-        fields = ["id", "bullet"]
+        fields = ["id","id", "bullet"]
 
 
 class HorizontalBulletSerializer(serializers.ModelSerializer):
     class Meta:
         model = HorizontalBullet
-        fields = ["id", "bullet"]
+        fields = ["id","id", "bullet"]
 
     
 class VerticalTabSerializer(serializers.ModelSerializer):
@@ -119,7 +119,7 @@ class VerticalTabSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VerticalTab
-        fields = [
+        fields = ["id",
             "id", "heading", "sub_heading", "summary", "bullets"
             ]
         
@@ -129,7 +129,7 @@ class HorizontalTabSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HorizontalTab
-        fields = [
+        fields = ["id",
             "id", "heading", "summary", "bullets"
             ]
         
@@ -137,7 +137,7 @@ class HorizontalTabSerializer(serializers.ModelSerializer):
 class TableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Table
-        fields = [
+        fields = ["id",
             "id", "heading"
             ]
 
@@ -145,7 +145,7 @@ class TableSerializer(serializers.ModelSerializer):
 class BulletPointSerializer(serializers.ModelSerializer):
     class Meta:
         model = BulletPoint
-        fields = [
+        fields = ["id",
             "id", "bullet_point"
             ]
         
@@ -153,9 +153,28 @@ class BulletPointSerializer(serializers.ModelSerializer):
 class TimelineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Timeline
-        fields = [
+        fields = ["id",
             "id", "heading", "summary"
             ]
+
+
+class MiniRegistrationSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField() 
+
+    class Meta:
+        model = Registration
+        fields = ["id",
+            "title", "image_url", "sub_type", "price"        
+        ]
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            if request is not None:
+                return request.build_absolute_uri(obj.image.url)
+            return f"{settings.SITE_URL}{obj.image.url}"
+        
+        return None
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -166,7 +185,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Registration
-        fields = [
+        fields = ["id",
             "title", "image_url", "sub_type", "price",
             "time_required", "required_documents", "additional_info",
             "slug", "updated", "blogs", "rating"
@@ -197,6 +216,31 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return None
 
 
+class MiniDetailSerializer(serializers.ModelSerializer):
+    registration = MiniRegistrationSerializer()
+    company_slug = serializers.CharField(source="company.slug", read_only=True)
+    company_sub_type = serializers.CharField(source="company.sub_type", read_only=True)
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RegistrationDetailPage
+        fields = ["id",
+            "registration", "meta_description", "company_slug",
+            "company_sub_type", "url"
+            ]
+        
+    def get_url(self, obj):
+        try:
+            company_slug = obj.company.slug
+            type_slug = obj.registration.registration_type.slug
+            sub_type_slug = obj.registration.sub_type.slug
+            slug = obj.slug
+        except AttributeError:
+            return None
+
+        return f"{company_slug}/{type_slug}/{sub_type_slug}/{slug}"
+
+
 class DetailSerializer(serializers.ModelSerializer):
     registration = RegistrationSerializer()
     company_slug = serializers.CharField(source="company.slug", read_only=True)
@@ -207,7 +251,6 @@ class DetailSerializer(serializers.ModelSerializer):
     tables = TableSerializer(many=True, read_only=True)
     bullet_points = BulletPointSerializer(many=True, read_only=True)    
     timelines = TimelineSerializer(many=True, read_only=True)
-    blogs = BlogSerializer(many=True, read_only=True)
     faqs = serializers.SerializerMethodField()
     testimonials = TestimonialSerializer(many=True, read_only=True)
     meta_tags = MetaTagSerializer(many=True, read_only=True)
@@ -218,7 +261,7 @@ class DetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RegistrationDetailPage
-        fields = [
+        fields = ["id",
             "registration", "meta_title", "meta_description",
             "summary", "description", "features", "slug",
             "vertical_title", "horizontal_title", "vertical_tabs", 
@@ -227,7 +270,7 @@ class DetailSerializer(serializers.ModelSerializer):
             "timeline_title", "timelines", "toc", "hide_features", 
             "hide_vertical_tab", "hide_horizontal_tab", "hide_table",
             "hide_bullets", "hide_timeline", "hide_support_languages",
-            "blogs", "faqs", "testimonials", "meta_tags", "published",
+            "faqs", "testimonials", "meta_tags", "published",
             "modified", "item_name", "created", "updated",
             "company_slug", "company_sub_type", "url", "company_meta_title"
             ]
@@ -285,7 +328,7 @@ class EnquirySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Enquiry
-        fields = ["company", "name", "phone", "email", "registration", "state"]
+        fields = ["id","company", "name", "phone", "email", "registration", "state"]
         extra_kwargs = {
             'company': {'required': False},  # Typically set server-side
             'name': {'required': True}
@@ -306,7 +349,7 @@ class EnquirySerializer(serializers.ModelSerializer):
     def validate(self, data):
         # Clean string fields
         cleaned_data = {}
-        string_fields = ['name']
+        string_fields = ["id",'name']
         
         for field in string_fields:
             value = data.get(field, '').strip()
@@ -336,7 +379,7 @@ class MultipageFaqSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MultiPageFaq
-        fields = ["company", "question", "answer", "slug"]
+        fields = ["id","company", "question", "answer", "slug"]
 
     def get_company(self, obj):
         if obj.company:
@@ -347,19 +390,19 @@ class MultipageFaqSerializer(serializers.ModelSerializer):
 class MultipageFeatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageFeature
-        fields = ["feature", "id"]
+        fields = ["id","feature", "id"]
 
 
 class MultipageVerticalBulletSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageVerticalBullet
-        fields = ["id", "bullet"]
+        fields = ["id","id", "bullet"]
 
 
 class MultipageHorizontalBulletSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageHorizontalBullet
-        fields = ["id", "bullet"]
+        fields = ["id","id", "bullet"]
 
     
 class MultipageVerticalTabSerializer(serializers.ModelSerializer):
@@ -367,7 +410,7 @@ class MultipageVerticalTabSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MultiPageVerticalTab
-        fields = [
+        fields = ["id",
             "id", "heading", "sub_heading", "summary", "bullets"
             ]
         
@@ -377,7 +420,7 @@ class MultipageHorizontalTabSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MultiPageHorizontalTab
-        fields = [
+        fields = ["id",
             "id", "heading", "summary", "bullets"
             ]
         
@@ -385,7 +428,7 @@ class MultipageHorizontalTabSerializer(serializers.ModelSerializer):
 class MultipageTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageTable
-        fields = [
+        fields = ["id",
             "id", "heading"
             ]
 
@@ -393,7 +436,7 @@ class MultipageTableSerializer(serializers.ModelSerializer):
 class MultipageBulletPointSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageBulletPoint
-        fields = [
+        fields = ["id",
             "id", "bullet_point"
             ]
         
@@ -401,7 +444,7 @@ class MultipageBulletPointSerializer(serializers.ModelSerializer):
 class MultipageTimelineSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageTimeline
-        fields = [
+        fields = ["id",
             "id", "heading", "summary"
             ]
 
@@ -416,7 +459,6 @@ class MultipageSerializer(serializers.ModelSerializer):
     bullet_points = MultipageBulletPointSerializer(many=True, read_only=True)    
     timelines = MultipageTimelineSerializer(many=True, read_only=True)
     faqs = MultipageFaqSerializer(many=True, read_only=True)
-    blogs = BlogSerializer(many=True, read_only=True)
     testimonials = TestimonialSerializer(many=True, read_only=True)
     meta_tags = MetaTagSerializer(many=True, read_only=True)
 
@@ -427,7 +469,7 @@ class MultipageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MultiPage
-        fields = [
+        fields = ["id",
             "title", "slug", "summary", "description", "slider_registrations", "features", "slug",
             "vertical_title", "horizontal_title", "vertical_tabs", 
             "horizontal_tabs", "table_title", "tables", "get_data",
@@ -435,7 +477,7 @@ class MultipageSerializer(serializers.ModelSerializer):
             "timeline_title", "timelines", "toc", "hide_features", 
             "hide_vertical_tab", "hide_horizontal_tab", "hide_table",
             "hide_bullets", "hide_timeline", "hide_support_languages",
-            "blogs", "faqs", "testimonials", "meta_tags", "published",
+            "faqs", "testimonials", "meta_tags", "published",
             "modified", "meta_description", "company_slug", "url_type",
             "rating", "rating_count", "registration", "company_name",
             "sub_title", "meta_title"
@@ -453,7 +495,7 @@ class TypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RegistrationType
-        fields = [
+        fields = ["id",
             "name", "company", "description", "slug", "detail_pages",
             "testimonials", "blogs", "updated", "rating"
             ]

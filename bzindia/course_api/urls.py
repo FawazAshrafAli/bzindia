@@ -6,7 +6,8 @@ from .views import (
     CourseApiViewset, EducationCompanyViewSet, CorporatePartnersViewSet, 
     StudentTestimonialViewSet, EnquiryViewSet,
     ProgramViewset, DetailViewSet, InstituteCourseDetailViewSet,
-    CompanyCoursesViewSet, SpecializationViewset
+    CompanyCoursesViewSet, SpecializationViewset,
+    DetailSliderViewSet
     )
 
 app_name = "course_api" 
@@ -26,6 +27,7 @@ companies_router.register(r'specializations', SpecializationViewset, basename="c
 companies_router.register(r'enquiries', EnquiryViewSet, basename="company-enquiry")
 companies_router.register(r'courses', CompanyCoursesViewSet, basename="company-course")
 companies_router.register(r'details', DetailViewSet, basename="company-detail")
+companies_router.register(r'slider-details', DetailSliderViewSet, basename="company-slider-detail")
 
 urlpatterns = [
     path('', include(router.urls)),

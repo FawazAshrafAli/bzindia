@@ -5,7 +5,7 @@ from .views import (
     ProductDetailViewset, ProductCompanyViewSet, 
     ProductCategoryViewSet, ProductViewset, EnquiryViewSet,
     ProductSubCategoryViewSet, ReviewViewSet, 
-    ProductMultipageViewSet
+    ProductMultipageViewSet, ProductSliderDetailViewset
     )
 
 app_name = "product_api"
@@ -18,6 +18,7 @@ companies_router = NestedDefaultRouter(router, r'companies', lookup="company")
 
 companies_router.register(r'products', ProductViewset, basename="company-product")
 companies_router.register(r'details', ProductDetailViewset, basename="company-detail")
+companies_router.register(r'slider-details', ProductSliderDetailViewset, basename="company-slider-detail")
 companies_router.register(r'multipages', ProductMultipageViewSet, basename="company-multipage")
 companies_router.register(r'categories', ProductCategoryViewSet, basename="company-category")
 companies_router.register(r'sub_categories', ProductSubCategoryViewSet, basename="company-sub_category")

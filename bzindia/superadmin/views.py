@@ -306,6 +306,7 @@ class AddCompanyView(BaseCompanyView, CreateView):
                 messages.error(request, "Failed! Company with provided sub type already exists.")
                 return redirect(self.redirect_url)
 
+            updating_meta_tags = []
             with transaction.atomic():
 
                 company_obj = self.model.objects.create(
@@ -323,9 +324,20 @@ class AddCompanyView(BaseCompanyView, CreateView):
                     
                     )
 
-                meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+                for tag in meta_tags:
+                    if not MetaTag.objects.filter(slug = tag).exists():
 
-                company_obj.meta_tags.set(meta_tag_objs)
+                        new_tag, created = MetaTag.objects.get_or_create(name = tag.strip())
+
+                        if not new_tag.slug in updating_meta_tags:
+                            updating_meta_tags.append(new_tag.slug)
+
+                    else:
+                        if not tag in updating_meta_tags:
+                            updating_meta_tags.append(tag)
+
+                meta_tag_objects = MetaTag.objects.filter(slug__in = updating_meta_tags)
+                company_obj.meta_tags.set(meta_tag_objects)
 
                 if add_on_company_types:
                     company_type_ids = CompanyType.objects.filter(name__in = add_on_company_types).values_list("id", flat=True)
@@ -449,6 +461,8 @@ class UpdateCompanyView(BaseCompanyView, UpdateView):
                 messages.error(request, "Company with the provided sub type already exists")
                 return redirect(self.get_redirect_url())
 
+            updating_meta_tags = []
+
             self.object.name = name
             self.object.type = type
             self.object.sub_type = sub_type
@@ -467,9 +481,17 @@ class UpdateCompanyView(BaseCompanyView, UpdateView):
 
             self.object.footer_content = footer_content
 
-            meta_tag_objs = MetaTag.objects.filter(slug__in = meta_tags)
+            for tag in meta_tags:
+                if not MetaTag.objects.filter(slug = tag).exists():
 
-            self.object.meta_tags.set(meta_tag_objs)
+                    new_tag, created = MetaTag.objects.get_or_create(name = tag.strip())
+
+                    if not new_tag.slug in updating_meta_tags:
+                        updating_meta_tags.append(new_tag.slug)
+
+                else:
+                    if not tag in updating_meta_tags:
+                        updating_meta_tags.append(tag)
 
             self.object.add_on_company_types.clear()
             if add_on_company_types:
@@ -477,6 +499,9 @@ class UpdateCompanyView(BaseCompanyView, UpdateView):
                 self.object.add_on_company_types.set(company_type_ids)
 
             self.object.save()
+
+            meta_tag_objects = MetaTag.objects.filter(slug__in = updating_meta_tags)
+            self.object.meta_tags.set(meta_tag_objects)
 
             messages.success(request, "Company Updation Successfull.")
             return redirect(self.get_success_url())
@@ -911,6 +936,9 @@ class AddBrandView(BaseProductCompanyView, CreateView):
             messages.error(request, "Server Error.")
 
         return redirect(self.get_redirect_url())
+
+
+# class DeleteProductBrand(BaseProduct)
     
 
 class ListProductCategoryView(BaseProductCompanyView, ListView):
@@ -4095,9 +4123,8 @@ class CourseSpecializationListView(BaseEducationCompanyView, ListView):
         context = super().get_context_data(**kwargs)
         try:
             context["course_specialization_page"] = True
-            context['program_list_page'] = True
-
-            context["programs"] = Program.objects.all().order_by("-created")
+            context['program_list_page'] = True                
+            context["programs"] = Program.objects.filter(company__slug = self.kwargs.get("slug")).order_by("-created")
         except Exception as e:
             logger.exception(f"Error in fetching context data of CourseSpecializationListView of superadmin app: {e}")
         return context
@@ -5531,8 +5558,7 @@ class DeleteCourseEnquiryView(BaseCourseEnquiryView, View):
 
     def post(self, request, *args, **kwargs):
         try:
-            self.object = get_object_or_404(CourseEnquiry, company__slug = self.kwargs.get(self.slug_url_kwarg), slug = self.kwargs.get('enquiry_slug'))
-            self.object.delete()
+            CourseEnquiry.objects.filter(company__slug = self.kwargs.get(self.slug_url_kwarg), slug = self.kwargs.get('enquiry_slug')).delete()
 
             messages.success(request, "Success! Delete Course Enquiry")
             return redirect(self.get_success_url())
@@ -14415,9 +14441,13 @@ class UpdateCheckedRegistrationMultipageView(AdminBaseView, UpdateView):
                 multipage = get_object_or_404(RegistrationMultiPage, slug = multipage_slug)
             except Http404:
                 return JsonResponse({"error": "Bad Request."}, status=400)
+            
+            if multipage.registration_region != "all":
+                return JsonResponse({"error": "Bad Request."}, status=400)
 
             with transaction.atomic():        
                 RegistrationMultiPage.objects.filter(company = multipage.company).update(home_footer_visibility = False)
+
                 multipage.home_footer_visibility = True
                 multipage.save()
 

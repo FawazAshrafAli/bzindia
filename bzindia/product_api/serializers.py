@@ -19,7 +19,7 @@ from meta_api.serializers import MetaTagSerializer
 class FaqSerializer(serializers.ModelSerializer):
     class Meta:
         model = Faq
-        fields = ["question", "answer", "slug"]
+        fields = ["id","question", "answer", "slug"]
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -41,7 +41,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Review
-        fields = ['name', 'text', 'rating', 'created', "product_name", "review_by", "created_date", "product", "email", "image_url"]
+        fields = ["id",'name', 'text', 'rating', 'created', "product_name", "review_by", "created_date", "product", "email", "image_url"]
         extra_kwargs = {
             'company': {'required': False},
             'review_by': {'required': True},
@@ -77,7 +77,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     def validate(self, data):
         # Clean string fields
         cleaned_data = {}
-        string_fields = ['review_by', 'text']
+        string_fields = ["id",'review_by', 'text']
         
         for field in string_fields:
             value = data.get(field, '').strip()
@@ -111,6 +111,43 @@ class ReviewSerializer(serializers.ModelSerializer):
         return data
 
 
+class MiniProductSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    category_name = serializers.CharField(source = "category.name", read_only = True)
+    reviews = ReviewSerializer(many=True, read_only=True)
+    rating = serializers.SerializerMethodField()
+    rating_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = ["id",
+            "name", "image_url", "price", "category_name", "rating", 
+            "rating_count", "reviews", "sku",
+            ]        
+
+    def get_rating(self, obj):
+        from django.db.models import Avg
+
+        if obj.reviews:
+            return obj.reviews.aggregate(avg_rating=Avg("rating"))["avg_rating"] or "0"
+        return "0"
+    
+    def get_rating_count(self, obj):
+
+        if obj.reviews:
+            return obj.reviews.count() or "0"
+        return "0"
+    
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            if request is not None:
+                return request.build_absolute_uri(obj.image.url)
+            return f"{settings.SITE_URL}/{obj.image.url}"
+        
+        return None
+
+
 class ProductSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     category_name = serializers.CharField(source = "category.name", read_only = True)
@@ -120,17 +157,31 @@ class ProductSerializer(serializers.ModelSerializer):
     brand_name = serializers.CharField(source = "brand.name", read_only = True)
     reviews = ReviewSerializer(many=True, read_only=True)
     faqs = serializers.SerializerMethodField()
-    blogs = serializers.SerializerMethodField()
-    detail_page_slug = serializers.SerializerMethodField()    
+    detail_page_slug = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+    rating_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = [
+        fields = ["id",
             "name", "image_url", "price", "description", "get_absolute_url", 
             "category_name", "rating", "rating_count", "reviews", "slug", 
-            "sku", "stock", "faqs", "blogs", "category_slug", "brand_name",
+            "sku", "stock", "faqs", "category_slug", "brand_name",
             "detail_page_slug", "sub_category_slug", "sub_category_name"
             ]
+        
+    def get_rating(self, obj):
+        from django.db.models import Avg
+
+        if obj.reviews:
+            return obj.reviews.aggregate(avg_rating=Avg("rating"))["avg_rating"] or "0"
+        return "0"
+    
+    def get_rating_count(self, obj):
+
+        if obj.reviews:
+            return obj.reviews.count() or "0"
+        return "0"
 
     def get_image_url(self, obj):
         request = self.context.get('request')
@@ -149,17 +200,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
         serializer = FaqSerializer(faqs, many = True)
 
-        return serializer.data
-    
-    def get_blogs(self, obj):
-        if not obj:
-            return None
-        
-        blogs = Blog.objects.filter(product = obj)
-
-        serializer = BlogSerializer(blogs, many = True)
-
-        return serializer.data
+        return serializer.data    
     
     def get_detail_page_slug(self, obj):
         if not obj:
@@ -176,13 +217,13 @@ class ProductSerializer(serializers.ModelSerializer):
 class FeatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feature
-        fields = ["feature", "id"]
+        fields = ["id","feature", "id"]
 
 
 class BulletPointSerializer(serializers.ModelSerializer):
     class Meta:
         model = BulletPoint
-        fields = [
+        fields = ["id",
             "id", "bullet_point"
             ]
         
@@ -190,9 +231,36 @@ class BulletPointSerializer(serializers.ModelSerializer):
 class TimelineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Timeline
-        fields = [
+        fields = ["id",
             "id", "heading", "summary"
             ]
+
+
+class MiniProductDetailSerializer(serializers.ModelSerializer):
+    product = MiniProductSerializer()
+
+    company_slug = serializers.CharField(source="company.slug", read_only=True)
+    url = serializers.SerializerMethodField()
+
+    company_sub_type = serializers.CharField(source="company.sub_type", read_only=True)
+
+    class Meta:
+        model = ProductDetailPage
+        fields = ["id",
+            "meta_description", "product", "company_slug", 
+            "url", "company_sub_type",
+            ]
+        
+    def get_url(self, obj):
+        try:
+            company_slug = obj.company.slug
+            category_slug = obj.product.category.slug
+            sub_category_slug = obj.product.sub_category.slug
+            slug = obj.slug
+        except AttributeError:
+            return None
+
+        return f"{company_slug}/{category_slug}/{sub_category_slug}/{slug}"
 
 
 class DetailSerializer(serializers.ModelSerializer):
@@ -205,15 +273,19 @@ class DetailSerializer(serializers.ModelSerializer):
     company_slug = serializers.CharField(source="company.slug", read_only=True)
     url = serializers.SerializerMethodField()
 
+    company_sub_type = serializers.CharField(source="company.sub_type", read_only=True)
+
     class Meta:
         model = ProductDetailPage
-        fields = [
+        fields = ["id",
             "meta_title", "meta_description",
             "product", "slug", "summary", "description",
             "features", "bullet_points", "hide_features", "hide_bullets",
             "hide_timeline", "timelines", "meta_tags", 
             "toc", "timeline_title", "hide_support_languages",
-            "created", "updated", "company_slug", "url"
+            "created", "updated", "company_slug", "url",
+
+            "company_sub_type",
             ]
         
     def get_url(self, obj):
@@ -231,13 +303,13 @@ class DetailSerializer(serializers.ModelSerializer):
 class MultipageFeatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageFeature
-        fields = ["feature", "id"]
+        fields = ["id","feature", "id"]
 
 
 class MultipageBulletPointSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageBulletPoint
-        fields = [
+        fields = ["id",
             "id", "bullet_point"
             ]
         
@@ -245,7 +317,7 @@ class MultipageBulletPointSerializer(serializers.ModelSerializer):
 class MultipageTimelineSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageTimeline
-        fields = [
+        fields = ["id",
             "id", "heading", "summary"
             ]
         
@@ -253,7 +325,7 @@ class MultipageTimelineSerializer(serializers.ModelSerializer):
 class MultipageFaqSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiPageFaq
-        fields = [
+        fields = ["id",
             "id", "question", "answer", "slug"
             ]
 
@@ -275,7 +347,7 @@ class MultiPageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MultiPage
-        fields = [
+        fields = ["id",
             "title", "products", "slug", "meta_description", "summary", "description",
             "features", "bullet_points", "hide_features", "hide_bullets",
             "hide_timeline", "timelines", "meta_tags", 
@@ -359,7 +431,7 @@ class ProductSubCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SubCategory
-        fields = [
+        fields = ["id",
             "name", "slug", "updated", "image_url", "category_name", 
             "category_slug", "testimonials", "blogs"
             ]
@@ -403,7 +475,7 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = [
+        fields = ["id",
             "details", "name", "slug", "sub_categories", "testimonials", "blogs", 
             "updated", "image_url"
             ]
@@ -484,7 +556,7 @@ class EnquirySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Enquiry
-        fields = ["company", "name", "phone", "email", "product", "state"]
+        fields = ["id","company", "name", "phone", "email", "product", "state"]
         extra_kwargs = {
             'company': {'required': False},  # Typically set server-side
             'name': {'required': True},
@@ -505,7 +577,7 @@ class EnquirySerializer(serializers.ModelSerializer):
     def validate(self, data):
         # Clean string fields
         cleaned_data = {}
-        string_fields = ['name']
+        string_fields = ["id",'name']
         
         for field in string_fields:
             value = data.get(field, '').strip()

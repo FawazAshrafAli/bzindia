@@ -1,4 +1,5 @@
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import LimitOffsetPagination
 
-class BlogPagination(PageNumberPagination):
-    page_size = 15
+class BlogPagination(LimitOffsetPagination):
+    default_limit = 9
+    max_limit = 50 

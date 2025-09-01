@@ -14,7 +14,13 @@ from custom_pages.models import AboutUs
 from product.models import Review
 
 from course_api.serializers import ProgramSerializer
-from .serializers import CompanySerializer, CompanyTypeSerializer, ContactEnquirySerializer, ClientSerializer, TestimonialSerializer, BannerSerializer
+from .serializers import (
+    CompanySerializer, CompanyTypeSerializer, 
+    ContactEnquirySerializer, ClientSerializer, 
+    TestimonialSerializer, BannerSerializer, 
+    MiniCompanySerializer, MiniCompanyTypeSerializer,
+    NavbarCompanyTypeSerializer
+    )
 from blog_api.serializers import BlogSerializer
 from custom_pages_api.serializers import AboutUsSerializer
 from product_api.serializers import ReviewSerializer
@@ -38,6 +44,17 @@ class CompanyApiViewset(viewsets.ReadOnlyModelViewSet):
         return context
     
 
+class MiniCompanyApiViewset(viewsets.ReadOnlyModelViewSet):
+    serializer_class = MiniCompanySerializer
+    queryset = Company.objects.all().order_by("?")[:12]
+    lookup_field  = "slug"
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
+
 class CompanyTypeApiViewset(viewsets.ModelViewSet):
     serializer_class = CompanyTypeSerializer
     queryset = CompanyType.objects.all().order_by("?")
@@ -47,6 +64,23 @@ class CompanyTypeApiViewset(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
+    
+
+class NavbarCompanyTypeApiViewset(viewsets.ModelViewSet):
+    serializer_class = NavbarCompanyTypeSerializer
+    queryset = CompanyType.objects.all().order_by("?")
+    lookup_field  = "slug"
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
+
+class BriefCompanyTypeApiViewset(viewsets.ModelViewSet):
+    serializer_class = MiniCompanyTypeSerializer
+    queryset = CompanyType.objects.all().order_by("?")[:12]
+    lookup_field  = "slug"
 
 
 class CompanyBlogViewSet(viewsets.ModelViewSet):
@@ -122,6 +156,9 @@ class CompanyAboutUsViewSet(viewsets.ModelViewSet):
         company_slug = self.kwargs.get("company_slug")
 
         if company_slug:
+            if company_slug == "bzindia":
+                return AboutUs.objects.filter(company__isnull = True)
+            
             return AboutUs.objects.filter(company__slug = company_slug)
         
         return AboutUs.objects.none()

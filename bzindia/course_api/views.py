@@ -18,7 +18,7 @@ from company.models import Company, Client
 from .serializers import (
     CourseSerializer, StudentTestimonialSerializer, 
     CourseFaqSerializer, EnquirySerializer, ProgramSerializer, 
-    DetailSerializer, SpecializationSerializer
+    DetailSerializer, SpecializationSerializer, MiniCourseDetailSerializer
     )
 
 from company_api.serializers import CompanySerializer, ClientSerializer
@@ -218,5 +218,40 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
                 filters["course__specialization__slug"] = specialization_slug
 
             return CourseDetail.objects.filter(**filters)
+        
+        return CourseDetail.objects.none()
+    
+
+class DetailSliderViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = MiniCourseDetailSerializer
+    lookup_field = "slug"
+    pagination_class = CoursePagination
+
+    def get_queryset(self):
+        slug = self.kwargs.get("company_slug")        
+
+        if slug:
+            if slug == "all":
+                return (
+                    CourseDetail.objects.select_related("course")
+                    .only(
+                        "id", "slug", "meta_description",
+                        "meta_title", "course"
+                        )
+                    .order_by("?")[:12]
+                )
+
+            filters = {"company__slug": slug}            
+
+            details = (
+                CourseDetail.objects.filter(**filters)
+                .select_related("course")
+                .only(
+                    "id", "slug", "meta_description",
+                    "meta_title", "course"
+                    )
+                .order_by("?")[:12]
+            )
+            return details
         
         return CourseDetail.objects.none()

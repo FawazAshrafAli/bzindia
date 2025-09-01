@@ -371,8 +371,8 @@ class Timeline(models.Model):
 
 
 class RegistrationDetailPage(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, blank=True, null=True)        
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="registration_details")
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, blank=True, null=True)
 
     summary = models.TextField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)

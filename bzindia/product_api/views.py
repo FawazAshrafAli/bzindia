@@ -10,7 +10,7 @@ from company_api.serializers import CompanySerializer
 from .serializers import (
     ProductCategorySerializer, DetailSerializer, ProductSerializer, 
     EnquirySerializer, ProductSubCategorySerializer, ReviewSerializer,
-    MultiPageSerializer
+    MultiPageSerializer, MiniProductDetailSerializer
     
     )
 from product.models import (
@@ -90,6 +90,42 @@ class ProductDetailViewset(viewsets.ReadOnlyModelViewSet):
         context['request'] = self.request
         return context
     
+
+class ProductSliderDetailViewset(viewsets.ReadOnlyModelViewSet):
+    serializer_class = MiniProductDetailSerializer
+    pagination_class = ProductDetailPagination
+    lookup_field = "slug"
+
+    def get_queryset(self):
+        company_slug = self.kwargs.get("company_slug")        
+
+        if company_slug:
+            if company_slug == "all":
+                return (
+                    ProductDetailPage.objects.select_related("product")
+                    .only(
+                        "id", "slug", "meta_description",
+                        "meta_title", "product"
+                        )
+                    .order_by("?")[:12]
+                )
+
+            filters = {"company__slug": company_slug}                        
+
+            details = (
+                ProductDetailPage.objects.filter(**filters)
+                .select_related("product")
+                .only(
+                    "id", "slug", "meta_description",
+                    "meta_title", "product"
+                    )
+                .order_by("?")[:12]
+                )
+
+            return details
+        
+        return ProductDetailPage.objects.none()
+
 
 class ProductCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ProductCategorySerializer
