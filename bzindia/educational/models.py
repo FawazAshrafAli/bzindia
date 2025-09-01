@@ -352,7 +352,7 @@ class Timeline(models.Model):
 
 
 class CourseDetail(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name = "course_details")
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
 
     summary = models.TextField()
